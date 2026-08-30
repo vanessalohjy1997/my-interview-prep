@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>React Hooks & State — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#2DD4BF;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(45,212,191,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#9DEBDD}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(45,212,191,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#9DEBDD}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">React <em>Hooks &amp; State</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> The shift</a>
+    <a href="#effect"><span class="n">01</span> useEffect</a>
+    <a href="#ref"><span class="n">02</span> useRef</a>
+    <a href="#reducer"><span class="n">03</span> useReducer</a>
+    <a href="#rules"><span class="n">04</span> Custom hooks &amp; rules</a>
+    <a href="#design"><span class="n">05</span> State design</a>
+    <a href="#concurrent"><span class="n">06</span> Deferred / transition</a>
+    <a href="#react19"><span class="n">07</span> React 19 APIs</a>
+    <a href="#drills"><span class="n">08</span> Drills</a>
+    <a href="#bank"><span class="n">09</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Hooks are about <span>synchronizing</span>, not lifecycle.</h1>
+      <p class="lede">The senior-level hook questions aren't &ldquo;what does useState do&rdquo; — they're about dependency arrays, cleanup, stale closures, and knowing when an effect is the wrong tool entirely.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Effects</span>
+        <span class="chip"><span class="dot d-pending"></span>Refs</span>
+        <span class="chip"><span class="dot d-chain"></span>Derived state</span>
+        <span class="chip"><span class="dot d-micro"></span>Concurrent</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The mental shift</div>
+      <h2>From lifecycle to synchronization</h2>
+      <p>Hooks let function components hold state and run side effects. The senior framing: stop thinking &ldquo;on mount / on update / on unmount&rdquo; and start thinking <strong>&ldquo;this effect keeps some external system in sync with my current state.&rdquo;</strong> The dependency array is the list of values that, when they change, mean the sync must run again.</p>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;An effect isn't a lifecycle callback — it's a synchronization whose dependencies declare what it depends on. If I list the deps honestly, correctness follows.&rdquo;</div>
+
+      <h3>The lifecycle it replaced</h3>
+      <p>You still get asked about class components, partly because plenty of production code still contains them and partly because the mapping is a good test of whether you understand effects. A class component's life had three moments:</p>
+      <pre>class Chart extends React.Component {
+  state = { data: null };
+
+  onData = data =&gt; this.setState({ data });
+
+  componentDidMount()  { this.sub = subscribe(this.props.id, this.onData); }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.id !== this.props.id) {     <span class="cmt">// you diff props by hand</span>
+      this.sub.close();
+      this.sub = subscribe(this.props.id, this.onData);
+    }
+  }
+
+  componentWillUnmount() { this.sub.close(); }
+
+  render() { return &lt;Canvas data={this.state.data} /&gt;; }
+}</pre>
+      <table class="tbl">
+        <tr><th>Class</th><th>Hooks equivalent</th></tr>
+        <tr><td>constructor / state =</td><td><code class="k">useState</code> or <code class="k">useReducer</code></td></tr>
+        <tr><td>componentDidMount</td><td><code class="k">useEffect(fn, [])</code></td></tr>
+        <tr><td>componentDidUpdate</td><td><code class="k">useEffect(fn, [deps])</code> — no manual <code class="k">prevProps</code> comparison</td></tr>
+        <tr><td>componentWillUnmount</td><td>the cleanup function returned from the effect</td></tr>
+        <tr><td>getDerivedStateFromProps</td><td>usually nothing — derive during render, or key the component to reset it</td></tr>
+        <tr><td>shouldComponentUpdate</td><td><code class="k">React.memo</code> (plus <code class="k">useMemo</code>/<code class="k">useCallback</code> on the props)</td></tr>
+        <tr><td>componentDidCatch / getDerivedStateFromError</td><td><strong>no hook exists</strong> — error boundaries are still classes</td></tr>
+        <tr><td>getSnapshotBeforeUpdate</td><td><strong>no equivalent.</strong> It reads the DOM <em>before</em> React mutates it; <code class="k">useLayoutEffect</code> runs <em>after</em> mutation, so it cannot capture the pre-mutation value</td></tr>
+      </table>
+      <p>The point of the comparison is not the table, it is what the table shows: in the class version, mount and update are <em>two hand-written code paths that must agree</em>, and the unmount cleanup is a third, far from both. That is why subscription leaks were endemic. One effect with honest dependencies collapses all three into a single description of &ldquo;what this component synchronizes with, and how to stop&rdquo;.</p>
+      <div class="note warn"><span class="lbl">The two things hooks still cannot do</span><strong>1) Catch render errors.</strong> <code class="k">componentDidCatch</code> and <code class="k">getDerivedStateFromError</code> are class-only, so every error boundary in a hooks codebase is either a small class component or a library wrapping one, such as <code class="k">react-error-boundary</code>. <strong>2) Read the DOM before a mutation.</strong> <code class="k">getSnapshotBeforeUpdate</code> — capturing something like <code class="k">scrollHeight</code> that the upcoming commit will destroy — has no hook equivalent either. React's docs say so outright. It is rare, but naming it is a strong answer.</div>
+    </section>
+
+    <section id="effect">
+      <div class="kicker">01 — The most-probed hook</div>
+      <h2>useEffect</h2>
+      <p><code class="k">useEffect</code> is for <strong>synchronizing with systems outside React</strong> — subscriptions, timers, network, non-React DOM. It is not a general &ldquo;run some code after render&rdquo; slot.</p>
+      <h3>Dependencies &amp; cleanup</h3>
+      <ul class="body">
+        <li><strong>List every reactive value</strong> the effect reads (props, state, derived values). The exhaustive-deps lint rule enforces this. <code class="k">[]</code> means &ldquo;nothing reactive to re-sync on&rdquo; — valid only if the effect truly reads no reactive value. It does <em>not</em> mean &ldquo;runs once&rdquo;: in development StrictMode React runs an extra setup+cleanup cycle first, a stress test that your cleanup really undoes your setup.</li>
+        <li><strong>Return a cleanup function.</strong> It runs before the effect re-runs and on unmount — unsubscribe, clear timers, abort in-flight requests. Without it you leak subscriptions and get overlapping work.</li>
+      </ul>
+      <h3>The stale-closure trap</h3>
+      <pre>useEffect(() =&gt; {
+  const id = setInterval(() =&gt; setCount(count + 1), 1000);
+  return () =&gt; clearInterval(id);
+}, []);              <span class="err">// count is captured once — stuck at 0+1</span></pre>
+      <p>With <code class="k">[]</code>, the interval callback closes over <code class="k">count</code> from the first render forever, so it always computes <code class="k">0 + 1</code>. Fixes: use the <strong>functional update</strong> <code class="k">setCount(c =&gt; c + 1)</code> (no dependency on <code class="k">count</code>), or add <code class="k">count</code> to deps (re-creates the interval), or — since React 19.2 — move the non-reactive part into a <code class="k">useEffectEvent</code>, which always sees the latest props/state and is deliberately kept out of the deps.</p>
+      <div class="note warn"><span class="lbl">When NOT to use an effect</span>Don't use effects for: <strong>derived state</strong> (compute it during render — <code class="k">const full = first + ' ' + last</code>, not an effect + state); <strong>transforming data</strong> for display; <strong>resetting state when a prop changes</strong> (give the component a <code class="k">key</code> instead); or <strong>logic that belongs in an event handler</strong> (do it in the handler, not by watching state with an effect). Effects that only sync React state to other React state are usually a smell.</div>
+    </section>
+
+    <section id="ref">
+      <div class="kicker">02 — Escape hatch</div>
+      <h2>useRef — mutable value vs DOM handle</h2>
+      <p><code class="k">useRef</code> returns a stable <code class="k">{ current }</code> box. Two uses:</p>
+      <ul class="body">
+        <li><strong>Mutable value that doesn't trigger re-render</strong> — a timer id, a previous value, the latest state for a callback. Writing <code class="k">ref.current = x</code> never re-renders.</li>
+        <li><strong>DOM handle</strong> — <code class="k">&lt;input ref={inputRef} /&gt;</code>, then <code class="k">inputRef.current.focus()</code>.</li>
+      </ul>
+      <h3>The indeterminate checkbox</h3>
+      <pre>const ref = useRef(null);
+useEffect(() =&gt; { ref.current.indeterminate = mixed; }, [mixed]);
+return &lt;input type="checkbox" ref={ref} checked={allChecked} onChange={onToggle} /&gt;;</pre>
+      <p><code class="k">indeterminate</code> is a <strong>DOM property with no HTML/JSX attribute</strong> — you can't set it declaratively. So you set it imperatively via a ref in an effect. This is the canonical &ldquo;why would you reach for a ref&rdquo; example (and it pairs with the checkbox-tree state design below).</p>
+
+      <h3>Callback refs</h3>
+      <p>A ref can also be a function. React calls it with the node on attach and with <code class="k">null</code> on detach, which is how you measure or observe a node the moment it exists:</p>
+      <pre><span class="cmt">// React 19: return a cleanup, exactly like an effect</span>
+const observe = useCallback(node =&gt; {
+  const ro = new ResizeObserver(...); ro.observe(node);
+  return () =&gt; ro.disconnect();
+}, []);
+return &lt;div ref={observe} /&gt;;</pre>
+      <p>Before React 19 the callback returned nothing and you handled teardown by checking for the <code class="k">null</code> call React made on detach. React 19 lets a callback ref return a cleanup function instead — and when you return one, <strong>React no longer calls the ref with <code class="k">null</code></strong>, so a leftover <code class="k">if (!node) return</code> guard becomes dead code. Note the inline-arrow trap: a callback ref defined inline is a new function every render, so React detaches and reattaches it each time — wrap it in <code class="k">useCallback</code>.</p>
+
+      <h3>Forwarding a ref to a child</h3>
+      <p>Refs are not props in the ordinary sense, so historically a function component could not receive one — it had to be wrapped:</p>
+      <pre><span class="cmt">// React 18 and earlier</span>
+const Input = forwardRef(function Input(props, ref) {
+  return &lt;input ref={ref} {...props} /&gt;;
+});
+
+<span class="cmt">// React 19 — ref is just a prop</span>
+function Input({ ref, ...props }) {
+  return &lt;input ref={ref} {...props} /&gt;;
+}</pre>
+      <p>In React 19 <code class="k">ref</code> is passed to function components like any other prop, and <code class="k">forwardRef</code> is on its way out. Knowing both forms — and that <code class="k">forwardRef</code> still exists for older code — is the expected answer.</p>
+
+      <h3>useImperativeHandle</h3>
+      <p>Occasionally a parent legitimately needs to <em>do</em> something to a child rather than describe it: focus an input, scroll a list, play a video. <code class="k">useImperativeHandle</code> lets the child expose a deliberately narrow API instead of its raw DOM node:</p>
+      <pre>function Field({ ref, ...props }) {
+  const input = useRef(null);
+  useImperativeHandle(ref, () =&gt; ({
+    focus: () =&gt; input.current.focus(),
+    clear: () =&gt; { input.current.value = ''; },
+  }), []);
+  return &lt;input ref={input} {...props} /&gt;;
+}</pre>
+      <div class="note warn"><span class="lbl">Use it rarely, and say why</span>Every imperative handle is an escape from the declarative model, so reach for it only when the action genuinely has no state representation — focus, scroll position, media playback. &ldquo;Open the modal&rdquo; is state and belongs in props; &ldquo;focus this field now&rdquo; is an event and does not.</div>
+    </section>
+
+    <section id="reducer">
+      <div class="kicker">03 — Structured state</div>
+      <h2>useReducer vs useState</h2>
+      <p>Both hold state; the difference is how transitions are expressed.</p>
+      <ul class="body">
+        <li><strong><code class="k">useState</code></strong> — simple, independent values. A boolean, a string, a small object.</li>
+        <li><strong><code class="k">useReducer</code></strong> — when the next state depends on the previous in non-trivial ways, when several sub-values change together, or when transitions are worth naming as actions. It centralizes logic into a pure <code class="k">(state, action) =&gt; state</code> function that's easy to test, and <code class="k">dispatch</code> has a stable identity so it's safe in effect deps.</li>
+      </ul>
+      <div class="note"><span class="lbl">Rule of thumb</span>Reach for a reducer when you find yourself calling several <code class="k">setState</code>s together, or when a bug is &ldquo;the state got into an impossible combination.&rdquo; A reducer makes the legal transitions explicit.</div>
+    </section>
+
+    <section id="rules">
+      <div class="kicker">04 — Reuse &amp; invariants</div>
+      <h2>Custom hooks &amp; the rules of hooks</h2>
+      <p><strong>Custom hooks</strong> (<code class="k">useSomething</code>) extract reusable <em>stateful logic</em>. Key point: they share <strong>logic, not state</strong> — each call site gets its own independent state. <code class="k">useToggle</code>, <code class="k">useDebouncedValue</code>, <code class="k">useFetch</code> are all just functions that call other hooks.</p>
+      <h3>The rules of hooks</h3>
+      <ul class="body">
+        <li><strong>Only call hooks at the top level</strong> — never inside conditions, loops, or nested functions.</li>
+        <li><strong>Only call hooks from React functions</strong> — components or other hooks.</li>
+      </ul>
+      <p><strong>Why order matters:</strong> React associates each hook's state with the <em>order</em> it's called in, not a name. On every render the hooks must run in the same sequence so the 1st <code class="k">useState</code> maps to the same slot. A conditional hook shifts the sequence and React reads the wrong slot — hence the rule.</p>
+    </section>
+
+    <section id="design">
+      <div class="kicker">05 — The highest-leverage skill</div>
+      <h2>State design</h2>
+      <ul class="body">
+        <li><strong>Derived vs stored:</strong> never store what you can compute. If a value is a function of existing state/props, derive it during render. Storing it creates two sources of truth that drift.</li>
+        <li><strong>Single source of truth:</strong> pick one canonical place for each piece of state; everything else derives from it.</li>
+        <li><strong>Lift state up</strong> to the closest common ancestor of the components that need it — but no higher.</li>
+        <li><strong>Colocation:</strong> keep state as close as possible to where it's used; only lift when sharing forces it. Over-lifting causes wide re-renders and prop drilling.</li>
+      </ul>
+      <div class="note"><span class="lbl">The checkbox-tree instinct</span>For a parent/child checkbox tree, store only the <strong>leaf</strong> checked-set, and <em>derive</em> each parent's checked/indeterminate state from its descendants. One source of truth, no sync bugs — the parent state can never disagree with its children because it isn't stored, it's computed.</div>
+    </section>
+
+    <section id="concurrent">
+      <div class="kicker">06 — Concurrent features</div>
+      <h2>useDeferredValue &amp; useTransition</h2>
+      <p>These mark work as <strong>non-urgent</strong> so React can keep the UI responsive by rendering the urgent update first and the expensive one at low priority (interruptibly).</p>
+      <ul class="body">
+        <li><code class="k">useTransition</code> gives you <code class="k">[isPending, startTransition]</code>; wrap the state update that triggers expensive rendering in <code class="k">startTransition</code>.</li>
+        <li><code class="k">useDeferredValue</code> takes a value and returns a lagging copy that updates at low priority — handy when you don't own the state setter.</li>
+      </ul>
+      <div class="note"><span class="lbl">Why not just debounce?</span>Debouncing delays work by a fixed timer — you guess the delay, and when it fires it still blocks. A transition doesn't delay: it renders the urgent update (the keystroke) immediately and lets the expensive render (the big filtered list) be <strong>interruptible</strong> and lower priority, so typing never janks. You still debounce to rate-limit a <em>network request</em> — the two solve different problems and often combine.</div>
+    </section>
+
+    <section id="react19">
+      <div class="kicker">07 — The current API surface</div>
+      <h2>React 19 — Actions, use(), and the new hooks</h2>
+
+      <p>React 19 is largely one idea followed to its conclusion: <strong>the async mutation — pending state, error handling, optimistic UI, and reset — is boilerplate everyone rewrites, so React should own it.</strong> That machinery is called an <strong>Action</strong>.</p>
+      <h3>Actions and useActionState</h3>
+      <pre>function Profile({ user }) {
+  const [state, formAction, isPending] = useActionState(
+    async (prev, formData) =&gt; {
+      try { await updateName(formData.get('name')); return { ok: true }; }
+      catch (e) { return { error: e.message }; }      <span class="cmt">// error becomes state</span>
+    },
+    { ok: false }
+  );
+  return (
+    &lt;form action={formAction}&gt;
+      &lt;input name="name" defaultValue={user.name} /&gt;
+      &lt;button disabled={isPending}&gt;{isPending ? 'Saving…' : 'Save'}&lt;/button&gt;
+      {state.error &amp;&amp; &lt;p role="alert"&gt;{state.error}&lt;/p&gt;}
+    &lt;/form&gt;
+  );
+}</pre>
+      <p>Passing a function to <code class="k">&lt;form action&gt;</code> makes React manage the submission: it runs inside a transition, so <code class="k">isPending</code> is handled for you, and uncontrolled fields reset once it succeeds. The same <em>signature</em> works as a Server Action — move the function into a server module and add <code class="k">'use server'</code>, and the component code is unchanged.</p>
+      <table class="tbl">
+        <tr><th>API</th><th>What it gives you</th></tr>
+        <tr><td><code class="k">useActionState</code></td><td><code class="k">[state, action, isPending]</code> — the result of the last run, the wrapped action, and its pending flag. Renamed from the experimental <code class="k">useFormState</code>.</td></tr>
+        <tr><td><code class="k">useFormStatus</code></td><td>Imported from <code class="k">react-dom</code>. Reads the pending state of the nearest parent form from <em>inside</em> a descendant — so a shared <code class="k">&lt;SubmitButton&gt;</code> needs no props.</td></tr>
+        <tr><td><code class="k">useOptimistic</code></td><td>Shows an optimistic value while an action is in flight. React discards it when the action <em>settles</em> — so a failure reverts, and a success must have updated the real state by then.</td></tr>
+        <tr><td><code class="k">use</code></td><td>Reads a promise or a context during render. <strong>Unlike every other hook it may be called conditionally</strong>, including inside a branch or a loop.</td></tr>
+      </table>
+      <pre>const [optimistic, addOptimistic] = useOptimistic(messages,
+  (current, draft) =&gt; [...current, { ...draft, sending: true }]);
+
+<span class="cmt">// passed to &lt;form action={send}&gt; — addOptimistic must run inside an action</span>
+<span class="cmt">// or a transition, or React warns and the update is not optimistic</span>
+async function send(formData) {
+  addOptimistic({ text: formData.get('text') });   <span class="cmt">// paint immediately</span>
+  await postMessage(formData);
+}                          <span class="cmt">// discarded when the action settles — by then</span>
+                           <span class="cmt">// the real state must have caught up, or it snaps back</span></pre>
+      <h3>use()</h3>
+      <p><code class="k">use(promise)</code> suspends the component until the promise resolves, handing the value back — the nearest <code class="k">&lt;Suspense&gt;</code> shows the fallback and the nearest error boundary catches a rejection. <code class="k">use(SomeContext)</code> reads context and, because it is exempt from the rules of hooks, can do so inside a condition.</p>
+      <div class="note warn"><span class="lbl">Two things to know about use()</span><strong>Do not create the promise during render.</strong> A promise made in the component body is a new promise every render, so the component suspends forever; it must come from somewhere stable — a Server Component passing it down, a cache, or a data library. <strong>And it cannot be called inside <code class="k">try</code>/<code class="k">catch</code></strong> — wrap the component in an error boundary instead. Both are standard follow-up questions.</div>
+      <h3>The rest of what changed</h3>
+      <ul class="body">
+        <li><code class="k">ref</code> is an ordinary prop on function components; <code class="k">forwardRef</code> is no longer required, and callback refs may return a cleanup function.</li>
+        <li><code class="k">&lt;Context&gt;</code> can be rendered directly as the provider — <code class="k">&lt;Context.Provider&gt;</code> is no longer needed.</li>
+        <li><code class="k">&lt;title&gt;</code>, <code class="k">&lt;meta&gt;</code> and <code class="k">&lt;link&gt;</code> rendered anywhere in the tree are hoisted into <code class="k">&lt;head&gt;</code>, which removes the need for a helmet library.</li>
+        <li>Resource hints ship as APIs: <code class="k">preload</code>, <code class="k">preinit</code>, <code class="k">preconnect</code>, <code class="k">prefetchDNS</code> from <code class="k">react-dom</code>.</li>
+        <li>Hydration mismatch errors now show a diff of the server and client output instead of a generic warning.</li>
+        <li>Server Components and Server Actions are stable for frameworks to build on.</li>
+        <li><strong>Removed:</strong> <code class="k">propTypes</code> and <code class="k">defaultProps</code> on function components (use default parameters), legacy context, string refs, <code class="k">findDOMNode</code>, and the legacy <code class="k">ReactDOM.render</code>/<code class="k">hydrate</code> roots (deprecated in 18, removed in 19) — <code class="k">createRoot</code> and <code class="k">hydrateRoot</code> are the only ones left.</li>
+      </ul>
+      <h3>Two React <span style="color:var(--amber)">18</span> hooks that still get asked</h3>
+      <p>Both predate React 19 — worth being precise about, because misattributing them is an easy own goal.</p>
+      <ul class="body">
+        <li><strong><code class="k">useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)</code></strong> — the correct way to read from an external store (a Redux-like store, <code class="k">matchMedia</code>, <code class="k">navigator.onLine</code>). It guarantees the value is consistent across a concurrent render, which a naive <code class="k">useEffect</code>-plus-<code class="k">useState</code> subscription cannot — that pattern can tear, showing two different values in one paint.</li>
+        <li><strong><code class="k">useId()</code></strong> — generates an identifier stable across server and client renders, for wiring <code class="k">htmlFor</code> and <code class="k">aria-describedby</code>. It is not for keys, and not for CSS selectors.</li>
+      </ul>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">08 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the frozen counter</div>
+        <pre>useEffect(() =&gt; {
+  const id = setInterval(() =&gt; setCount(count + 1), 1000);
+  return () =&gt; clearInterval(id);
+}, []);</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Counter sticks at 1</div>
+          <p style="margin:0">The interval closes over <code class="k">count</code> from the first render (deps <code class="k">[]</code>), so it always computes 0+1. Fix with the functional update <code class="k">setCount(c =&gt; c+1)</code>, or add <code class="k">count</code> to deps, or read the latest value from a ref.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — effect or not?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;I have <code class='k'>firstName</code> and <code class='k'>lastName</code> state and want <code class='k'>fullName</code>. Should I keep <code class='k'>fullName</code> in state and update it in a useEffect?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">No. <code class="k">fullName</code> is derived — compute it during render: <code class="k">const fullName = firstName + ' ' + lastName</code>. Storing it plus an effect creates a second source of truth that lags by one render and can drift. Derive, don't duplicate.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — why does this crash?</div>
+        <pre>function C({ showName }){
+  if (showName) { const [n] = useState(''); }
+  const [x, setX] = useState(0);
+}</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Breaks the rules of hooks — hook order changes</div>
+          <p style="margin:0">The conditional <code class="k">useState</code> changes the <em>number</em> of hooks between renders, so React can't line the call sequence up with its stored slots and throws &ldquo;Rendered more hooks than during the previous render&rdquo;. Hooks must be called unconditionally at the top level; move the condition inside or split components.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — reset on prop change</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;When the selected <code class='k'>userId</code> prop changes, I want the edit form to reset. Effect that setStates the fields?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Prefer giving the form a <code class="k">key={userId}</code> — changing the key remounts it with fresh state, no effect needed. Effects that copy props into state and reset them are fragile (extra renders, easy to desync). Reserve the effect approach for partial resets.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — deferred vs debounce</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A search box filters a 10k-row list on every keystroke and janks. useDeferredValue or debounce?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">For the <em>rendering</em> jank, <code class="k">useDeferredValue</code> on the query: the input updates instantly (urgent) while the heavy filtered list re-renders at low priority and stays interruptible — no guessed delay. The list must be wrapped in <code class="k">memo</code>, though: without it the urgent re-render re-renders the list anyway and the deferral buys nothing. If you're also hitting an API per keystroke, debounce <em>that request</em> to rate-limit the network. They address different costs and combine well.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">09 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="effect">useEffect</button>
+        <button class="fchip" data-f="class">Class era</button>
+        <button class="fchip" data-f="ref">useRef</button>
+        <button class="fchip" data-f="reducer">Reducer</button>
+        <button class="fchip" data-f="rules">Rules</button>
+        <button class="fchip" data-f="design">State design</button>
+        <button class="fchip" data-f="concurrent">Concurrent</button>
+        <button class="fchip" data-f="r19">React 18 / 19</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · derive, don't duplicate; synchronize, don't lifecycle.</footer>
+
+<script>
+const QA = [["effect", "useEffect", "What is useEffect actually for?", "Synchronizing a component with external systems — subscriptions, timers, network, non-React DOM. It's not a general 'run code after render' slot; state-derived values and event logic don't belong in it."], ["effect", "useEffect", "What goes in the dependency array?", "Every reactive value the effect reads — props, state, and values derived from them. The exhaustive-deps lint rule enforces it. An empty array means the effect reads nothing reactive, so there is nothing to re-synchronise on; it does not mean 'runs once', because StrictMode deliberately runs an extra setup and cleanup cycle in development."], ["effect", "useEffect", "What does the cleanup function do and when does it run?", "It runs before the effect re-runs and on unmount. Use it to unsubscribe, clear timers, and abort in-flight requests. Missing cleanup leaks subscriptions and causes overlapping work."], ["effect", "useEffect", "Explain the stale-closure trap.", "An effect/callback captures the props and state from the render it was created in. With wrong (often empty) deps, it keeps reading those stale values — e.g. an interval that always computes 0+1. Fix with functional updates, correct deps, or a ref."], ["effect", "useEffect", "Name cases where you should NOT use an effect.", "Derived state (compute in render), transforming data for display, resetting state on prop change (use key), and logic that belongs in an event handler. Effects that only sync React state to React state are a smell."], ["ref", "useRef", "What are the two uses of useRef?", "A mutable value that persists across renders without causing re-renders (timer id, previous value, latest state), and a handle to a DOM node for imperative access (focus, measure)."], ["ref", "useRef", "Does changing ref.current re-render?", "No. Writing to ref.current is a mutation that React doesn't track — it never triggers a render. That's exactly why it's used for values you don't want to render on."], ["ref", "useRef", "Why set a checkbox's indeterminate via a ref?", "indeterminate is a DOM property with no HTML/JSX attribute, so it can't be set declaratively. You set it imperatively on the DOM node through a ref in an effect."], ["class", "Class era", "Map the class lifecycle methods onto hooks.", "componentDidMount is useEffect with an empty dependency array; componentDidUpdate is useEffect with dependencies, without the manual prevProps comparison; componentWillUnmount is the cleanup function the effect returns; shouldComponentUpdate is React.memo. getDerivedStateFromProps usually needs no equivalent — derive during render or key the component to reset it. Two have no hook equivalent at all: getDerivedStateFromError/componentDidCatch, and getSnapshotBeforeUpdate, which reads the DOM before React mutates it, whereas useLayoutEffect runs after mutation."], ["class", "Class era", "Why is one effect better than componentDidMount plus componentDidUpdate?", "Because mount and update were two hand-written code paths that had to agree, with the teardown in a third method far from both — which is why subscription leaks and stale subscriptions were so common. One effect with honest dependencies describes what the component synchronizes with and how to stop, and React runs it whenever those inputs change."], ["class", "Class era", "What can class components still do that hooks cannot?", "Two things. Catch render errors — getDerivedStateFromError and componentDidCatch have no hook equivalent, so every error boundary is a class or a library wrapping one. And read the DOM before React mutates it: getSnapshotBeforeUpdate captures a value such as scrollHeight that the commit is about to destroy, and useLayoutEffect runs too late for that."], ["class", "Class era", "When would you still write a class component today?", "For an error boundary, or when maintaining existing class code where a conversion is not worth the risk. New code otherwise uses function components — the class API is not deprecated, but it receives no new features."], ["ref", "useRef", "What is a callback ref and when do you use one?", "A function passed as ref, which React calls with the node on attach and null on detach. Use it when you need to act the moment a node exists — measuring it, attaching an observer — or when the node changes identity. In React 19 the callback may return a cleanup function instead of relying on the null call."], ["ref", "useRef", "What does forwardRef do, and is it still needed?", "It let a function component receive a ref, which was otherwise not passed as a prop. In React 19 ref is an ordinary prop on function components, so forwardRef is no longer required for new code; it still exists for compatibility with older components."], ["ref", "useRef", "What is useImperativeHandle for?", "It lets a child expose a deliberately narrow imperative API to a parent's ref — focus, clear, scroll — instead of handing over the raw DOM node. Use it only when the action has no state representation; anything that can be expressed as a prop should be."], ["reducer", "Reducer", "useReducer vs useState — when each?", "useState for simple independent values. useReducer when next state depends on previous non-trivially, several values change together, or you want named, testable transitions in a pure (state, action) => state function."], ["reducer", "Reducer", "Is dispatch stable across renders?", "Yes — useReducer's dispatch has a stable identity, so it's safe to omit from or include in effect dependency arrays without causing re-runs."], ["rules", "Rules", "What are the rules of hooks?", "Call hooks only at the top level (never in conditions, loops, or nested functions) and only from React components or other hooks."], ["rules", "Rules", "Why does hook call order matter?", "React tracks each hook's state by call order, not by name. The sequence must be identical every render so each hook maps to the same slot; a conditional hook shifts the sequence and corrupts state."], ["rules", "Rules", "What does a custom hook share — logic or state?", "Logic. Each call to a custom hook gets its own isolated state; two components using useCounter() don't share a counter. Custom hooks are just functions that call other hooks."], ["design", "State design", "Derived vs stored state?", "If a value can be computed from existing state/props, derive it during render instead of storing it. Storing derived data creates a second source of truth that drifts and needs syncing."], ["design", "State design", "What does 'single source of truth' mean here?", "Each piece of state has exactly one canonical owner; everything else is computed from it. It prevents contradictory states (e.g. a parent checkbox disagreeing with its children)."], ["design", "State design", "Lifting state up vs colocation?", "Lift state to the closest common ancestor that needs it — but no higher. Colocate otherwise: keep state near where it's used. Over-lifting causes wide re-renders and prop drilling."], ["design", "State design", "How would you model a parent/child checkbox tree?", "Store only the leaf checked-set as the source of truth, and derive each parent's checked/indeterminate from its descendants. Nothing to keep in sync because parent state is computed, not stored."], ["concurrent", "Concurrent", "What do useTransition/useDeferredValue do?", "They mark updates as non-urgent so React renders the urgent update first and the expensive one at low, interruptible priority — keeping the UI responsive during heavy renders."], ["concurrent", "Concurrent", "useDeferredValue over debouncing — why?", "Debounce delays by a guessed timer and still blocks when it runs. A deferred value doesn't delay: the urgent input updates immediately while the heavy render is interruptible and low-priority. Debounce is still right for rate-limiting network requests."], ["concurrent", "Concurrent", "What does isPending from useTransition tell you?", "That a transition (low-priority update) is still rendering, so you can show a subtle pending indicator without blocking the urgent UI."], ["r19", "React 19", "What is an Action in React 19?", "A function passed to form action, startTransition, or useActionState that React runs inside a transition and manages for you: pending state, error handling, optimistic updates, and form reset. It removes the boilerplate every app writes around an async mutation."], ["r19", "React 19", "What does useActionState return?", "A tuple of the last result state, a wrapped action to pass to form action or a button, and an isPending boolean. The action function receives the previous state and the form data, and whatever it returns becomes the new state — including errors, which become state rather than exceptions."], ["r19", "React 19", "What is useFormStatus for?", "Reading the pending state of the nearest enclosing form from inside a descendant component, so a shared submit button can disable itself without the parent threading props down. It comes from react-dom and only works inside a form."], ["r19", "React 19", "How does useOptimistic work?", "You give it the real state and a function that applies a pending change. While an action is in flight, React renders the optimistic value; when the action settles, it reverts to the real state — which means a failure automatically undoes the optimistic UI."], ["r19", "React 19", "What is the use() hook?", "It reads a resource during render: use(promise) suspends until it resolves, and use(Context) reads context. Uniquely it can be called conditionally, inside branches and loops — though it still cannot appear inside a try/catch, where you use an error boundary instead. React's docs are explicit that despite the name it is not really a hook."], ["r19", "React 19", "What is the main pitfall with use(promise)?", "Creating the promise during render. A new promise on every render means the component suspends forever. The promise has to come from something stable — a Server Component passing it down, a cache, or a data library."], ["r19", "React 19", "What was removed in React 19?", "propTypes and defaultProps on function components, legacy context, string refs, findDOMNode, and the legacy ReactDOM.render and hydrate roots, which were deprecated in React 18. createRoot and hydrateRoot are the supported roots, and default parameters replace defaultProps."], ["r19", "React 19", "What changed about document metadata in React 19?", "title, meta, and link elements rendered anywhere in the tree are hoisted into the head automatically, so a helmet-style library is no longer needed for per-page metadata."], ["r19", "React 18", "What problem does useSyncExternalStore solve?", "Subscribing to an external store safely under concurrent rendering. A hand-rolled useEffect plus useState subscription can tear — different components reading different values within one render — because the store may change mid-render. useSyncExternalStore guarantees a consistent snapshot, and its server snapshot argument keeps hydration matching. Note it is a React 18 API, not a React 19 one."], ["r19", "React 18", "What is useId for?", "Generating identifiers that are stable between the server and client renders, for accessibility wiring like htmlFor and aria-describedby. It is not for list keys and not for CSS selectors. Like useSyncExternalStore, it arrived in React 18."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

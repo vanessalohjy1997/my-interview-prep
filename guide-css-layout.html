@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS & Layout — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#E879F9;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(232,121,249,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#F2C2FB}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(232,121,249,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#F2C2FB}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+
+  /* ---------- box-model diagram ---------- */
+  .bm{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin:24px 0}
+  .bm-layer{border:1px dashed var(--faint);border-radius:10px;padding:26px 18px 14px;position:relative}
+  .bm-layer .bm-tag{position:absolute;top:6px;left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  .bm-margin{border-color:var(--amber);background:rgba(243,186,47,.05)}
+  .bm-margin>.bm-tag{color:var(--amber)}
+  .bm-border{border:2px solid var(--violet);background:rgba(167,139,250,.06)}
+  .bm-border>.bm-tag{color:var(--violet)}
+  .bm-padding{border-color:var(--cyan);background:rgba(52,211,230,.06)}
+  .bm-padding>.bm-tag{color:var(--cyan)}
+  .bm-content{border:1px solid var(--emerald);background:rgba(232,121,249,.09);border-radius:8px;padding:20px 14px;text-align:center;
+    font-family:var(--mono);font-size:12px;color:var(--text)}
+  .bm-note{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:12px;text-align:center}
+  .bm-note b{color:var(--muted);font-weight:500}
+
+  /* ---------- interactive labs ---------- */
+  .lab{border:1px solid var(--border);border-radius:14px;background:var(--surface);margin:26px 0;overflow:hidden}
+  .lab-head{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .lab-title{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--emerald);font-weight:700}
+  .lab-presets{display:flex;flex-wrap:wrap;gap:6px}
+  .lab-preset{font-family:var(--mono);font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg);
+    color:var(--muted);padding:4px 10px;border-radius:100px;transition:.15s}
+  .lab-preset:hover{border-color:var(--emerald);color:var(--emerald)}
+  .ctlgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 18px;padding:15px 16px}
+  .ctl-lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);
+    margin-bottom:6px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .ctl-lbl b{color:var(--emerald);font-weight:500;text-transform:none;letter-spacing:0;font-size:11px}
+  .seg{display:flex;flex-wrap:wrap;gap:4px}
+  .seg button{font-family:var(--mono);font-size:10.5px;line-height:1.35;cursor:pointer;border:1px solid var(--border);
+    background:var(--bg);color:var(--muted);padding:4px 8px;border-radius:6px;transition:.12s}
+  .seg button:hover{color:var(--text);border-color:var(--faint)}
+  .seg button.on{background:var(--emerald);border-color:var(--emerald);color:#08110F;font-weight:700}
+  .rng{width:100%;accent-color:var(--emerald);cursor:pointer;height:18px}
+  .txtin{width:100%;font-family:var(--mono);font-size:11.5px;background:var(--bg);color:var(--text);
+    border:1px solid var(--border);border-radius:6px;padding:6px 8px}
+  .txtin:focus{outline:none;border-color:var(--emerald)}
+
+  .stage{padding:16px;border-top:1px solid var(--border-soft);
+    background:repeating-linear-gradient(45deg,transparent,transparent 9px,rgba(255,255,255,.014) 9px,rgba(255,255,255,.014) 18px)}
+  .axisbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-family:var(--mono);font-size:10.5px}
+  .axisbar span{border:1px solid var(--border);border-radius:100px;padding:3px 10px;color:var(--muted);background:var(--bg)}
+  .axisbar .main{border-color:var(--emerald);color:var(--emerald)}
+  .axisbar .cross{border-color:var(--cyan);color:var(--cyan)}
+  .demo{border:1px dashed var(--faint);border-radius:10px;padding:12px;min-height:200px;background:rgba(0,0,0,.24)}
+  .it{background:linear-gradient(160deg,var(--surface-2),var(--surface));border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:var(--mono);font-size:12px;display:flex;align-items:center;justify-content:center;
+    padding:12px 16px;cursor:pointer;transition:.15s;user-select:none;position:relative;overflow:hidden}
+  .it:hover{border-color:var(--emerald);color:var(--text)}
+  .it.mod{border-color:var(--emerald);background:linear-gradient(160deg,rgba(232,121,249,.16),rgba(232,121,249,.05))}
+  .it .tag{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:8.5px;letter-spacing:.03em;color:var(--emerald)}
+  .tracks{display:grid;margin-bottom:6px}
+  .tracks div{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-align:center;
+    border-top:1px solid var(--border);padding-top:3px;white-space:nowrap;overflow:hidden}
+  .tracks div b{color:var(--cyan);font-weight:500}
+  .labhint{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:10px}
+
+  .lab-code{border-top:1px solid var(--border)}
+  .codetabs{display:flex;gap:4px;padding:9px 14px 0}
+  .codetabs button{font-family:var(--mono);font-size:10.5px;cursor:pointer;background:transparent;border:1px solid transparent;
+    border-bottom:none;color:var(--faint);padding:5px 12px;border-radius:7px 7px 0 0;transition:.14s}
+  .codetabs button:hover{color:var(--muted)}
+  .codetabs button.on{color:var(--emerald);border-color:var(--border);background:#070E0D}
+  .lab-code pre{margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none;font-size:12.5px}
+
+  /* ---------- named grid areas diagram ---------- */
+  .areas{display:grid;gap:8px;grid-template-columns:150px 1fr;
+    grid-template-areas:"header header" "sidebar main" "footer footer";margin:20px 0}
+  .areas div{border:1px solid var(--border);border-radius:8px;background:var(--surface-2);padding:14px 12px;
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:center}
+  .areas .a-header{grid-area:header;border-color:var(--emerald);color:var(--emerald)}
+  .areas .a-side{grid-area:sidebar;border-color:var(--cyan);color:var(--cyan);min-height:96px;display:flex;align-items:center;justify-content:center}
+  .areas .a-main{grid-area:main;border-color:var(--violet);color:var(--violet);display:flex;align-items:center;justify-content:center}
+  .areas .a-foot{grid-area:footer;border-color:var(--amber);color:var(--amber)}
+  @media(max-width:620px){
+    .areas{grid-template-columns:1fr;grid-template-areas:"header" "main" "sidebar" "footer"}
+    .ctlgrid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:430px){.ctlgrid{grid-template-columns:1fr}}
+
+  /* ---------- tailwind mapping ---------- */
+  .tw-map td:first-child{color:var(--muted)}
+  .tw-map td:last-child{font-family:var(--mono);font-size:12.5px;color:var(--emerald);white-space:normal}
+  main{min-width:0}
+  .tbl.wrapc td:first-child{white-space:normal}
+  .tbl.wrapc td,.tbl.wrapc th{overflow-wrap:anywhere}
+  @media(max-width:700px){.tbl td:first-child{white-space:normal}.tbl td,.tbl th{overflow-wrap:anywhere}}
+  .lab pre{max-width:100%}
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">CSS &amp; <em>Layout</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Two questions</a>
+    <a href="#box"><span class="n">01</span> Box model</a>
+    <a href="#position"><span class="n">02</span> Position &amp; stacking</a>
+    <a href="#flex"><span class="n">03</span> Flexbox</a>
+    <a href="#grid"><span class="n">04</span> Grid</a>
+    <a href="#cascade"><span class="n">05</span> Cascade &amp; specificity</a>
+    <a href="#motion"><span class="n">06</span> Transitions &amp; animation</a>
+    <a href="#vars"><span class="n">07</span> Custom properties</a>
+    <a href="#tailwind"><span class="n">08</span> Tailwind</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Every layout bug is <span>one of two questions.</span></h1>
+      <p class="lede">What box is this, and what is it positioned or sized relative to? Get the box model, positioning, stacking contexts, Flexbox, Grid, and the cascade right, and you stop fighting CSS.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Box model</span>
+        <span class="chip"><span class="dot d-pending"></span>Position</span>
+        <span class="chip"><span class="dot d-chain"></span>Flex &amp; Grid</span>
+        <span class="chip"><span class="dot d-rej"></span>Cascade</span>
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>Tailwind</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The diagnostic</div>
+      <h2>Two questions that solve most bugs</h2>
+      <p>When a layout misbehaves, ask: <strong>(1) what box is this element</strong> (its <code class="k">display</code> and box-sizing), and <strong>(2) what is it positioned/sized relative to</strong> (its containing block, its formatting context). Almost every &ldquo;why is it there / why is it that size&rdquo; answers to one of these.</p>
+    </section>
+
+    <section id="box">
+      <div class="kicker">01 — Content, padding, border, margin</div>
+      <h2>The box model</h2>
+      <p>Every element is a box: <strong>content</strong> &rarr; <strong>padding</strong> &rarr; <strong>border</strong> &rarr; <strong>margin</strong> (inside out). The question that trips people up is what <code class="k">width</code> refers to:</p>
+      <ul class="body">
+        <li><code class="k">box-sizing: content-box</code> (default) — <code class="k">width</code> is the <em>content</em> only; padding and border add on top. A 200px box with 20px padding renders 240px wide.</li>
+        <li><code class="k">box-sizing: border-box</code> — <code class="k">width</code> includes padding and border. That 200px stays 200px. This is why teams set <code class="k">*{ box-sizing: border-box }</code> globally.</li>
+      </ul>
+      <div class="bm">
+        <div class="bm-layer bm-margin"><span class="bm-tag">margin — outside the box, collapses vertically</span>
+          <div class="bm-layer bm-border"><span class="bm-tag">border</span>
+            <div class="bm-layer bm-padding"><span class="bm-tag">padding — inside the border, painted with the background</span>
+              <div class="bm-content">content&nbsp;&nbsp;·&nbsp;&nbsp;width &amp; height apply here</div>
+            </div>
+          </div>
+        </div>
+        <div class="bm-note"><b>content-box:</b> width = the pink box only &nbsp;·&nbsp; <b>border-box:</b> width = pink + cyan + violet</div>
+      </div>
+      <h3>Margin collapsing</h3>
+      <p>Adjacent <strong>vertical</strong> margins of block elements collapse — two positives to the <em>larger</em> of the two (not the sum), a positive and a negative <em>add together</em>, two negatives to the most negative. It happens between siblings, between a parent and its first/last child, and within an empty block (its own top and bottom) — <em>unless</em> separated by padding, border, inline content or a set height, or the parent establishes a new block formatting context (e.g. <code class="k">overflow: hidden</code>, <code class="k">display: flow-root</code>). Horizontal margins never collapse.</p>
+    </section>
+
+    <section id="position">
+      <div class="kicker">02 — Placement &amp; layers</div>
+      <h2>Position &amp; stacking context</h2>
+      <table class="tbl">
+        <tr><th>Value</th><th>Behaviour</th></tr>
+        <tr><td>static</td><td>default; in normal flow; ignores top/left</td></tr>
+        <tr><td>relative</td><td>offset from its normal spot; still occupies its original space</td></tr>
+        <tr><td>absolute</td><td>removed from flow; positioned to the nearest <em>positioned</em> ancestor (the containing block)</td></tr>
+        <tr><td>fixed</td><td>positioned to the viewport &mdash; unless an ancestor has a transform/filter, which becomes its containing block</td></tr>
+        <tr><td>sticky</td><td>relative until a scroll threshold, then sticks within its scroll container</td></tr>
+      </table>
+      <h3>Stacking context &amp; z-index gotchas</h3>
+      <ul class="body">
+        <li><code class="k">z-index</code> only applies to <strong>positioned</strong> elements (and flex/grid items). On a <code class="k">static</code> element it does nothing.</li>
+        <li>A new <strong>stacking context</strong> is created by <code class="k">position</code> + <code class="k">z-index</code>, but also by <code class="k">opacity &lt; 1</code>, <code class="k">transform</code>, <code class="k">filter</code>, <code class="k">will-change</code>, and a few others.</li>
+        <li><strong>The classic bug:</strong> a child's <code class="k">z-index</code> is only compared <em>within its parent's</em> stacking context. A high <code class="k">z-index: 9999</code> child inside a low-stacked parent still loses to a sibling of the parent. Children can't escape their parent's context.</li>
+      </ul>
+    </section>
+
+    <section id="flex">
+      <div class="kicker">03 — One dimension</div>
+      <h2>Flexbox</h2>
+      <p>Flexbox lays out items along <strong>one axis</strong>. Set <code class="k">display: flex</code> on the container; items distribute along the <em>main axis</em> and align on the <em>cross axis</em>.</p>
+      <ul class="body">
+        <li><code class="k">flex-direction</code> — sets the main axis (<code class="k">row</code> default, or <code class="k">column</code>). <strong>This is the one that flips everything below it</strong>: in a column, <code class="k">justify-content</code> now controls vertical spacing and <code class="k">align-items</code> horizontal.</li>
+        <li><code class="k">justify-content</code> — distributes items along the <strong>main</strong> axis.</li>
+        <li><code class="k">align-items</code> — aligns items on the <strong>cross</strong> axis. <code class="k">align-self</code> overrides it for one item.</li>
+        <li><code class="k">flex: grow shrink basis</code> — <code class="k">flex: 1</code> means &ldquo;grow to fill, shrink if needed, from a 0 basis.&rdquo;</li>
+        <li><code class="k">gap</code> — spacing between items without margins.</li>
+        <li><code class="k">align-content</code> — only does anything when items <strong>wrap onto multiple lines</strong>: it distributes the lines themselves.</li>
+      </ul>
+      <p>Play with it — every control below writes real CSS onto the container, and the code panel shows exactly what you built.</p>
+
+      <div class="lab" id="flexLab">
+        <div class="lab-head">
+          <span class="lab-title">Flexbox playground</span>
+          <div class="lab-presets">
+            <button class="lab-preset" data-fp="nav">Nav bar</button>
+            <button class="lab-preset" data-fp="centre">Dead centre</button>
+            <button class="lab-preset" data-fp="cards">Wrapping cards</button>
+            <button class="lab-preset" data-fp="fill">Sidebar + fill</button>
+            <button class="lab-preset" data-fp="reset">Reset</button>
+          </div>
+        </div>
+        <div class="ctlgrid" id="flexCtl"></div>
+        <div class="stage">
+          <div class="axisbar">
+            <span class="main" id="fMainAx">main axis →</span>
+            <span class="cross" id="fCrossAx">cross axis ↓</span>
+          </div>
+          <div class="demo" id="flexDemo"></div>
+          <div class="labhint">Click any item to cycle its own <code class="k">flex</code>: <code class="k">initial</code> → <code class="k">1</code> → <code class="k">2</code> → <code class="k">none</code>.</div>
+        </div>
+        <div class="lab-code">
+          <div class="codetabs"><button class="on" data-fmode="css">CSS</button><button data-fmode="tw">Tailwind</button></div>
+          <pre id="flexCode"></pre>
+        </div>
+      </div>
+
+      <h3>The three numbers in <code class="k">flex</code></h3>
+      <p><code class="k">flex</code> is shorthand for <code class="k">flex-grow flex-shrink flex-basis</code>. The values that come up constantly:</p>
+      <table class="tbl">
+        <tr><th>Shorthand</th><th>Longhand</th><th>Behaviour</th></tr>
+        <tr><td>flex: initial</td><td>0 1 auto</td><td>the default — don't grow, do shrink, size from content/<code class="k">width</code></td></tr>
+        <tr><td>flex: 1</td><td>1 1 0%</td><td>share free space <em>equally</em>, ignoring content width</td></tr>
+        <tr><td>flex: auto</td><td>1 1 auto</td><td>grow, but from the content size — wider content keeps a bigger share</td></tr>
+        <tr><td>flex: none</td><td>0 0 auto</td><td>rigid — never grows or shrinks</td></tr>
+      </table>
+      <div class="note"><span class="lbl">flex: 1 vs flex: auto</span>Both grow. The difference is the <em>basis</em>: with <code class="k">flex: 1</code> the basis is <code class="k">0</code>, so items end up the <strong>same width</strong> regardless of content; with <code class="k">flex: auto</code> the basis is the content, so a longer label keeps a wider column. Reach for <code class="k">flex: 1</code> when you want equal columns, <code class="k">flex: auto</code> when content should have a say.</div>
+      <div class="note warn"><span class="lbl">The overflow bug everyone hits</span>A flex item's <code class="k">min-width</code> is <code class="k">auto</code>, not <code class="k">0</code> — it refuses to shrink below its content's intrinsic minimum. So a long unbroken string or a nested table blows the row out instead of truncating, and your <code class="k">text-overflow: ellipsis</code> never fires. Fix: <code class="k">min-width: 0</code> on the item (<code class="k">min-height: 0</code> for a column). Tailwind spells it <code class="k">min-w-0</code>.</div>
+      <pre><span class="cmt">// nav bar: logo left, links right, vertically centred</span>
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+<span class="cmt">// the truncating row</span>
+.row   { display: flex; gap: 12px; }
+.row .label { flex: 1; <span class="kw">min-width: 0</span>; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }</pre>
+    </section>
+
+    <section id="grid">
+      <div class="kicker">04 — Two dimensions</div>
+      <h2>Grid</h2>
+      <p>Grid lays out in <strong>rows and columns at once</strong>. Define tracks on the container; place items into the grid.</p>
+      <pre>.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;   <span class="cmt">// sidebar + fluid content</span>
+  gap: 16px;
+}
+<span class="cmt">// responsive wrap with no media queries:</span>
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }</pre>
+      <ul class="body">
+        <li><code class="k">fr</code> distributes leftover space; <code class="k">minmax(min, max)</code> bounds a track.</li>
+        <li><code class="k">repeat(auto-fit, minmax(...))</code> makes items wrap responsively without media queries.</li>
+        <li><code class="k">grid-template-areas</code> lets you name regions and place items by name — very readable for page shells.</li>
+        <li><strong>Explicit vs implicit tracks:</strong> tracks you declare are explicit; anything overflowing creates <em>implicit</em> tracks sized by <code class="k">grid-auto-rows</code> / <code class="k">grid-auto-columns</code>. &ldquo;Why is my last row a different height?&rdquo; is almost always an implicit row.</li>
+      </ul>
+
+      <div class="lab" id="gridLab">
+        <div class="lab-head">
+          <span class="lab-title">Grid playground</span>
+          <div class="lab-presets">
+            <button class="lab-preset" data-gp="shell">Page shell</button>
+            <button class="lab-preset" data-gp="autofit">Auto-fit cards</button>
+            <button class="lab-preset" data-gp="dense">Dense packing</button>
+            <button class="lab-preset" data-gp="reset">Reset</button>
+          </div>
+        </div>
+        <div class="ctlgrid" id="gridCtl"></div>
+        <div class="stage">
+          <div class="tracks" id="gridTracks"></div>
+          <div class="demo" id="gridDemo"></div>
+          <div class="labhint">The strip above shows the <strong>resolved</strong> width of each column track — watch what <code class="k">1fr</code> and <code class="k">minmax()</code> actually compute to. Click an item to cycle its span.</div>
+        </div>
+        <div class="lab-code">
+          <div class="codetabs"><button class="on" data-gmode="css">CSS</button><button data-gmode="tw">Tailwind</button></div>
+          <pre id="gridCode"></pre>
+        </div>
+      </div>
+
+      <h3>auto-fit vs auto-fill</h3>
+      <p>Both repeat as many tracks as fit. The difference shows when there aren't enough items: <code class="k">auto-fill</code> keeps the empty tracks (so items stay at their <code class="k">minmax</code> minimum, left-aligned), while <code class="k">auto-fit</code> <strong>collapses</strong> them to zero, letting the remaining items stretch across the full width. Two items in a wide container: <code class="k">auto-fill</code> leaves them narrow, <code class="k">auto-fit</code> makes them half the row each.</p>
+
+      <h3>Named areas</h3>
+      <p><code class="k">grid-template-areas</code> draws the layout in the stylesheet — and rearranging it for mobile is one redefinition, no source-order changes:</p>
+      <div class="areas">
+        <div class="a-header">header</div>
+        <div class="a-side">sidebar</div>
+        <div class="a-main">main</div>
+        <div class="a-foot">footer</div>
+      </div>
+      <pre>.shell {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+  gap: 8px;
+}
+.a-header { grid-area: header; }
+
+<span class="cmt">// mobile: one column, and main jumps above the sidebar</span>
+@media (max-width: 620px) {
+  .shell { grid-template-columns: 1fr;
+           grid-template-areas: "header" "main" "sidebar" "footer"; }
+}</pre>
+      <p>That block is live — this page's diagram <em>is</em> that CSS. Narrow the window past 620px and the areas re-flow.</p>
+      <div class="note"><span class="lbl">Grid vs Flex</span>Flexbox for content that flows in <strong>one</strong> direction (a toolbar, a row of chips). Grid when you need explicit <strong>two-dimensional</strong> structure (a page shell, a card gallery, aligned rows <em>and</em> columns). They compose — grid areas often contain flex rows.</div>
+      <div class="note gold"><span class="lbl">items vs content</span>Four alignment properties, and interviewers love the distinction. <code class="k">justify-items</code>/<code class="k">align-items</code> position each item <em>inside its own track</em>. <code class="k">justify-content</code>/<code class="k">align-content</code> position the <em>whole set of tracks</em> inside the container — so they only do something when the tracks are smaller than the container (fixed <code class="k">px</code> columns, not <code class="k">1fr</code>). <code class="k">place-items</code> and <code class="k">place-content</code> are the row-then-column shorthands.</div>
+    </section>
+
+    <section id="cascade">
+      <div class="kicker">05 — Who wins</div>
+      <h2>The cascade &amp; specificity</h2>
+      <p>When multiple rules target an element, the winner is decided in order:</p>
+      <ol class="body">
+        <li><strong>Importance/origin</strong> — <code class="k">!important</code> and origin (author vs user vs browser) first.</li>
+        <li><strong>Cascade layers</strong> — with <code class="k">@layer</code>, a later layer beats an earlier one and unlayered styles beat all layers, decided <em>before</em> specificity is compared.</li>
+        <li><strong>Specificity</strong> — ID &gt; class/attribute/pseudo-class &gt; element/pseudo-element, compared as a <em>three</em>-part tuple (id, class, element). Inline styles aren't part of specificity — they win at an earlier cascade step. <code class="k">:where()</code> contributes zero; <code class="k">:is()</code>/<code class="k">:not()</code> take their most specific argument.</li>
+        <li><strong>Source order</strong> — if specificity ties, the later rule wins.</li>
+      </ol>
+      <p>Inheritance is separate: some properties (color, font) inherit; layout properties (margin, padding) don't. Avoid <code class="k">!important</code> — it escalates specificity wars; prefer a single low-specificity system.</p>
+      <h3>Centering, the canonical answers</h3>
+      <pre><span class="cmt">// flexbox — most common</span>
+.parent { display: flex; justify-content: center; align-items: center; }
+<span class="cmt">// grid — shortest</span>
+.parent { display: grid; place-items: center; }
+<span class="cmt">// absolute — when out of flow</span>
+.child { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }</pre>
+    </section>
+
+    <section id="motion">
+      <div class="kicker">06 — Two mechanisms, one budget</div>
+      <h2>Transitions &amp; animations</h2>
+
+      <p><strong>A transition interpolates between two states and needs something to change it</strong> — a class, a pseudo-class, an inline style. <strong>An animation runs from a keyframe timeline</strong> and needs no trigger: it can start on load, loop, and pass through as many steps as you like.</p>
+      <pre>.btn {
+  background: #333;
+  transition: background 200ms ease-out, transform 120ms ease-out;
+}
+.btn:hover { background: #555; transform: translateY(-1px); }
+
+@keyframes pulse {
+  from { opacity: 1; }
+  50%  { opacity: .4; }
+  to   { opacity: 1; }
+}
+.badge { animation: pulse 1.4s ease-in-out infinite; }</pre>
+      <table class="tbl">
+        <tr><th>Property</th><th>What it controls</th></tr>
+        <tr><td>transition</td><td>Shorthand for <code class="k">property duration timing-function delay</code>. List several, comma-separated. Naming the properties beats <code class="k">all</code>, which quietly animates things you did not intend.</td></tr>
+        <tr><td>timing-function</td><td><code class="k">ease</code>, <code class="k">linear</code>, <code class="k">ease-in-out</code>, <code class="k">cubic-bezier()</code> for a custom curve, <code class="k">steps()</code> for sprite-style jumps.</td></tr>
+        <tr><td>animation-fill-mode</td><td>What applies outside the run. <code class="k">forwards</code> holds the final keyframe — the usual fix for &ldquo;it snaps back at the end&rdquo;.</td></tr>
+        <tr><td>animation-direction</td><td><code class="k">alternate</code> reverses every other iteration, so a loop does not jump.</td></tr>
+        <tr><td>animation-play-state</td><td><code class="k">paused</code> / <code class="k">running</code> — pausable without JavaScript rewriting the animation.</td></tr>
+      </table>
+      <h3>The performance question they are really asking</h3>
+      <p>Only <strong><code class="k">transform</code> and <code class="k">opacity</code></strong> can be handled entirely by the compositor. Everything else costs you work on the main thread <em>every frame</em>:</p>
+      <ul class="body">
+        <li>Animating <code class="k">width</code>, <code class="k">height</code>, <code class="k">top</code>, <code class="k">left</code>, <code class="k">margin</code> &rarr; <strong>layout</strong> on every frame, then paint, then composite.</li>
+        <li>Animating <code class="k">background-color</code>, <code class="k">box-shadow</code>, <code class="k">color</code> &rarr; <strong>paint</strong> on every frame, then composite.</li>
+        <li>Animating <code class="k">transform</code> / <code class="k">opacity</code> &rarr; <strong>composite only</strong>, and it can run off the main thread entirely.</li>
+      </ul>
+      <p>So &ldquo;slide this panel in&rdquo; is <code class="k">transform: translateX(-100%)</code> &rarr; <code class="k">translateX(0)</code>, never <code class="k">left: -300px</code> &rarr; <code class="k">left: 0</code>. The <strong>FLIP</strong> technique generalises this: measure First and Last positions, apply the Invert transform, then Play by transitioning it away — so a layout change animates as a pure transform.</p>
+      <div class="note warn"><span class="lbl">will-change is not a free win</span>It is a <em>hint</em> to promote the element to its own compositor layer ahead of time, which costs memory — and for the values you would actually name here (<code class="k">transform</code>, <code class="k">opacity</code>, <code class="k">filter</code>) it creates a stacking context up front, with all the z-index consequences from the previous section. Apply it shortly before the animation and remove it after; a stylesheet full of permanent <code class="k">will-change</code> makes things slower, not faster.</div>
+      <h3>The gotchas</h3>
+      <ul class="body">
+        <li><strong>You cannot transition to or from <code class="k">auto</code></strong> — historically true, and still the portable assumption. The classic accordion fix is a wrapper with <code class="k">display: grid; grid-template-rows: 0fr</code> transitioning to <code class="k">1fr</code>, with <code class="k">overflow: hidden</code> <strong>on the single child</strong> (not the wrapper — the child's automatic minimum size is what would otherwise keep the <code class="k">0fr</code> track open). Chromium now also ships <code class="k">interpolate-size: allow-keywords</code> and <code class="k">calc-size()</code>, which genuinely do interpolate to <code class="k">auto</code>; it is not Baseline yet, so know it exists and still reach for grid.</li>
+        <li><strong>Transitions need a starting value the browser has rendered.</strong> An element inserted already in its end state has nothing to transition from — historically you forced a reflow; modern CSS gives you <code class="k">@starting-style</code>.</li>
+        <li><strong><code class="k">display</code> is discrete</strong>, so a fade-out to <code class="k">display: none</code> traditionally required JavaScript or a delay. <code class="k">transition-behavior: allow-discrete</code> now lets it participate.</li>
+        <li><strong>Respect motion preferences.</strong> Wrap non-essential motion in <code class="k">@media (prefers-reduced-motion: reduce)</code> and reduce it to a near-instant cross-fade rather than removing feedback entirely.</li>
+        <li><strong>Events differ between the two.</strong> <code class="k">transitionend</code> fires once <em>per transitioned property</em> — check <code class="k">event.propertyName</code>. <code class="k">animationend</code> fires once when the whole animation finishes, after every iteration; the per-iteration event is <code class="k">animationiteration</code>, and animation events carry <code class="k">animationName</code>, not <code class="k">propertyName</code>. Neither &ldquo;end&rdquo; event fires if the thing is interrupted — you get <code class="k">transitioncancel</code> / <code class="k">animationcancel</code> instead.</li>
+      </ul>
+    </section>
+
+    <section id="vars">
+      <div class="kicker">07 — Runtime values, not build-time text</div>
+      <h2>Custom properties</h2>
+
+      <p>A custom property is a real CSS value that participates in the cascade and <strong>inherits</strong>. That is the entire difference from a Sass variable, which is text substituted at build time and gone before the browser sees it.</p>
+      <pre>:root {
+  --space: 8px;
+  --brand: #E879F9;
+  --btn-bg: var(--brand);
+}
+.card { --space: 12px; }              <span class="cmt">/* scoped override, inherits down */</span>
+.card .body { padding: var(--space); } <span class="cmt">/* 12px, not 8px */</span>
+.btn { background: var(--btn-bg, #666); } <span class="cmt">/* fallback if undefined */</span></pre>
+      <table class="tbl">
+        <tr><th></th><th>Sass variable</th><th>CSS custom property</th></tr>
+        <tr><td>Resolved</td><td>At build time</td><td>At computed-value time, in the browser</td></tr>
+        <tr><td>Scope</td><td>Lexical, in the source file</td><td>The DOM — it inherits to descendants</td></tr>
+        <tr><td>Changeable at runtime</td><td>No</td><td>Yes — by a class, a media query, or JavaScript</td></tr>
+        <tr><td>Readable from JS</td><td>No</td><td>Yes</td></tr>
+      </table>
+      <h3>Why inheritance is the whole point</h3>
+      <p>Theming works because you redefine a handful of properties on an ancestor and every descendant that reads them updates — no duplicated rule blocks, no specificity war:</p>
+      <pre>:root         { --bg: #fff; --fg: #111; }
+[data-theme="dark"] { --bg: #0B1416; --fg: #E6F0EE; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0B1416; --fg: #E6F0EE; }
+}
+body { background: var(--bg); color: var(--fg); }</pre>
+      <p>The same idea gives components a styling API: expose <code class="k">--btn-bg</code> and <code class="k">--btn-radius</code> and consumers can restyle the button without overriding your selectors — the one hook that survives CSS Modules, shadow DOM, and utility frameworks alike.</p>
+      <h3>JavaScript interop</h3>
+      <pre>el.style.setProperty('--x', e.clientX + 'px');
+getComputedStyle(el).getPropertyValue('--brand').trim();</pre>
+      <p>Setting one property is much cheaper than swapping classes across a tree, which makes this the standard technique for cursor-following effects, live theming, and progress indicators.</p>
+      <div class="note warn"><span class="lbl">Three sharp edges</span><strong>1)</strong> An invalid substitution is <em>invalid at computed-value time</em>: the property falls back to its inherited or initial value, not to the <code class="k">var()</code> fallback — which only applies when the property is undefined. <strong>2)</strong> You cannot use <code class="k">var()</code> in a media query condition. <strong>3)</strong> Custom properties are untyped tokens, so they only animate <em>discretely</em> — flipping at the halfway point rather than interpolating.</div>
+      <h3>@property gives them a type</h3>
+      <pre>@property --angle {
+  syntax: '&lt;angle&gt;';
+  inherits: false;
+  initial-value: 0deg;
+}
+.ring { transition: --angle 300ms linear; }</pre>
+      <p>Registering a property tells the browser what kind of value it holds, which enables type checking, a real initial value, and — the useful part — <strong>smooth interpolation</strong> instead of the discrete 50% flip, so gradients and angles driven by custom properties can finally be transitioned and animated properly.</p>
+    </section>
+
+    <section id="tailwind">
+      <div class="kicker">08 — Utility-first</div>
+      <h2>Tailwind CSS, briefly</h2>
+      <p>Tailwind is a <strong>utility-first</strong> framework: instead of writing a rule and inventing a class name for it, you compose tiny single-purpose classes in the markup. <code class="k">flex items-center justify-between gap-4</code> <em>is</em> the CSS you just learned — same properties, same mental model, different authoring surface.</p>
+      <p>Two things it actually buys you, and both are worth saying out loud in an interview:</p>
+      <ul class="body">
+        <li><strong>No naming, no dead CSS.</strong> The hardest part of a stylesheet is naming things and knowing when a rule is safe to delete. Utilities live and die with the markup that uses them, so the stylesheet stops growing forever.</li>
+        <li><strong>Constraints by default.</strong> <code class="k">p-4</code> comes from a spacing scale, not from someone's guess of <code class="k">17px</code>. It's a design system enforced by autocomplete.</li>
+      </ul>
+
+      <h3>The translation table</h3>
+      <p>If you know the CSS, you know Tailwind — the utilities are a naming convention over the same properties:</p>
+      <table class="tbl wrapc tw-map">
+        <tr><th>CSS</th><th>Tailwind</th></tr>
+        <tr><td>display: flex; flex-direction: column</td><td>flex flex-col</td></tr>
+        <tr><td>justify-content: space-between</td><td>justify-between</td></tr>
+        <tr><td>align-items: center</td><td>items-center</td></tr>
+        <tr><td>gap: 16px</td><td>gap-4 &nbsp;<span style="color:var(--faint)">(scale = px ÷ 4)</span></td></tr>
+        <tr><td>flex: 1 1 0%; min-width: 0</td><td>flex-1 min-w-0</td></tr>
+        <tr><td>display: grid; grid-template-columns: repeat(3, 1fr)</td><td>grid grid-cols-3</td></tr>
+        <tr><td>grid-template-columns: 200px 1fr</td><td>grid-cols-[200px_1fr] &nbsp;<span style="color:var(--faint)">(underscore = space)</span></td></tr>
+        <tr><td>grid-column: span 2</td><td>col-span-2</td></tr>
+        <tr><td>position: absolute; inset: 0</td><td>absolute inset-0</td></tr>
+      </table>
+      <p>Flip either playground above to its <strong>Tailwind</strong> tab and the same layout you built comes back as utilities.</p>
+
+      <h3>Variants — the part that isn't just shorthand</h3>
+      <p>A utility can be prefixed with a condition. This is where Tailwind does something plain inline styles can't, because these are real media queries and pseudo-classes:</p>
+      <pre>&lt;div class="<span class="kw">grid</span> grid-cols-1 <span class="kw">md:</span>grid-cols-3 gap-4
+            <span class="kw">hover:</span>shadow-lg <span class="kw">focus-visible:</span>ring-2 <span class="kw">dark:</span>bg-slate-900"&gt;</pre>
+      <ul class="body">
+        <li><strong>Breakpoints are min-width</strong> and therefore mobile-first: unprefixed = all sizes, <code class="k">md:</code> = that size <em>and up</em>. Style the small screen first, then layer.</li>
+        <li><strong>State:</strong> <code class="k">hover:</code>, <code class="k">focus-visible:</code>, <code class="k">disabled:</code>, <code class="k">first:</code>, <code class="k">odd:</code>.</li>
+        <li><strong>Relational:</strong> <code class="k">group-hover:</code> (react to a parent marked <code class="k">group</code>), <code class="k">peer-checked:</code> (react to a sibling), <code class="k">has-[:checked]:</code> (react to a descendant).</li>
+        <li><strong>Data/ARIA:</strong> <code class="k">data-[state=open]:rotate-180</code>, <code class="k">aria-expanded:</code> — the glue for headless component libraries.</li>
+        <li><strong>Arbitrary values</strong> escape the scale when you genuinely need to: <code class="k">top-[37px]</code>, <code class="k">grid-cols-[1fr_auto]</code>, <code class="k">bg-[#0B1416]</code>.</li>
+      </ul>
+
+      <h3>The two gotchas they'll ask about</h3>
+      <div class="note warn"><span class="lbl">1 — Class names must exist as whole strings</span>The build scans your source files as <em>plain text</em> — it never runs your code. So <code class="k">text-${color}-500</code> or <code class="k">`p-${n}`</code> produces nothing: the string <code class="k">text-red-500</code> never appears in the file. Map to full class names instead (<code class="k">const tone = { red: 'text-red-500', green: 'text-green-500' }</code>), or safelist them. This is the single most common Tailwind bug.</div>
+      <div class="note warn"><span class="lbl">2 — Conflicting classes don't cascade</span><code class="k">class="p-2 p-4"</code> doesn't make the last one win — both rules exist and <em>source order in the generated stylesheet</em> decides, which you don't control. So a component that accepts a <code class="k">className</code> prop can't be overridden reliably. The standard fix is <code class="k">tailwind-merge</code>, usually wrapped with <code class="k">clsx</code> as a <code class="k">cn()</code> helper, which resolves conflicts by keeping the last utility per property.</div>
+      <pre><span class="cmt">// the cn() helper you'll see in every Tailwind codebase</span>
+import clsx from 'clsx';
+import { twMerge } from 'tailwind-merge';
+export const cn = (...i) =&gt; twMerge(clsx(i));
+
+<span class="cmt">// now the caller's p-8 actually beats the default p-4</span>
+&lt;button className={cn('p-4 rounded bg-slate-800', className)} /&gt;</pre>
+
+      <h3>@apply, and when it's a smell</h3>
+      <p><code class="k">@apply</code> inlines utilities into a normal CSS rule. It looks like the fix for &ldquo;too many classes&rdquo;, but a stylesheet full of <code class="k">.btn { @apply ... }</code> gives back exactly the naming and dead-code problems Tailwind removed — you've reinvented the framework, slower. The honest answer: repetition is a <strong>component</strong> problem, so extract a component; keep <code class="k">@apply</code> for the handful of cases with no component to hang it on, like styling third-party markup or a base <code class="k">body</code> rule.</p>
+      <p>For components with real variants, <code class="k">class-variance-authority</code> (CVA) is the idiomatic answer — variants as typed props mapping to class strings, merged with <code class="k">cn()</code>.</p>
+
+      <h3>What changed in v4</h3>
+      <ul class="body">
+        <li><strong>Config lives in CSS.</strong> <code class="k">@import "tailwindcss"</code> plus an <code class="k">@theme</code> block replaces <code class="k">tailwind.config.js</code> — and design tokens are emitted as real custom properties, so <code class="k">var(--color-brand)</code> works in hand-written CSS too.</li>
+        <li><strong>A new Rust engine</strong> (Oxide) with automatic content detection — no <code class="k">content: []</code> globs to keep in sync.</li>
+        <li><strong>Container queries are built in</strong> — <code class="k">@container</code> on the parent, then <code class="k">@md:flex-row</code> on children, sizing off the <em>container</em> rather than the viewport.</li>
+        <li>Output is wrapped in <strong>cascade layers</strong>, which makes the &ldquo;does my CSS beat Tailwind's&rdquo; question predictable at last.</li>
+      </ul>
+      <pre><span class="cmt">/* app.css — v4, the whole config */</span>
+@import "tailwindcss";
+@theme {
+  --color-brand: #E879F9;
+  --spacing-gutter: 1.5rem;
+}
+<span class="cmt">/* → gives you bg-brand, text-brand, p-gutter … and var(--color-brand) */</span></pre>
+
+      <div class="note gold"><span class="lbl">If they ask &ldquo;why not just write CSS?&rdquo;</span>&ldquo;Tailwind trades readable markup for a stylesheet that can't rot. On a team, the win is that styles are colocated and deletable, and the scale stops pixel drift — you never have to decide whether some <code class="k">.card--compact</code> is still used. The costs are real: markup gets noisy, you need <code class="k">tailwind-merge</code> for a sane override story, and you must never build class names dynamically. I'd still reach for plain CSS or CSS Modules for a design-system primitive with a complex API, and use custom properties for anything themed at runtime — the two compose fine, since v4 exposes its tokens as custom properties anyway.&rdquo;</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the z-index that won't work</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A dropdown with <code class='k'>z-index: 9999</code> still renders behind the next section. The parent has <code class='k'>opacity: 0.98</code>. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0"><code class="k">opacity &lt; 1</code> creates a stacking context on the parent, so the dropdown's z-index is only compared <em>within</em> that parent — it can't rise above elements outside it. Fix: remove the opacity (or the transform/filter) creating the context, or restructure so the dropdown is a child of a higher-stacked ancestor (e.g. portal it to the body).</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — box-sizing math</div>
+        <pre>.box { width: 200px; padding: 20px; border: 5px solid; }</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">content-box → 250px wide · border-box → 200px wide</div>
+          <p style="margin:0">Default content-box adds padding (2&times;20) and border (2&times;5) outside the 200px content: 250px total. With <code class="k">box-sizing: border-box</code>, the 200px includes padding and border, so it stays 200px and the content shrinks.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — fixed inside a transform</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A <code class='k'>position: fixed</code> modal is supposed to cover the viewport but is clipped inside a card. The card has <code class='k'>transform: translateZ(0)</code>. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">A <code class="k">transform</code> (or filter/perspective) on an ancestor makes it the containing block for <code class="k">fixed</code> descendants, so &lsquo;fixed&rsquo; is now relative to the card, not the viewport. Remove the transform from that ancestor, or render the modal outside it (a portal at the body).</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — specificity</div>
+        <pre>#nav a { color: blue; }
+.link { color: red; }
+<span class="cmt">// &lt;a class="link"&gt; inside #nav</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">blue</div>
+          <p style="margin:0"><code class="k">#nav a</code> has an ID (specificity 1,0,1) which beats a single class <code class="k">.link</code> (0,1,0), regardless of source order. To make the class win without <code class="k">!important</code>, raise its specificity or lower the other rule's.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — flex or grid?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A responsive card gallery that wraps to fill the row, equal-width cards, min 220px. Flex or Grid?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Grid: <code class="k">grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))</code> wraps and equalises columns with no media queries. Flex can wrap too but making the last row's items match widths is fiddlier. Grid is the two-dimensional tool; use it when you want aligned rows and columns.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — the janky drawer</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A side drawer animates with <code class='k'>transition: left 300ms</code> and stutters on mobile. Fix it.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Animating <code class="k">left</code> changes geometry, so the browser runs layout and paint on <em>every frame</em> on the main thread. Switch to <code class="k">transform: translateX(-100%)</code> &rarr; <code class="k">translateX(0)</code>, which the compositor can handle without layout or paint — and off the main thread. Add <code class="k">will-change: transform</code> just before the animation if you still see a first-frame hitch, and remove it afterwards.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 — height: auto</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;An accordion needs to expand from 0 to its natural height. <code class='k'>transition: height 200ms</code> does nothing. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0"><code class="k">auto</code> is not an interpolatable value, so there is nothing to animate between. The robust CSS-only fix is a wrapper with <code class="k">display: grid; grid-template-rows: 0fr</code> transitioning to <code class="k">1fr</code>, with <code class="k">overflow: hidden</code> on the child. Alternatives: animate <code class="k">max-height</code> to a value you know exceeds the content (cheap, but the timing is wrong because the transition covers the unused range), or measure with JavaScript and animate to an explicit pixel height.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 8 — Sass variable or custom property?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;When would you use each, and why can a custom property do theming that a Sass variable cannot?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">A Sass variable is text replaced at build time — it cannot change at runtime and does not exist in the browser, which makes it fine for build-time constants like a breakpoint list. A custom property is a real value that <strong>cascades and inherits</strong>, so redefining <code class="k">--bg</code> on <code class="k">[data-theme="dark"]</code> updates every descendant that reads it, with no duplicated rules and no specificity fight. It is also readable and writable from JavaScript, which is what makes live theming and cursor-driven effects cheap.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 9 — the row that won't truncate</div>
+        <pre>.row   { display: flex; gap: 12px; }
+.title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+<span class="cmt">// a long title pushes the price button off the edge instead of truncating</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">min-width: 0 on .title</div>
+          <p style="margin:0">A flex item's <code class="k">min-width</code> defaults to <code class="k">auto</code>, which is its content's intrinsic minimum — so the item refuses to shrink below the full title and <code class="k">flex-shrink</code> can never do its job. Setting <code class="k">min-width: 0</code> (or <code class="k">overflow: hidden</code>, which has the same side effect) releases the floor and the ellipsis appears. In a column, it's <code class="k">min-height: 0</code>. Tailwind: <code class="k">min-w-0</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 10 — auto-fit or auto-fill?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A card grid uses <code class='k'>repeat(auto-fill, minmax(220px, 1fr))</code>. With only two cards in a 1400px container they sit narrow on the left, and the designer wants them to fill the row. What changes?&rdquo;</div>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Swap auto-fill for auto-fit</div>
+          <p style="margin:0"><code class="k">auto-fill</code> creates every track that fits and <em>keeps the empty ones</em>, so the two cards stay at 220px with empty tracks beside them. <code class="k">auto-fit</code> creates the same tracks then <strong>collapses the empty ones to zero</strong>, so the <code class="k">1fr</code> maximum lets the two remaining cards absorb the whole row. When the container is full of items the two behave identically — which is why the difference only ever bites at low item counts.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 11 — the Tailwind class that vanishes in production</div>
+        <pre>const tone = severity === 'high' ? 'red' : 'green';
+return &lt;span className={`text-${tone}-500`}&gt;{label}&lt;/span&gt;;
+<span class="cmt">// works in dev after someone used text-red-500 elsewhere; ships colourless</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">The class name never exists as a literal string</div>
+          <p style="margin:0">Tailwind's build scans source files as <strong>plain text</strong> — it does not execute your code, so it never sees <code class="k">text-red-500</code> in that template literal and never generates the rule. Fix by mapping to complete class names: <code class="k">const tone = { high: 'text-red-500', low: 'text-green-500' }</code>, so the full strings appear in the file. Safelisting works but is a last resort. This is also why <code class="k">className</code> props should receive whole utilities, never fragments.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="box">Box model</button>
+        <button class="fchip" data-f="position">Position</button>
+        <button class="fchip" data-f="flex">Flexbox</button>
+        <button class="fchip" data-f="grid">Grid</button>
+        <button class="fchip" data-f="cascade">Cascade</button>
+        <button class="fchip" data-f="motion">Motion</button>
+        <button class="fchip" data-f="vars">Variables</button>
+        <button class="fchip" data-f="tailwind">Tailwind</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · what box is this, and relative to what?</footer>
+
+<script>
+const QA = [["box", "Box model", "What's the difference between content-box and border-box?", "content-box (default): width is the content only; padding and border add to the rendered size. border-box: width includes padding and border, so the box stays the declared size. Teams set border-box globally to make sizing predictable."], ["box", "Box model", "What is margin collapsing?", "Adjacent vertical margins of block elements collapse to the larger of the two, not the sum — between siblings and between a parent and its first/last child. Horizontal margins never collapse."], ["box", "Box model", "How do you prevent margin collapse?", "Separate the margins with padding or border, or establish a new block formatting context on the parent (overflow: hidden/auto, display: flow-root, flex/grid). Then parent-child margins no longer collapse."], ["position", "Position", "What does position: absolute position relative to?", "The nearest positioned ancestor (anything not static) — that's its containing block. If none exists, it's the initial containing block (viewport-ish). Absolute elements are removed from normal flow."], ["position", "Position", "How does sticky differ from fixed?", "sticky is relative until the element hits a scroll threshold (e.g. top: 0), then it sticks within its scroll container and stops when the container scrolls away. fixed is always positioned to the viewport (barring a transformed ancestor)."], ["position", "Position", "When does z-index do nothing?", "On a static element — z-index only applies to positioned elements (relative/absolute/fixed/sticky) and flex/grid items. Add a position (or make it a flex item) for z-index to take effect."], ["position", "Position", "What creates a new stacking context?", "position + z-index, opacity < 1, transform, filter, will-change, perspective, isolation: isolate, and others. Inside a context, child z-indexes are only compared with each other."], ["position", "Position", "Why can a z-index:9999 child still lose?", "Because z-index is only compared within the same stacking context. If the child's parent forms a low-stacked context, the child can't rise above elements outside that parent. Fix by changing the parent's context or portaling the child out."], ["position", "Position", "What breaks position: fixed?", "A transform, filter, or perspective on an ancestor makes that ancestor the containing block for fixed descendants, so 'fixed' becomes relative to it instead of the viewport — often clipping modals. Portal the element out or remove the transform."], ["flex", "Flexbox", "What's the difference between justify-content and align-items?", "justify-content distributes items along the main axis; align-items aligns them on the cross axis. Which is which flips when you change flex-direction from row to column."], ["flex", "Flexbox", "What does flex: 1 mean?", "Shorthand for flex-grow:1, flex-shrink:1, flex-basis:0 — the item grows to share available space equally from a zero basis and shrinks if needed. It's the common 'fill remaining space' value."], ["flex", "Flexbox", "When do you use Flexbox over Grid?", "For one-dimensional layouts — a row or column of items that flow and wrap (toolbars, button groups, nav bars). Grid is for explicit two-dimensional structure with aligned rows and columns."], ["grid", "Grid", "What does the fr unit do?", "fr represents a fraction of the leftover space in a grid container after fixed tracks. grid-template-columns: 200px 1fr gives a fixed sidebar and a content column that takes the rest."], ["grid", "Grid", "How do you make a responsive grid without media queries?", "grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)). Items wrap to as many columns as fit at >=220px and stretch to fill the row. auto-fill keeps empty tracks; auto-fit collapses them."], ["grid", "Grid", "What are grid-template-areas?", "A way to name regions ('header' 'sidebar main') and place items by assigning grid-area names — very readable for page shells and easy to rearrange responsively by redefining the areas."], ["cascade", "Cascade", "How is specificity calculated?", "Count inline styles, then IDs, then classes/attributes/pseudo-classes, then elements/pseudo-elements — compared as a tuple (inline, id, class, element). Higher wins; ties break by source order (later wins)."], ["cascade", "Cascade", "Order of the cascade?", "Importance/origin (!important, author vs user vs UA) first, then specificity, then source order. So a more specific selector beats a later one, but !important overrides specificity within its origin."], ["cascade", "Cascade", "Why avoid !important?", "It overrides normal specificity and triggers escalating '!important wars' that are hard to maintain. Prefer a consistent low-specificity system; reserve !important for utilities or overriding third-party styles you can't edit."], ["cascade", "Cascade", "Which properties inherit by default?", "Mostly text-related ones — color, font, line-height, visibility, list-style. Box/layout properties (margin, padding, border, width, background) do not inherit. Use inherit/initial/unset to control it explicitly."], ["cascade", "Cascade", "Give three ways to center a box.", "Flexbox: display:flex; justify-content:center; align-items:center. Grid: display:grid; place-items:center. Absolute: top:50%; left:50%; transform:translate(-50%,-50%). Flex/grid for in-flow; absolute for out-of-flow overlays."], ["motion", "Motion", "What is the difference between a CSS transition and an animation?", "A transition interpolates between two states and needs something to change — a class, a pseudo-class, an inline style. An animation runs a keyframe timeline with no trigger: it can start on load, loop, alternate, and pass through many steps."], ["motion", "Motion", "Which properties are cheap to animate, and why?", "transform and opacity, because the compositor can handle them without recalculating layout or repainting — often off the main thread entirely. Animating width, top, or margin forces layout every frame; animating background-color or box-shadow forces paint every frame."], ["motion", "Motion", "Why can't you transition height from 0 to auto?", "auto is not an interpolatable value, so there is no end point to animate toward. The portable fix is a grid wrapper transitioning grid-template-rows from 0fr to 1fr with overflow: hidden on the child — the child's automatic minimum size is what otherwise keeps the 0fr track open. Chromium now also supports interpolate-size: allow-keywords, which does interpolate to auto, but it is not Baseline yet."], ["motion", "Motion", "What does animation-fill-mode do?", "It controls which keyframe values apply outside the animation's active period. forwards holds the final keyframe after it ends — the fix for an animation that snaps back — backwards applies the first keyframe during the delay, and both does each."], ["motion", "Motion", "When should you use will-change?", "Sparingly, and shortly before the animation starts. It hints the browser to promote the element to its own compositor layer in advance, which costs memory, and for values like transform or opacity it creates a stacking context up front. Leaving it on across many elements permanently makes rendering slower, not faster."], ["motion", "Motion", "What is the FLIP technique?", "First, Last, Invert, Play: measure the element's position before and after a layout change, apply a transform that makes it look like it never moved, then transition that transform away. It animates a layout change using only compositor-friendly properties."], ["motion", "Motion", "How do you respect users who do not want motion?", "Query prefers-reduced-motion: reduce and cut non-essential motion — usually replacing a slide or parallax with a near-instant cross-fade rather than removing the feedback altogether, since some transition still communicates that state changed."], ["motion", "Motion", "Why does a transition sometimes not run on a newly inserted element?", "Because the browser never rendered a starting value to interpolate from — the element appears already in its end state. Historically you forced a reflow between the two states; modern CSS provides @starting-style, and transition-behavior: allow-discrete lets discrete properties like display participate."], ["vars", "Variables", "How do CSS custom properties differ from Sass variables?", "Custom properties are real values resolved in the browser at computed-value time: they cascade, inherit, can be changed at runtime by a class or media query, and are readable and writable from JavaScript. Sass variables are text substituted at build time and do not exist in the browser at all."], ["vars", "Variables", "Why are custom properties good for theming?", "Because they inherit. Redefining a handful of properties on an ancestor updates every descendant that reads them, so a theme is a small block of variable overrides rather than a duplicated set of rules fighting over specificity."], ["vars", "Variables", "What does the second argument to var() do?", "It is a fallback used when the custom property is not defined at all. It does not rescue an invalid value — if the substituted value is invalid for the property, the declaration becomes invalid at computed-value time and the property falls back to its inherited or initial value instead."], ["vars", "Variables", "How do you read and write custom properties from JavaScript?", "Write with element.style.setProperty('--x', value) and read with getComputedStyle(element).getPropertyValue('--x'). Setting one property is far cheaper than toggling classes across a subtree, which is why it suits cursor-following effects and live theming."], ["vars", "Variables", "What are the limitations of custom properties?", "They cannot be used in media query conditions, they are untyped tokens so they only animate discretely — flipping at the halfway point rather than interpolating — and changing one high in the tree invalidates styles for everything below it. Registering the property with @property gives it a syntax and initial value and makes it interpolate smoothly."], ["vars", "Variables", "How would you expose a component styling API with them?", "Read values like --btn-bg and --btn-radius inside the component with sensible fallbacks, and let consumers set them on the component or any ancestor. It gives a customisation surface that works through CSS Modules, utility frameworks, and shadow DOM, where selector overrides do not."], ["flex", "Flexbox", "What is the difference between flex: 1 and flex: auto?", "Both grow and shrink; the difference is the basis. flex: 1 is 1 1 0%, so items ignore their content and end up equal widths. flex: auto is 1 1 auto, so the basis is the content size and an item with more content keeps a larger share."], ["flex", "Flexbox", "Why does a flex item overflow instead of shrinking?", "Because a flex item's min-width is auto, not 0 — it will not shrink below its content's intrinsic minimum, so a long string or a nested grid blows the row out and text-overflow never fires. Set min-width: 0 (min-height: 0 in a column) on the item."], ["flex", "Flexbox", "When does align-content do anything?", "Only when items wrap onto multiple lines. align-items aligns each item within its line; align-content distributes the lines themselves inside the container. With flex-wrap: nowrap there is a single line, so align-content is a no-op."], ["flex", "Flexbox", "How do you align one item differently from the rest?", "align-self on that item overrides the container's align-items for it. The classic use is pushing one item to the other end of the cross axis, or using margin-left: auto to absorb all free space on the main axis and push an item to the far edge."], ["flex", "Flexbox", "What does flex-basis do that width does not?", "flex-basis sets the size along the main axis before free space is distributed, so it flips meaning with flex-direction — it is the height in a column. It also wins over width for a row item. width is axis-agnostic and is only used when flex-basis is auto."], ["grid", "Grid", "What is the difference between auto-fit and auto-fill?", "Both create as many tracks as fit. auto-fill keeps the empty tracks, so a few items stay at their minimum width. auto-fit collapses empty tracks to zero, letting the existing items stretch across the full row. They behave identically once there are enough items to fill the row."], ["grid", "Grid", "What are implicit tracks?", "Tracks the browser creates for items that fall outside your declared grid — sized by grid-auto-rows or grid-auto-columns rather than grid-template-*. An unexpectedly sized last row is usually an implicit row falling back to auto."], ["grid", "Grid", "justify-items vs justify-content in Grid?", "justify-items positions each item inside its own track. justify-content positions the whole set of tracks inside the container, so it only has an effect when the tracks are narrower than the container — with 1fr columns there is no leftover space and it does nothing. place-items and place-content are the shorthands."], ["grid", "Grid", "How do you make an item span tracks?", "grid-column: span 2 (or an explicit line range like grid-column: 1 / 3) and the row equivalent. With grid-auto-flow: dense the browser backfills the holes that spanning leaves, at the cost of visual order no longer matching DOM order — which matters for keyboard and screen-reader users."], ["grid", "Grid", "What does subgrid solve?", "A nested grid normally has its own independent tracks, so card titles and footers do not line up across cards. grid-template-columns: subgrid (or rows) makes the child adopt the parent's track lines, so nested content aligns to the outer grid."], ["tailwind", "Tailwind", "What is utility-first CSS, and what does it actually buy you?", "Composing single-purpose classes in the markup instead of writing rules and naming them. The wins are that styles are colocated and deletable — the stylesheet stops growing forever and you never wonder whether a class is still used — and that values come from a fixed scale, which prevents pixel drift. The costs are noisy markup and a weaker story for runtime theming."], ["tailwind", "Tailwind", "Why does text-${color}-500 not work in Tailwind?", "Because the build scans source files as plain text and never executes your code, so the complete class string never appears anywhere and the rule is never generated. Map to full class names in an object, or safelist them. It is the most common Tailwind bug."], ["tailwind", "Tailwind", "How do Tailwind breakpoints work?", "They are min-width media queries, so it is mobile-first: an unprefixed utility applies at every size and md: applies at that breakpoint and above. You style the smallest screen with the bare utility and layer larger screens on top."], ["tailwind", "Tailwind", "Why do teams use tailwind-merge?", "Because conflicting utilities do not cascade in source order of the class attribute — class='p-2 p-4' is resolved by the order of the rules in the generated stylesheet, which you do not control. tailwind-merge strips earlier utilities that target the same property, so a className prop can reliably override a component's defaults. It is usually wrapped with clsx as a cn() helper."], ["tailwind", "Tailwind", "When is @apply a mistake?", "When it is used to escape long class lists. Extracting .btn { @apply ... } brings back naming, dead code and specificity — the problems utilities removed — and repetition is usually a component boundary, not a CSS one. Keep it for markup you do not control and for base element styles."], ["tailwind", "Tailwind", "What changed in Tailwind v4?", "Configuration moved into CSS: @import 'tailwindcss' plus an @theme block replaces tailwind.config.js, and theme tokens are emitted as real custom properties usable from hand-written CSS. It also ships a Rust engine with automatic content detection, built-in container queries, and output wrapped in cascade layers."], ["tailwind", "Tailwind", "How do you build component variants in Tailwind?", "With class-variance-authority or a similar map from typed props to class strings, merged through cn() so callers can still override. That keeps variants in one place and type-checked, instead of ad-hoc ternaries in the className attribute."], ["tailwind", "Tailwind", "Does Tailwind replace CSS custom properties?", "No, and v4 leans on them — theme tokens are emitted as custom properties. Utilities are compile-time, so anything that must change at runtime (a user-picked accent, a live theme) still wants a custom property that a utility or arbitrary value reads."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+
+/* ---------------- layout labs ---------------- */
+(function(){
+  const H=[54,80,44,66,94,50,72,60];
+
+  function build(host,specs,state,render){
+    host.innerHTML='';
+    specs.forEach(sp=>{
+      const wrap=document.createElement('div');
+      const lbl=document.createElement('div');
+      lbl.className='ctl-lbl';
+      lbl.innerHTML='<span>'+sp.label+'</span><b data-out="'+sp.key+'"></b>';
+      wrap.appendChild(lbl);
+      if(sp.type==='seg'){
+        const seg=document.createElement('div');
+        seg.className='seg'; seg.dataset.key=sp.key;
+        sp.opts.forEach(o=>{
+          const val=Array.isArray(o)?o[0]:o, txt=Array.isArray(o)?o[1]:o;
+          const b=document.createElement('button');
+          b.type='button'; b.textContent=txt; b.dataset.v=val;
+          b.addEventListener('click',()=>{ state[sp.key]=val; if(sp.clears) state[sp.clears]=''; render(); });
+          seg.appendChild(b);
+        });
+        wrap.appendChild(seg);
+      }else{
+        const i=document.createElement('input');
+        i.dataset.key=sp.key;
+        if(sp.type==='range'){ i.type='range'; i.className='rng'; i.min=sp.min; i.max=sp.max; i.step=sp.step||1;
+          i.addEventListener('input',()=>{ state[sp.key]=+i.value; render(); }); }
+        else { i.type='text'; i.className='txtin'; i.spellcheck=false; i.placeholder=sp.placeholder||'';
+          i.addEventListener('input',()=>{ state[sp.key]=i.value; render(); }); }
+        wrap.appendChild(i);
+      }
+      host.appendChild(wrap);
+    });
+  }
+
+  function sync(host,specs,state){
+    specs.forEach(sp=>{
+      const out=host.querySelector('[data-out="'+sp.key+'"]');
+      if(out) out.textContent = sp.fmt ? sp.fmt(state[sp.key]) : '';
+      if(sp.type==='seg'){
+        host.querySelectorAll('.seg[data-key="'+sp.key+'"] button')
+          .forEach(b=>b.classList.toggle('on', b.dataset.v===String(state[sp.key])));
+      }else{
+        const i=host.querySelector('input[data-key="'+sp.key+'"]');
+        if(i && i.value!==String(state[sp.key])) i.value=state[sp.key];
+      }
+    });
+  }
+
+  const SCALE=new Set([0,0.5,1,1.5,2,2.5,3,3.5,4,5,6,7,8,9,10,11,12,14,16,20,24,28,32,36,40,44,48,52,56,60,64,72,80,96]);
+  const sp4 = (p,px)=>{ const n=px/4; return SCALE.has(n) ? p+'-'+n : p+'-['+px+'px]'; };
+  const arb = (p,v)=> p+'-['+String(v).replace(/,\s+/g,',').replace(/\s+/g,'_')+']';
+
+  /* ============ flexbox lab ============ */
+  const fCtl=document.getElementById('flexCtl'), fDemo=document.getElementById('flexDemo'), fCode=document.getElementById('flexCode');
+  if(fCtl && fDemo){
+    const F={dir:'row',justify:'flex-start',align:'stretch',wrap:'nowrap',content:'flex-start',gap:12,size:70,count:5,items:[],mode:'css'};
+    const CYC=['initial','1','2','none'];
+    const long=v=> v==='initial'?'0 1 auto' : v==='none'?'0 0 auto' : v+' 1 0%';
+    const SPECS=[
+      {key:'dir',label:'flex-direction',type:'seg',fmt:v=>v,opts:[['row','row'],['row-reverse','row-rev'],['column','column'],['column-reverse','col-rev']]},
+      {key:'justify',label:'justify-content',type:'seg',fmt:v=>v,opts:[['flex-start','start'],['center','center'],['flex-end','end'],['space-between','between'],['space-around','around'],['space-evenly','evenly']]},
+      {key:'align',label:'align-items',type:'seg',fmt:v=>v,opts:[['stretch','stretch'],['flex-start','start'],['center','center'],['flex-end','end'],['baseline','baseline']]},
+      {key:'wrap',label:'flex-wrap',type:'seg',fmt:v=>v,opts:[['nowrap','nowrap'],['wrap','wrap'],['wrap-reverse','wrap-rev']]},
+      {key:'content',label:'align-content',type:'seg',fmt:v=>v,opts:[['flex-start','start'],['center','center'],['space-between','between'],['stretch','stretch']]},
+      {key:'gap',label:'gap',type:'range',min:0,max:40,fmt:v=>v+'px'},
+      {key:'size',label:'item main size',type:'range',min:40,max:170,fmt:v=>v+'px'},
+      {key:'count',label:'items',type:'range',min:2,max:8,fmt:v=>v}
+    ];
+    const TW={
+      dir:{row:'','row-reverse':'flex-row-reverse',column:'flex-col','column-reverse':'flex-col-reverse'},
+      justify:{'flex-start':'justify-start',center:'justify-center','flex-end':'justify-end','space-between':'justify-between','space-around':'justify-around','space-evenly':'justify-evenly'},
+      align:{stretch:'items-stretch','flex-start':'items-start',center:'items-center','flex-end':'items-end',baseline:'items-baseline'},
+      wrap:{nowrap:'',wrap:'flex-wrap','wrap-reverse':'flex-wrap-reverse'},
+      content:{'flex-start':'content-start',center:'content-center','space-between':'content-between',stretch:'content-stretch'},
+      item:{initial:'','1':'flex-1','2':'flex-[2]',none:'flex-none'}
+    };
+    const PRE={
+      nav:{dir:'row',justify:'space-between',align:'center',wrap:'nowrap',gap:16,size:70,count:4,items:['initial','initial','initial','initial']},
+      centre:{dir:'row',justify:'center',align:'center',wrap:'nowrap',gap:12,size:70,count:3,items:['initial','initial','initial']},
+      cards:{dir:'row',justify:'flex-start',align:'stretch',wrap:'wrap',content:'flex-start',gap:12,size:120,count:8,items:['initial','initial','initial','initial','initial','initial','initial','initial']},
+      fill:{dir:'row',justify:'flex-start',align:'stretch',wrap:'nowrap',gap:12,size:90,count:3,items:['none','1','none']},
+      reset:{dir:'row',justify:'flex-start',align:'stretch',wrap:'nowrap',content:'flex-start',gap:12,size:70,count:5,items:['initial','initial','initial','initial','initial']}
+    };
+
+    function render(){
+      while(F.items.length<F.count) F.items.push('initial');
+      F.items.length=F.count;
+      const col=F.dir.indexOf('column')===0;
+      Object.assign(fDemo.style,{display:'flex',flexDirection:F.dir,justifyContent:F.justify,alignItems:F.align,
+        flexWrap:F.wrap,alignContent:F.content,gap:F.gap+'px',minHeight:col?'440px':'200px'});
+      fDemo.innerHTML='';
+      F.items.forEach((v,i)=>{
+        const el=document.createElement('div');
+        el.className='it'+(v!=='initial'?' mod':'');
+        el.textContent=String(i+1);
+        el.style.flex=long(v);
+        if(col){ el.style.height=F.size+'px'; el.style.minWidth=H[i%H.length]+'px'; }
+        else   { el.style.width=F.size+'px';  el.style.minHeight=H[i%H.length]+'px'; }
+        if(v!=='initial'){ const t=document.createElement('span'); t.className='tag'; t.textContent='flex: '+v; el.appendChild(t); }
+        el.addEventListener('click',()=>{ F.items[i]=CYC[(CYC.indexOf(v)+1)%CYC.length]; render(); });
+        fDemo.appendChild(el);
+      });
+      const ar={row:['→','↓'],'row-reverse':['←','↓'],column:['↓','→'],'column-reverse':['↑','→']}[F.dir];
+      document.getElementById('fMainAx').textContent='main axis '+ar[0]+'  ·  justify-content';
+      document.getElementById('fCrossAx').textContent='cross axis '+ar[1]+'  ·  align-items';
+      const acg=fCtl.querySelector('.seg[data-key="content"]');
+      if(acg){ const box=acg.parentNode; const inert=F.wrap==='nowrap';
+        box.style.opacity=inert?'.42':'1'; box.title=inert?'align-content only applies when items wrap':''; }
+
+      let out;
+      if(F.mode==='css'){
+        const L=['.container {','  display: flex;','  flex-direction: '+F.dir+';','  justify-content: '+F.justify+';',
+                 '  align-items: '+F.align+';','  flex-wrap: '+F.wrap+';'];
+        if(F.wrap!=='nowrap') L.push('  align-content: '+F.content+';');
+        L.push('  gap: '+F.gap+'px;','}');
+        L.push('.container > * { '+(col?'height':'width')+': '+F.size+'px; }');
+        F.items.forEach((v,i)=>{ if(v!=='initial') L.push('.container > :nth-child('+(i+1)+') { flex: '+v+'; /* '+long(v)+' */ }'); });
+        out=L.join('\n');
+      }else{
+        const cls=['flex',TW.dir[F.dir],TW.justify[F.justify],TW.align[F.align],TW.wrap[F.wrap],
+                   F.wrap!=='nowrap'?TW.content[F.content]:'', sp4('gap',F.gap)].filter(Boolean).join(' ');
+        const size=sp4(col?'h':'w',F.size);
+        const kids=F.items.map((v,i)=>{
+          const c=[size,TW.item[v]].filter(Boolean).join(' ');
+          return '  <div class="'+c+'">'+(i+1)+'</div>';
+        }).join('\n');
+        out='<div class="'+cls+'">\n'+kids+'\n</div>';
+      }
+      fCode.textContent=out;
+      sync(fCtl,SPECS,F);
+    }
+
+    build(fCtl,SPECS,F,render);
+    document.querySelectorAll('#flexLab .lab-preset').forEach(b=>{
+      b.addEventListener('click',()=>{ Object.assign(F,JSON.parse(JSON.stringify(PRE[b.dataset.fp]))); render(); });
+    });
+    document.querySelectorAll('#flexLab .codetabs button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        F.mode=b.dataset.fmode;
+        document.querySelectorAll('#flexLab .codetabs button').forEach(x=>x.classList.toggle('on',x===b));
+        render();
+      });
+    });
+    render();
+  }
+
+  /* ============ grid lab ============ */
+  const gCtl=document.getElementById('gridCtl'), gDemo=document.getElementById('gridDemo'),
+        gCode=document.getElementById('gridCode'), gTracks=document.getElementById('gridTracks');
+  if(gCtl && gDemo){
+    const G={cols:'repeat(3, 1fr)',custom:'',rows:'auto',gap:12,justify:'stretch',align:'stretch',flow:'row',count:6,items:[],mode:'css'};
+    const CYC=['','col','row','both'];
+    const SPECS=[
+      {key:'cols',label:'grid-template-columns',type:'seg',clears:'custom',opts:[
+        ['repeat(3, 1fr)','3 × 1fr'],['200px 1fr','200px 1fr'],['1fr 2fr 1fr','1fr 2fr 1fr'],
+        ['repeat(auto-fit, minmax(120px, 1fr))','auto-fit'],['repeat(auto-fill, minmax(120px, 1fr))','auto-fill']]},
+      {key:'custom',label:'…or type a track list',type:'text',placeholder:'e.g. 80px 1fr 2fr'},
+      {key:'rows',label:'grid-auto-rows',type:'seg',fmt:v=>v,opts:[['auto','auto'],['90px','90px'],['minmax(90px, auto)','minmax()']]},
+      {key:'gap',label:'gap',type:'range',min:0,max:40,fmt:v=>v+'px'},
+      {key:'justify',label:'justify-items',type:'seg',fmt:v=>v,opts:['stretch','start','center','end']},
+      {key:'align',label:'align-items',type:'seg',fmt:v=>v,opts:['stretch','start','center','end']},
+      {key:'flow',label:'grid-auto-flow',type:'seg',fmt:v=>v,opts:[['row','row'],['column','column'],['row dense','dense']]},
+      {key:'count',label:'items',type:'range',min:3,max:12,fmt:v=>v}
+    ];
+    const SPAN={'':['',''],col:['span 2',''],row:['','span 2'],both:['span 2','span 2']};
+    const TWSPAN={'':'',col:'col-span-2',row:'row-span-2',both:'col-span-2 row-span-2'};
+    const PRE={
+      shell:{cols:'200px 1fr',custom:'',rows:'auto',gap:12,justify:'stretch',align:'stretch',flow:'row',count:4,items:['col','','','col']},
+      autofit:{cols:'repeat(auto-fit, minmax(120px, 1fr))',custom:'',rows:'auto',gap:12,justify:'stretch',align:'stretch',flow:'row',count:7,items:['','','','','','','']},
+      dense:{cols:'repeat(4, 1fr)',custom:'',rows:'90px',gap:8,justify:'stretch',align:'stretch',flow:'row dense',count:10,items:['','col','','row','col','','','both','','']},
+      reset:{cols:'repeat(3, 1fr)',custom:'',rows:'auto',gap:12,justify:'stretch',align:'stretch',flow:'row',count:6,items:['','','','','','']}
+    };
+    const cols=()=> (G.custom||'').trim() || G.cols;
+
+    function render(){
+      while(G.items.length<G.count) G.items.push('');
+      G.items.length=G.count;
+      Object.assign(gDemo.style,{display:'grid',gridTemplateColumns:cols(),gridAutoRows:G.rows,gap:G.gap+'px',
+        justifyItems:G.justify,alignItems:G.align,gridAutoFlow:G.flow,minHeight:'200px'});
+      gDemo.innerHTML='';
+      G.items.forEach((v,i)=>{
+        const el=document.createElement('div');
+        el.className='it'+(v?' mod':'');
+        el.textContent=String(i+1);
+        el.style.minHeight=(40+(H[i%H.length]%40))+'px';
+        el.style.gridColumn=SPAN[v][0]?'span 2':'';
+        el.style.gridRow=SPAN[v][1]?'span 2':'';
+        if(v){ const t=document.createElement('span'); t.className='tag'; t.textContent=TWSPAN[v].replace('col-span-2','col 2').replace('row-span-2','row 2'); el.appendChild(t); }
+        el.addEventListener('click',()=>{ G.items[i]=CYC[(CYC.indexOf(v)+1)%CYC.length]; render(); });
+        gDemo.appendChild(el);
+      });
+
+      const used=getComputedStyle(gDemo).gridTemplateColumns;
+      const parts=used.split(/\s+/).filter(x=>x && !isNaN(parseFloat(x)));
+      if(parts.length){
+        gTracks.style.gridTemplateColumns=used;
+        gTracks.style.columnGap=G.gap+'px';
+        gTracks.style.margin='0 13px 6px';
+        gTracks.innerHTML=parts.map((v,i)=>'<div>'+(i+1)+' · <b>'+Math.round(parseFloat(v))+'px</b></div>').join('');
+      }else{ gTracks.innerHTML=''; }
+
+      let out;
+      if(G.mode==='css'){
+        const L=['.grid {','  display: grid;','  grid-template-columns: '+cols()+';','  grid-auto-rows: '+G.rows+';',
+                 '  gap: '+G.gap+'px;','  justify-items: '+G.justify+';','  align-items: '+G.align+';',
+                 '  grid-auto-flow: '+G.flow+';','}'];
+        G.items.forEach((v,i)=>{
+          if(!v) return;
+          const d=[]; if(SPAN[v][0]) d.push('grid-column: span 2;'); if(SPAN[v][1]) d.push('grid-row: span 2;');
+          L.push('.grid > :nth-child('+(i+1)+') { '+d.join(' ')+' }');
+        });
+        out=L.join('\n');
+      }else{
+        const c=cols();
+        const m=c.match(/^repeat\((\d+),\s*1fr\)$/);
+        const cls=['grid', m?('grid-cols-'+m[1]):arb('grid-cols',c),
+          G.rows==='auto'?'':arb('auto-rows',G.rows), sp4('gap',G.gap),
+          'justify-items-'+G.justify, 'items-'+G.align,
+          {row:'',column:'grid-flow-col','row dense':'grid-flow-row-dense'}[G.flow]].filter(Boolean).join(' ');
+        const kids=G.items.map((v,i)=> '  <div'+(TWSPAN[v]?' class="'+TWSPAN[v]+'"':'')+'>'+(i+1)+'</div>').join('\n');
+        out='<div class="'+cls+'">\n'+kids+'\n</div>';
+      }
+      gCode.textContent=out;
+      sync(gCtl,SPECS,G);
+    }
+
+    build(gCtl,SPECS,G,render);
+    document.querySelectorAll('#gridLab .lab-preset').forEach(b=>{
+      b.addEventListener('click',()=>{ Object.assign(G,JSON.parse(JSON.stringify(PRE[b.dataset.gp]))); render(); });
+    });
+    document.querySelectorAll('#gridLab .codetabs button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        G.mode=b.dataset.gmode;
+        document.querySelectorAll('#gridLab .codetabs button').forEach(x=>x.classList.toggle('on',x===b));
+        render();
+      });
+    });
+    render();
+    window.addEventListener('resize',()=>{ clearTimeout(window.__gT); window.__gT=setTimeout(render,120); });
+  }
+})();
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript Core — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#A78BFA;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(167,139,250,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#C6B8FA}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(167,139,250,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#C6B8FA}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">JavaScript <em>Core</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> The four pillars</a>
+    <a href="#closures"><span class="n">01</span> Closures</a>
+    <a href="#this"><span class="n">02</span> this binding</a>
+    <a href="#proto"><span class="n">03</span> Prototypes</a>
+    <a href="#coercion"><span class="n">04</span> Coercion &amp; equality</a>
+    <a href="#drills"><span class="n">05</span> Output drills</a>
+    <a href="#bank"><span class="n">06</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>The rules behind the <span>&ldquo;weird&rdquo; parts</span> of JavaScript.</h1>
+      <p class="lede">The event loop and promises have their own tabs. This one drills the other four core-JS topics senior rounds lean on hardest — closures, <code class="k">this</code>, prototypes, and coercion — as precise rules, not folklore.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-chain"></span>Closures</span>
+        <span class="chip"><span class="dot d-pending"></span>this</span>
+        <span class="chip"><span class="dot d-ful"></span>Prototypes</span>
+        <span class="chip"><span class="dot d-rej"></span>Coercion</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The lay of the land</div>
+      <h2>The four pillars this guide drills</h2>
+      <p>Two of the biggest JavaScript-core topics — the <strong>event loop</strong> and <strong>promises / async-await</strong> — have their own dedicated tabs in this deck. This guide covers the four remaining pillars senior interviews probe hardest.</p>
+      <ul class="body">
+        <li><strong>Closures</strong> — a function keeps a live reference to the scope it was created in. Powers memoization and module privacy, and explains the stale-closure bugs in the React Hooks tab.</li>
+        <li><strong><code class="k">this</code></strong> — decided by <em>how a function is called</em>, not where it's written (arrows are the lexical exception).</li>
+        <li><strong>Prototypes</strong> — objects delegate lookups to other objects; <code class="k">class</code> is syntax over this.</li>
+        <li><strong>Coercion &amp; equality</strong> — the type-conversion rules behind <code class="k">==</code> and the famous trick snippets.</li>
+      </ul>
+      <div class="note"><span class="lbl">The through-line</span>JavaScript looks forgiving but is governed by a small set of exact rules. Naming the rule — not the vibe — is what reads as senior.</div>
+    </section>
+
+    <section id="closures">
+      <div class="kicker">01 — Functions that remember</div>
+      <h2>Closures</h2>
+      <p>A <strong>closure</strong> is the pairing of a function with the lexical environment it was defined in. When a function is created, it keeps a live reference to the variables in scope at that point — and can read and mutate them later, even after the outer function has returned.</p>
+      <pre>function counter(){
+  let n = 0;                  <span class="cmt">// private to the returned fn</span>
+  return () =&gt; ++n;
+}
+const next = counter();
+next(); next(); next();       <span class="out">// 1, 2, 3 — n survives between calls</span></pre>
+
+      <h3>The classic gotcha: <code class="k">var</code> in a loop</h3>
+      <pre>for (var i = 0; i &lt; 3; i++) {
+  setTimeout(() =&gt; console.log(i), 0);
+}
+<span class="out">// 3  3  3</span></pre>
+      <p><code class="k">var</code> is function-scoped, so all three callbacks close over the <em>same</em> <code class="k">i</code>. By the time the timers fire (after the loop finishes), <code class="k">i</code> is <code class="k">3</code>. Fixes:</p>
+      <ul class="body">
+        <li><strong><code class="k">let</code></strong> is block-scoped — each iteration gets a <em>fresh binding</em>, so you get <code class="k">0 1 2</code>. This is the modern fix.</li>
+        <li><strong>Pre-ES6:</strong> wrap in an IIFE to capture the value per iteration: <code class="k">(function(j){ setTimeout(function(){ console.log(j); }); })(i)</code>.</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this</span>It's not that the timer "runs late" — it's that with <code class="k">var</code> there is only one <code class="k">i</code> shared by every closure. <code class="k">let</code> creates one per iteration.</div>
+
+      <h3>Real uses</h3>
+      <pre><span class="cmt">// memoization — the cache lives in the closure</span>
+function memoize(fn){
+  const cache = new Map();
+  return (arg) =&gt; {
+    if (cache.has(arg)) return cache.get(arg);
+    const out = fn(arg);
+    cache.set(arg, out);
+    return out;
+  };
+}</pre>
+      <ul class="body">
+        <li><strong>Private state / module pattern</strong> — expose methods, keep data unreachable from outside (the closure is the only reference).</li>
+        <li><strong>Event handlers &amp; callbacks</strong> capture the variables at definition time — which is exactly how a <em>stale closure</em> arises: a handler keeps reading the value it closed over, not the latest one. This is the root of the React <code class="k">useEffect</code>/<code class="k">setInterval</code> stale-state bug (see the Hooks tab).</li>
+      </ul>
+    </section>
+
+    <section id="this">
+      <div class="kicker">02 — Call-site, not definition-site</div>
+      <h2>The <code class="k">this</code> keyword</h2>
+      <p>For a normal function, <code class="k">this</code> is determined by <strong>how the function is called</strong>. Four rules, in precedence order (highest first):</p>
+      <table class="tbl">
+        <tr><th>Rule</th><th>Call shape</th><th><code class="k">this</code> is</th></tr>
+        <tr><td>new</td><td><code class="k">new Fn()</code></td><td>the brand-new object</td></tr>
+        <tr><td>explicit</td><td><code class="k">fn.call(o)</code> / <code class="k">apply</code> / <code class="k">bind</code></td><td><code class="k">o</code></td></tr>
+        <tr><td>implicit</td><td><code class="k">obj.fn()</code></td><td><code class="k">obj</code> (the receiver)</td></tr>
+        <tr><td>default</td><td><code class="k">fn()</code></td><td><code class="k">undefined</code> in strict mode; the global object otherwise</td></tr>
+      </table>
+      <h3>Why <code class="k">this</code> &ldquo;breaks&rdquo;</h3>
+      <pre>const user = {
+  name: 'Ada',
+  greet(){ return `hi ${this.name}`; }
+};
+const fn = user.greet;
+fn();   <span class="out">// strict mode / ES module: this is undefined → TypeError</span>
+        <span class="cmt">// (non-strict browser: "hi " — this is window, and window.name defaults to "")</span>
+        <span class="cmt">// (non-strict Node global: "hi undefined") — the receiver is lost either way</span>
+setTimeout(user.greet, 0);   <span class="out">// same detached-receiver problem</span></pre>
+      <p>Passing a method as a bare reference detaches it from its receiver — the call site is now <code class="k">fn()</code>, so the implicit rule doesn't apply. Fixes: <code class="k">user.greet.bind(user)</code>, an arrow wrapper <code class="k">() =&gt; user.greet()</code>, or defining the method as a class field arrow.</p>
+      <div class="note"><span class="lbl">Arrow functions are different</span>Arrows have <strong>no own <code class="k">this</code></strong> — they capture <code class="k">this</code> lexically from the enclosing scope at definition time. They also have no <code class="k">arguments</code> and can't be used with <code class="k">new</code>. That's why an arrow is the right callback when you want to keep the surrounding <code class="k">this</code> (e.g. inside a class method), and the wrong choice for an object method that needs a dynamic receiver.</div>
+      <div class="note warn"><span class="lbl">Trap</span><code class="k">bind</code> is permanent: a bound function ignores later <code class="k">call</code>/<code class="k">apply</code> receivers, and <code class="k">new</code> on a bound function ignores the bound <code class="k">this</code> (uses the new object). Precedence: <code class="k">new</code> &gt; explicit &gt; implicit &gt; default.</div>
+    </section>
+
+    <section id="proto">
+      <div class="kicker">03 — Objects all the way down</div>
+      <h2>Prototypes &amp; inheritance</h2>
+      <p>Every object has an internal link, <code class="k">[[Prototype]]</code> (legacy accessor <code class="k">__proto__</code>; <em>read</em> it with <code class="k">Object.getPrototypeOf</code>, <em>set</em> it with <code class="k">Object.setPrototypeOf</code> — or at creation time with <code class="k">Object.create</code>). When you read a property, the engine walks this <strong>prototype chain</strong> until it finds the key or hits <code class="k">null</code>.</p>
+      <pre>const animal = { speak(){ return 'generic'; } };
+const dog = Object.create(animal);   <span class="cmt">// dog.__proto__ === animal</span>
+dog.bark = () =&gt; 'woof';
+dog.speak();          <span class="out">// 'generic' — found up the chain</span>
+dog.hasOwnProperty('speak');   <span class="out">// false — it's inherited</span></pre>
+      <h3>Constructors, <code class="k">.prototype</code>, and <code class="k">class</code></h3>
+      <pre>function Point(x, y){ this.x = x; this.y = y; }
+Point.prototype.norm = function(){ return Math.hypot(this.x, this.y); };
+const p = new Point(3, 4);
+p.norm();             <span class="out">// 5 — method lives on Point.prototype, shared</span>
+p instanceof Point;   <span class="out">// true — Point.prototype is in p's chain</span></pre>
+      <p><code class="k">class</code> is largely <strong>syntactic sugar</strong> over prototypal delegation: methods you declare go on <code class="k">Class.prototype</code> (shared across instances), <code class="k">extends</code> wires the prototype chain, and <code class="k">super</code> walks up it. (Not a 100% desugaring — class bodies run in strict mode, aren't hoisted like functions (TDZ), throw if called without <code class="k">new</code>, and define non-enumerable methods.) Two names people confuse:</p>
+      <ul class="body">
+        <li><code class="k">Fn.prototype</code> — the object that instances created with <code class="k">new Fn()</code> will delegate to.</li>
+        <li><code class="k">obj.__proto__</code> — the object <em>this</em> object delegates to. For an instance, <code class="k">p.__proto__ === Point.prototype</code>.</li>
+      </ul>
+      <div class="note"><span class="lbl">Why methods go on the prototype</span>Defining a method once on the prototype means every instance shares one function object, instead of each instance carrying its own copy. Instance fields (state) go on the object; behaviour goes on the prototype.</div>
+    </section>
+
+    <section id="coercion">
+      <div class="kicker">04 — Type juggling</div>
+      <h2>Coercion &amp; equality</h2>
+      <p><code class="k">===</code> (strict) compares type <em>and</em> value with no conversion. <code class="k">==</code> (loose) applies the loose-equality algorithm (<code class="k">IsLooselyEqual</code>; called Abstract Equality pre-ES2021), which coerces operands toward a common type before comparing. Prefer <code class="k">===</code> everywhere; understand <code class="k">==</code> so you can read traps.</p>
+      <h3>The falsy values</h3>
+      <p>Only these values are falsy: <code class="k">false</code>, <code class="k">0</code>, <code class="k">-0</code>, <code class="k">0n</code>, <code class="k">""</code>, <code class="k">null</code>, <code class="k">undefined</code>, and <code class="k">NaN</code> (plus the legacy oddity <code class="k">document.all</code>). Everything else — including <code class="k">"0"</code>, <code class="k">"false"</code>, <code class="k">[]</code>, and <code class="k">{}</code> — is truthy.</p>
+      <h3>The greatest hits</h3>
+      <pre>0.1 + 0.2 === 0.3     <span class="out">// false  (IEEE-754 float)</span>
+NaN === NaN           <span class="out">// false  (use Number.isNaN)</span>
+typeof null           <span class="out">// "object"  (ancient bug)</span>
+null == undefined     <span class="out">// true</span>
+null == 0             <span class="out">// false  (== does NOT coerce null to 0)</span>
+'' == 0               <span class="out">// true   ('' -&gt; 0)</span>
+'5' + 1               <span class="out">// "51"   (+ prefers string concat)</span>
+'5' - 1               <span class="out">// 4      (- forces numeric)</span>
+[] == ![]             <span class="out">// true   (see below)</span></pre>
+      <p><code class="k">[] == ![]</code> is the party trick: <code class="k">![]</code> is <code class="k">false</code> (arrays are truthy), so it becomes <code class="k">[] == false</code> &rarr; <code class="k">[] == 0</code> &rarr; <code class="k">"" == 0</code> &rarr; <code class="k">0 == 0</code> &rarr; <code class="k">true</code>. Each step is one coercion rule; none of it is magic.</p>
+      <div class="note warn"><span class="lbl">The one exception worth memorising</span><code class="k">null</code> and <code class="k">undefined</code> are loosely equal to each other and to nothing else — except the same <code class="k">document.all</code> oddity noted above, which is also <code class="k">== null</code>. So <code class="k">== null</code> is the idiomatic &ldquo;is it null or undefined&rdquo; check.</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">05 — Drill until reflex</div>
+      <h2>Output prediction drills</h2>
+      <p>Predict the output, then reveal. Say the rule out loud — that's what's scored.</p>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — loop &amp; closure</div>
+        <pre>const fns = [];
+for (let i = 0; i &lt; 3; i++) fns.push(() =&gt; i);
+console.log(fns.map(f =&gt; f()));</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">[0, 1, 2]</div>
+          <p style="margin:0"><code class="k">let</code> gives each iteration its own binding of <code class="k">i</code>, so each arrow closes over a different value. With <code class="k">var</code> it would be <code class="k">[3, 3, 3]</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — who is <code class="k">this</code>?</div>
+        <pre>const o = {
+  x: 10,
+  get(){ return this.x; },
+  getArrow: () =&gt; this.x
+};
+console.log(o.get());
+console.log(o.getArrow());</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">10 · undefined (classic script) — a module throws on the arrow</div>
+          <p style="margin:0"><code class="k">o.get()</code> uses the implicit rule — <code class="k">this</code> is <code class="k">o</code> — so <code class="k">10</code>. <code class="k">getArrow</code> is an arrow, so <code class="k">this</code> is lexical, captured from the surrounding scope, <em>not</em> <code class="k">o</code>. In a classic (non-module) script that's the global object, which has no <code class="k">x</code> → <code class="k">undefined</code>; at module top level <code class="k">this</code> is <code class="k">undefined</code>, so <code class="k">this.x</code> would throw. Either way the arrow never sees <code class="k">o</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — detached method</div>
+        <pre>class C { constructor(){ this.v = 42; } val(){ return this.v; } }
+const c = new C();
+const f = c.val;
+console.log(f());</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">TypeError: Cannot read properties of undefined (reading 'v')</div>
+          <p style="margin:0">Class bodies are strict mode, so a bare <code class="k">f()</code> has <code class="k">this === undefined</code>. Reading <code class="k">this.v</code> throws. Fix: <code class="k">c.val.bind(c)</code> or a class field arrow <code class="k">val = () =&gt; this.v</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — coercion salad</div>
+        <pre>console.log(1 + '2' + 3);
+console.log(1 + 2 + '3');
+console.log('5' - -'2');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">"123" · "33" · 7</div>
+          <p style="margin:0"><code class="k">+</code> is left-to-right: <code class="k">1 + '2'</code> &rarr; <code class="k">"12"</code>, then <code class="k">"12" + 3</code> &rarr; <code class="k">"123"</code>. Second: <code class="k">1 + 2</code> &rarr; <code class="k">3</code> (numbers), then <code class="k">+ '3'</code> &rarr; <code class="k">"33"</code>. Third: <code class="k">-'2'</code> &rarr; <code class="k">-2</code>, and <code class="k">'5' - (-2)</code> forces numeric &rarr; <code class="k">7</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — prototype lookup</div>
+        <pre>function A(){}
+A.prototype.hi = () =&gt; 'A';
+const a = new A();
+A.prototype.hi = () =&gt; 'B';
+console.log(a.hi());</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">"B"</div>
+          <p style="margin:0"><code class="k">a</code> holds a live link to <code class="k">A.prototype</code>, not a snapshot. Property lookup happens at call time, so reassigning the prototype method is visible to the already-created instance.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — the conceptual one</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;What is a closure, and give one real bug and one real use.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">A closure is a function bundled with the lexical scope it was defined in, keeping those variables alive after the outer function returns. <strong>Bug:</strong> an event handler or effect that closes over a stale value keeps using the old state (the React <code class="k">setInterval</code> counter trap). <strong>Use:</strong> encapsulating private state — a memoization cache or a module's internals that nothing outside can reach. Both come from the same mechanism: the function <em>remembers</em> its birthplace scope.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">06 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="closures">Closures</button>
+        <button class="fchip" data-f="this">this</button>
+        <button class="fchip" data-f="proto">Prototypes</button>
+        <button class="fchip" data-f="coercion">Coercion</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · know the rule, not the vibe.</footer>
+
+<script>
+const QA = [["closures", "Closures", "What is a closure?", "A function together with a live reference to the lexical scope it was defined in. It can read and mutate those outer variables even after the outer function has returned."], ["closures", "Closures", "Why does a var loop with setTimeout print the final value N times?", "var is function-scoped, so every callback closes over the same single i. When the timers fire after the loop, i already holds its final value. let gives each iteration a fresh binding, fixing it."], ["closures", "Closures", "Name two practical uses of closures.", "Private state / the module pattern (data reachable only through the returned functions), and memoization (the cache lives in the closure). Also currying and stable event handlers."], ["closures", "Closures", "How do closures cause stale-state bugs?", "A callback captures the variables from the render/scope where it was created. If it keeps running later (an interval, a subscription) it reads those stale values, not the latest — the classic React useEffect trap."], ["closures", "Closures", "How does let fix the classic loop bug?", "let is block-scoped and the for-loop creates a new binding of the variable for each iteration, so each closure captures its own copy (0, 1, 2…) instead of one shared variable."], ["this", "this", "What decides this in a normal function?", "The call site — how the function is invoked, not where it was defined. new > explicit (call/apply/bind) > implicit (obj.method()) > default (undefined in strict mode / global otherwise)."], ["this", "this", "How is this different in an arrow function?", "Arrows have no own this; they capture it lexically from the enclosing scope at definition time. They also have no arguments and can't be constructed with new."], ["this", "this", "Why does passing obj.method as a callback break this?", "Passing it as a bare reference detaches it from the receiver. The call site becomes method() (default rule), so this is undefined/global. Fix with bind, an arrow wrapper, or a class-field arrow."], ["this", "this", "What does bind do, and can it be overridden?", "bind returns a new function permanently pinned to a given this (and optionally preset args). A bound function ignores later call/apply receivers; only new overrides it (using the fresh object)."], ["this", "this", "call vs apply vs bind?", "call and apply invoke immediately with an explicit this — call takes comma args, apply takes an args array. bind doesn't invoke; it returns a new permanently-bound function."], ["proto", "Prototypes", "What is the prototype chain?", "Each object links to a prototype via [[Prototype]]. Property reads walk up this chain until the key is found or it reaches null. It's delegation, not copying."], ["proto", "Prototypes", "Is class real inheritance or sugar?", "Sugar over prototypes. Methods go on Class.prototype (shared by instances), extends links the prototype chain, and super walks up it. No classical/copy inheritance underneath."], ["proto", "Prototypes", "Difference between Fn.prototype and obj.__proto__?", "Fn.prototype is the object that instances made with new Fn() will delegate to. obj.__proto__ is the object this particular object delegates to. For an instance p of Fn, p.__proto__ === Fn.prototype."], ["proto", "Prototypes", "Why put methods on the prototype instead of the instance?", "So all instances share one function object rather than each carrying its own copy — less memory and a single place to update. State goes on the instance; shared behaviour on the prototype."], ["proto", "Prototypes", "What does Object.create(proto) do?", "Creates a new object whose [[Prototype]] is proto, with no own properties. It's the direct way to set up delegation without a constructor."], ["proto", "Prototypes", "How does instanceof work?", "It checks whether the constructor's prototype object appears anywhere in the value's prototype chain — not whether it was literally built by that constructor."], ["coercion", "Coercion", "=== vs ==?", "=== compares type and value with no conversion. == runs Abstract Equality, coercing operands toward a common type first. Default to === and reserve == for the == null idiom."], ["coercion", "Coercion", "List the falsy values.", "false, 0, -0, 0n, \"\" (empty string), null, undefined, NaN. Everything else is truthy — including \"0\", \"false\", [], and {}."], ["coercion", "Coercion", "Why is 0.1 + 0.2 !== 0.3?", "Numbers are IEEE-754 doubles; 0.1 and 0.2 have no exact binary representation, so the sum is 0.30000000000000004. Compare with a small epsilon instead of ===."], ["coercion", "Coercion", "Why is typeof null 'object'?", "A first-version bug that can never be fixed for compatibility. To test for null specifically use value === null; for null-or-undefined use value == null."], ["coercion", "Coercion", "Explain [] == ![] being true.", "![] is false (arrays are truthy). Then [] == false → [] == 0 → (ToPrimitive []) '' == 0 → 0 == 0 → true. A chain of individual coercion rules."], ["coercion", "Coercion", "When does + concatenate vs add?", "If either operand is a string (or an object that becomes one), + concatenates. Otherwise it adds numerically. -, *, / always coerce to number, so '5' - 1 is 4 but '5' + 1 is '51'."], ["coercion", "Coercion", "How do you compare NaN?", "NaN is not equal to anything, including itself, so x === NaN is always false. Use Number.isNaN(x) (not the global isNaN, which coerces its argument first)."], ["coercion", "Coercion", "What is the safe way to check for null or undefined?", "x == null is true for null and undefined and nothing else (bar the legacy document.all oddity) — the one place loose equality is idiomatic. Or use x ?? fallback / optional chaining."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

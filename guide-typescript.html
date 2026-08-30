@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TypeScript Types — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#60A5FA;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(96,165,250,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#B4D3FB}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(96,165,250,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#B4D3FB}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand"><em>TypeScript</em> Types</div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Structural &amp; erased</a>
+    <a href="#generics"><span class="n">01</span> Generics</a>
+    <a href="#unions"><span class="n">02</span> Unions &amp; discriminated</a>
+    <a href="#narrow"><span class="n">03</span> Narrowing</a>
+    <a href="#utility"><span class="n">04</span> Utility types</a>
+    <a href="#mapped"><span class="n">05</span> Mapped &amp; conditional</a>
+    <a href="#react"><span class="n">06</span> Typing React</a>
+    <a href="#drills"><span class="n">07</span> Drills</a>
+    <a href="#bank"><span class="n">08</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Types are a <span>structural, erased</span> proof system.</h1>
+      <p class="lede">Senior TypeScript isn't authoring gnarly conditional types — it's modelling state so illegal states can't compile, narrowing precisely, and knowing the utility types cold.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-pending"></span>Generics</span>
+        <span class="chip"><span class="dot d-ful"></span>Discriminated unions</span>
+        <span class="chip"><span class="dot d-chain"></span>Narrowing</span>
+        <span class="chip"><span class="dot d-micro"></span>Utility types</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — Two facts that explain everything</div>
+      <h2>Structural typing &amp; erasure</h2>
+      <ul class="body">
+        <li><strong>Structural (duck) typing</strong> — compatibility is by <em>shape</em>, not name. If an object has the required members, it fits the type, regardless of what it was declared as. Caveat: a <em>fresh object literal</em> also gets excess property checking, so extra properties error at the assignment site — assign the same value via a variable and it passes. Two identically-shaped types are interchangeable.</li>
+        <li><strong>Types are erased at runtime</strong> — TypeScript compiles to plain JavaScript with the types stripped. There is no runtime type information, so you can't <code class="k">instanceof</code> an interface. Runtime validation of external data still needs guards or a schema library (Zod).</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;TypeScript checks shapes at compile time and then disappears. It protects me from my own code, not from bad data at the boundary — that still needs runtime validation.&rdquo;</div>
+    </section>
+
+    <section id="generics">
+      <div class="kicker">01 — Parametric types</div>
+      <h2>Generics</h2>
+      <p>A generic is a type parameter — a placeholder a caller fills in — so a function/type works over many types while preserving the relationship between them.</p>
+      <pre>function first&lt;T&gt;(arr: T[]): T | undefined { return arr[0]; }
+first([1, 2, 3]);        <span class="out">// T = number  -&gt; number | undefined</span>
+
+<span class="cmt">// constraint: T must have a length</span>
+function longest&lt;T extends { length: number }&gt;(a: T, b: T){
+  return a.length &gt;= b.length ? a : b;
+}</pre>
+      <p>Generics shine in <strong>components and hooks</strong>:</p>
+      <pre>function useToggle&lt;T&gt;(a: T, b: T){ /* returns T */ }
+
+type ListProps&lt;T&gt; = {
+  items: T[];
+  render: (item: T) =&gt; React.ReactNode;
+};
+function List&lt;T&gt;({ items, render }: ListProps&lt;T&gt;){
+  return &lt;ul&gt;{items.map(render)}&lt;/ul&gt;;
+}
+&lt;List items={users} render={u =&gt; u.name} /&gt;  <span class="out">// T inferred as User</span></pre>
+    </section>
+
+    <section id="unions">
+      <div class="kicker">02 — Modelling state</div>
+      <h2>Unions, intersections &amp; discriminated unions</h2>
+      <ul class="body">
+        <li><strong>Union</strong> <code class="k">A | B</code> — a value is one of these. You may only access members common to all members until you narrow.</li>
+        <li><strong>Intersection</strong> <code class="k">A &amp; B</code> — a value has <em>all</em> members of both.</li>
+      </ul>
+      <h3>Discriminated unions — the senior move</h3>
+      <pre>type State&lt;T&gt; =
+  | { status: 'loading' }
+  | { status: 'error'; error: Error }
+  | { status: 'success'; data: T };
+
+function view(s: State&lt;User&gt;){
+  switch (s.status) {
+    case 'loading': return spinner();
+    case 'error':   return oops(s.error);   <span class="out">// s.error is known here</span>
+    case 'success': return show(s.data);     <span class="out">// s.data is known here</span>
+  }
+}</pre>
+      <p>The literal <code class="k">status</code> field is the <strong>discriminant</strong>: checking it narrows the union to one member, and TypeScript then knows exactly which fields exist. This makes <em>illegal states unrepresentable</em> — you can't have <code class="k">data</code> and <code class="k">error</code> at once. Add exhaustiveness with a <code class="k">never</code> default:</p>
+      <pre>default: { const _exhaustive: never = s; return _exhaustive; }
+<span class="cmt">// adding a new status without handling it becomes a compile error</span></pre>
+    </section>
+
+    <section id="narrow">
+      <div class="kicker">03 — From wide to specific</div>
+      <h2>Narrowing</h2>
+      <p>Narrowing is how TypeScript refines a broad type to a specific one within a branch:</p>
+      <ul class="body">
+        <li><code class="k">typeof x === 'string'</code> — primitives.</li>
+        <li><code class="k">x instanceof Error</code> — class instances.</li>
+        <li><code class="k">'id' in x</code> — presence of a property.</li>
+        <li>truthiness (<code class="k">if (x)</code>), equality, and discriminant checks (above).</li>
+      </ul>
+      <h3>User-defined type guards &amp; <code class="k">as const</code></h3>
+      <pre>function isUser(x: unknown): x is User {
+  return typeof x === 'object' &amp;&amp; x !== null &amp;&amp; 'name' in x;
+}
+if (isUser(data)) { data.name; }   <span class="out">// data narrowed to User</span>
+
+const roles = ['admin', 'user'] as const;
+<span class="cmt">// type: readonly ["admin", "user"] — literal, not string[]</span>
+type Role = typeof roles[number];  <span class="out">// "admin" | "user"</span></pre>
+      <p>The <code class="k">x is User</code> return type is a <strong>type predicate</strong>: it tells the compiler that a <code class="k">true</code> result means <code class="k">x</code> is a <code class="k">User</code> in the following block. <code class="k">as const</code> freezes a value to its most specific literal, readonly type — the bridge from runtime values to precise types.</p>
+    </section>
+
+    <section id="utility">
+      <div class="kicker">04 — Know these cold</div>
+      <h2>Utility types</h2>
+      <pre>type User = { id: number; name: string; email: string };
+
+Partial&lt;User&gt;        <span class="out">// all props optional</span>
+Required&lt;Partial&lt;User&gt;&gt; <span class="out">// all props required again</span>
+Readonly&lt;User&gt;       <span class="out">// all props readonly</span>
+Pick&lt;User, 'id' | 'name'&gt;   <span class="out">// { id: number; name: string }</span>
+Omit&lt;User, 'email'&gt;         <span class="out">// { id: number; name: string }</span>
+Record&lt;string, User&gt;        <span class="out">// { [k: string]: User }</span>
+
+function make(){ return { ok: true, n: 1 }; }
+ReturnType&lt;typeof make&gt;      <span class="out">// { ok: boolean; n: number }</span>
+Parameters&lt;typeof make&gt;      <span class="out">// []</span>
+
+keyof User                   <span class="out">// "id" | "name" | "email"</span>
+User['email']                <span class="out">// string  (indexed access)</span></pre>
+      <p><code class="k">keyof</code> gives the union of an object's keys; <code class="k">typeof value</code> lifts a runtime value into the type world; together <code class="k">typeof obj[keyof typeof obj]</code> is a common idiom for &ldquo;the union of a const object's values.&rdquo;</p>
+    </section>
+
+    <section id="mapped">
+      <div class="kicker">05 — Reading level</div>
+      <h2>Mapped &amp; conditional types</h2>
+      <p>You don't need to author fancy ones — you need to <strong>read and explain</strong> them.</p>
+      <h3>Mapped types</h3>
+      <pre><span class="cmt">// re-create Partial with a mapped type</span>
+type MyPartial&lt;T&gt; = { [K in keyof T]?: T[K] };
+<span class="cmt">// modifiers: ? adds optional, readonly adds immutability, - removes them</span>
+type Mutable&lt;T&gt; = { -readonly [K in keyof T]: T[K] };</pre>
+      <p>A mapped type iterates the keys of <code class="k">T</code> (<code class="k">K in keyof T</code>) and produces a property per key. You can add/remove <code class="k">?</code> and <code class="k">readonly</code>, and remap keys with <code class="k">as</code>.</p>
+      <h3>Conditional types</h3>
+      <pre>type IsString&lt;T&gt; = T extends string ? true : false;
+IsString&lt;'hi'&gt;   <span class="out">// true</span>
+IsString&lt;number&gt; <span class="out">// false</span>
+
+<span class="cmt">// infer extracts a type from a position</span>
+type ElementOf&lt;T&gt; = T extends (infer U)[] ? U : never;
+ElementOf&lt;string[]&gt;   <span class="out">// string</span></pre>
+      <p><code class="k">T extends U ? X : Y</code> picks a branch based on assignability; <code class="k">infer</code> captures a type from within the checked shape (here, the array's element type).</p>
+    </section>
+
+    <section id="react">
+      <div class="kicker">06 — Where FE meets types</div>
+      <h2>Typing React</h2>
+      <pre>type Props = {
+  title: string;
+  count?: number;                 <span class="cmt">// optional</span>
+  children: React.ReactNode;      <span class="cmt">// anything renderable</span>
+  onSelect: (id: string) =&gt; void;
+};
+
+<span class="cmt">// events</span>
+function onChange(e: React.ChangeEvent&lt;HTMLInputElement&gt;){ e.target.value; }
+function onClick(e: React.MouseEvent&lt;HTMLButtonElement&gt;){}
+function onSubmit(e: React.FormEvent&lt;HTMLFormElement&gt;){ e.preventDefault(); }
+
+<span class="cmt">// refs — note the null and the element type</span>
+const inputRef = useRef&lt;HTMLInputElement&gt;(null);
+inputRef.current?.focus();</pre>
+      <ul class="body">
+        <li>Type <code class="k">children</code> as <code class="k">React.ReactNode</code> (strings, elements, arrays, null).</li>
+        <li>Event handlers take a typed <code class="k">React.*Event&lt;HTMLElementType&gt;</code> — the element type gives you the right <code class="k">currentTarget</code>. <code class="k">ChangeEvent</code> is the special case that also re-types <code class="k">target</code>; elsewhere <code class="k">target</code> is just <code class="k">EventTarget</code>.</li>
+        <li>Refs are <code class="k">useRef&lt;T&gt;(null)</code>; <code class="k">.current</code> is <code class="k">T | null</code>, hence the optional chaining.</li>
+        <li>Many teams prefer typing props directly over <code class="k">React.FC</code> because it complicates generic components. (In older <code class="k">@types/react</code> before v18 it also forced an implicit <code class="k">children</code> prop; that was removed in the React 18 types, so today you declare <code class="k">children</code> yourself or use <code class="k">PropsWithChildren</code>.)</li>
+      </ul>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">07 — Drill until reflex</div>
+      <h2>&ldquo;What does this type resolve to?&rdquo; drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — Pick + Omit</div>
+        <pre>type T = { a: number; b: string; c: boolean };
+type X = Omit&lt;T, 'b'&gt;;
+type Y = Pick&lt;T, 'a'&gt;;</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">X = { a: number; c: boolean } · Y = { a: number }</div>
+          <p style="margin:0">Omit removes the listed keys; Pick keeps only the listed keys. They're complementary ways to derive a subset object type.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — as const</div>
+        <pre>const a = ['x', 'y'];
+const b = ['x', 'y'] as const;</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">a: string[] · b: readonly ["x", "y"]</div>
+          <p style="margin:0">Without <code class="k">as const</code>, TS widens to <code class="k">string[]</code>. With it, the value is frozen to a readonly tuple of literals — enabling <code class="k">typeof b[number]</code> to be the union <code class="k">"x" | "y"</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — why does this error?</div>
+        <pre>function area(s: { kind: 'circle'; r: number }
+              | { kind: 'square'; side: number }){
+  return s.r * s.r;   <span class="cmt">// ???</span>
+}</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">Property 'r' does not exist on the square member</div>
+          <p style="margin:0">Before narrowing, only members common to <em>all</em> union members are accessible; <code class="k">r</code> isn't on the square. Narrow first with <code class="k">if (s.kind === 'circle')</code>, then <code class="k">s.r</code> is valid.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — ReturnType</div>
+        <pre>const load = () =&gt; ({ id: 1, ok: true });
+type R = ReturnType&lt;typeof load&gt;;</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">R = { id: number; ok: boolean }</div>
+          <p style="margin:0"><code class="k">typeof load</code> gets the function's type; <code class="k">ReturnType</code> extracts what it returns. Great for deriving a type from a factory/selector instead of re-declaring it.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — the conceptual one</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Why model async UI as a discriminated union instead of <code class='k'>{ loading, error, data }</code> booleans?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Separate flags allow impossible combinations (loading && error && data), which every consumer must defensively handle. A discriminated union on <code class="k">status</code> makes illegal states unrepresentable and lets the compiler narrow to exactly the fields that exist in each state — fewer bugs, and exhaustiveness checking catches unhandled cases.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">08 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="generics">Generics</button>
+        <button class="fchip" data-f="unions">Unions</button>
+        <button class="fchip" data-f="narrow">Narrowing</button>
+        <button class="fchip" data-f="utility">Utility</button>
+        <button class="fchip" data-f="mapped">Mapped/cond</button>
+        <button class="fchip" data-f="react">React</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · make illegal states unrepresentable.</footer>
+
+<script>
+const QA = [["generics", "Generics", "What problem do generics solve?", "They let a function/type work over many types while preserving relationships between inputs and outputs, instead of falling back to any. A generic type parameter is filled in (often inferred) by the caller."], ["generics", "Generics", "What does T extends X do in a generic?", "It constrains the type parameter so callers can only supply types assignable to X, and lets the body safely use X's members. e.g. <T extends { length: number }> guarantees a length."], ["generics", "Generics", "How do you type a generic React component?", "Make the component function generic over the item type: function List<T>({ items, render }: { items: T[]; render: (i: T) => ReactNode }). T is inferred from the items prop at the call site."], ["unions", "Unions", "Union vs intersection?", "A | B means the value is one of the types (only common members accessible until narrowed). A & B means it has all members of both. Unions model choices; intersections combine capabilities."], ["unions", "Unions", "What is a discriminated union?", "A union whose members share a literal 'tag' field (the discriminant). Checking that field narrows to one member, so TypeScript knows exactly which properties exist — ideal for modelling loading/error/success state."], ["unions", "Unions", "How do you get exhaustiveness checking?", "In a switch over the discriminant, assign the value to a never in the default case. If a new union member is added but not handled, assigning it to never becomes a compile error."], ["unions", "Unions", "What does 'make illegal states unrepresentable' mean?", "Design types so invalid combinations can't be constructed — e.g. a discriminated union prevents having both data and error at once, unlike separate boolean flags. The compiler enforces valid shapes."], ["narrow", "Narrowing", "What is narrowing?", "Refining a broad type to a more specific one inside a branch, using typeof, instanceof, the in operator, truthiness, equality, or discriminant checks. Accessing member-specific fields is only allowed after narrowing."], ["narrow", "Narrowing", "What is a user-defined type guard?", "A function returning a type predicate x is T (e.g. isUser(x): x is User). When it returns true, TypeScript narrows x to T in the calling branch. Useful for validating unknown/external values."], ["narrow", "Narrowing", "What does as const do?", "It freezes a literal to its narrowest, readonly type — arrays become readonly tuples of literals, object properties become readonly literals. It bridges runtime values into precise types (e.g. deriving a union of values)."], ["utility", "Utility", "Partial vs Required vs Readonly?", "Partial<T> makes all properties optional; Required<T> makes them all required; Readonly<T> makes them all readonly. They're mapped types that toggle modifiers across every key."], ["utility", "Utility", "Pick vs Omit?", "Pick<T, K> keeps only the listed keys; Omit<T, K> removes the listed keys and keeps the rest. Complementary ways to derive a subset object type from an existing one."], ["utility", "Utility", "What do keyof and typeof do?", "keyof T gives the union of T's property keys. typeof value lifts a runtime value into its type. Combined, typeof obj[keyof typeof obj] yields the union of a const object's value types."], ["utility", "Utility", "What is Record<K, V>?", "A type for an object whose keys are K and values are V — e.g. Record<string, number> is { [key: string]: number }. Handy for dictionaries/lookup maps."], ["utility", "Utility", "What does ReturnType do?", "ReturnType<typeof fn> extracts the return type of a function type, so you can derive a type from a factory/selector rather than re-declaring it. Parameters<> similarly extracts the argument tuple."], ["mapped", "Mapped/cond", "What is a mapped type?", "A type that iterates over the keys of another type ([K in keyof T]) to build a new object type, optionally toggling ?/readonly modifiers and remapping keys with as. Partial and Readonly are mapped types."], ["mapped", "Mapped/cond", "What is a conditional type?", "T extends U ? X : Y — it selects a branch based on whether T is assignable to U. Combined with infer (which captures a type from a position), it can extract types, e.g. the element type of an array."], ["mapped", "Mapped/cond", "What does infer do?", "Inside a conditional type's extends clause, infer U introduces a type variable capturing part of the matched shape — e.g. T extends (infer U)[] ? U : never extracts an array's element type."], ["react", "React", "How do you type children?", "As React.ReactNode, which covers strings, numbers, elements, arrays, null/undefined — anything renderable. Prefer typing props directly over React.FC, which complicates generic components (and in @types/react before v18 also forced an implicit children prop; that was removed in React 18, so you now declare children yourself or use PropsWithChildren)."], ["react", "React", "How do you type an input change handler?", "(e: React.ChangeEvent<HTMLInputElement>) => void — the element type parameter gives e.target the correct type (e.g. .value). Similar generics exist for MouseEvent, FormEvent, KeyboardEvent."], ["react", "React", "How do you type a useRef to a DOM node?", "useRef<HTMLInputElement>(null). Its .current is HTMLInputElement | null, so you access it with optional chaining (ref.current?.focus()) since it's null before mount."], ["react", "React", "Are types available at runtime?", "No — types are erased during compilation. You can't check an interface with instanceof or reflect on types at runtime; validate external/unknown data with type guards or a schema library like Zod."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

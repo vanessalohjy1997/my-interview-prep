@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Component Architecture & Reuse — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#818CF8;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(129,140,248,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#C3C9FB}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(129,140,248,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#C3C9FB}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Component <em>Architecture</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> The goal</a>
+    <a href="#compose"><span class="n">01</span> Composition</a>
+    <a href="#patterns"><span class="n">02</span> Reuse patterns</a>
+    <a href="#bound"><span class="n">03</span> Boundaries</a>
+    <a href="#context"><span class="n">04</span> Context cost</a>
+    <a href="#redux"><span class="n">05</span> Redux &amp; stores</a>
+    <a href="#state"><span class="n">06</span> Server vs UI state</a>
+    <a href="#native"><span class="n">07</span> React vs Native</a>
+    <a href="#drills"><span class="n">08</span> Drills</a>
+    <a href="#bank"><span class="n">09</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Good architecture is <span>drawing the right boundaries.</span></h1>
+      <p class="lede">Reusable vs one-off, composition vs configuration, where Context's re-render cost bites, and the server-state / UI-state split that a trading frontend lives or dies by.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-chain"></span>Composition</span>
+        <span class="chip"><span class="dot d-ful"></span>Boundaries</span>
+        <span class="chip"><span class="dot d-pending"></span>Context</span>
+        <span class="chip"><span class="dot d-micro"></span>Server state</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — What we're optimising for</div>
+      <h2>Components as reuse boundaries</h2>
+      <p>Component architecture is the discipline of deciding <strong>what becomes a component, how components talk, and where a reusable boundary should sit</strong>. The goals are composability, testability, and <em>controlled</em> coupling — not maximum reuse for its own sake.</p>
+      <div class="note"><span class="lbl">The guiding tension</span>Every abstraction you add buys reuse and costs indirection. Senior judgement is knowing when the reuse is worth the indirection — and when it isn't yet.</div>
+    </section>
+
+    <section id="compose">
+      <div class="kicker">01 — The React way</div>
+      <h2>Composition over inheritance</h2>
+      <p>React has <strong>no component inheritance</strong>. You reuse and specialise by <em>composing</em>: passing <code class="k">children</code>, passing elements as props (&ldquo;slots&rdquo;), and wrapping.</p>
+      <pre>function Card({ header, children, footer }){
+  return (
+    &lt;section className="card"&gt;
+      {header &amp;&amp; &lt;header&gt;{header}&lt;/header&gt;}
+      &lt;div className="body"&gt;{children}&lt;/div&gt;
+      {footer &amp;&amp; &lt;footer&gt;{footer}&lt;/footer&gt;}
+    &lt;/section&gt;
+  );
+}</pre>
+      <p>Instead of subclassing a base card, callers <em>compose</em> content into named holes. This scales without an inheritance hierarchy and keeps each piece independently testable.</p>
+    </section>
+
+    <section id="patterns">
+      <div class="kicker">02 — The reuse toolbox</div>
+      <h2>Patterns for sharing</h2>
+      <ul class="body">
+        <li><strong>Compound components</strong> — a set that shares implicit state via Context so the consumer writes declarative markup: <code class="k">&lt;Tabs&gt;&lt;Tab/&gt;&lt;Tab/&gt;&lt;/Tabs&gt;</code>. The parent holds the active index; children read it from context.</li>
+        <li><strong>Render props / children-as-a-function</strong> — a component owns behaviour and hands data back: <code class="k">&lt;Motion&gt;{v =&gt; &lt;Box x={v}/&gt;}&lt;/Motion&gt;</code>.</li>
+        <li><strong>Higher-order components</strong> — a function wrapping a component. Largely <em>legacy</em>: prone to wrapper-hell and prop collisions.</li>
+        <li><strong>Custom hooks</strong> — the <em>modern</em> primitive for sharing stateful <strong>logic</strong>. Render props/compound components share <strong>structure</strong>; hooks share behaviour without touching the tree.</li>
+      </ul>
+      <pre><span class="cmt">// compound components via context</span>
+const TabsCtx = createContext(null);
+function Tabs({ children }){
+  const [active, setActive] = useState(0);
+  const value = useMemo(() =&gt; ({ active, setActive }), [active]); <span class="cmt">// stable value — see §04</span>
+  return &lt;TabsCtx.Provider value={value}&gt;{children}&lt;/TabsCtx.Provider&gt;;
+}
+function Tab({ index, children }){
+  const { active, setActive } = useContext(TabsCtx);
+  return &lt;button role="tab" aria-selected={active === index} onClick={() =&gt; setActive(index)}&gt;{children}&lt;/button&gt;;
+}</pre>
+    </section>
+
+    <section id="bound">
+      <div class="kicker">03 — One-off or reusable?</div>
+      <h2>Where to draw the boundary</h2>
+      <ul class="body">
+        <li><strong>Rule of three</strong> — abstract on the third real occurrence, not the first. Two similar things are often coincidence.</li>
+        <li><strong>Prop explosion is a smell</strong> — if making something reusable needs a dozen boolean/variant props, the abstraction is fighting its use cases. Consider composition (slots) instead of configuration.</li>
+        <li><strong>Coupling</strong> — a &ldquo;reusable&rdquo; component that reaches into a specific store, route, or API isn't reusable. Keep leaf/presentational components dumb; inject data via props.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">Say this</span>&ldquo;Prefer duplication over the wrong abstraction.&rdquo; Premature abstraction couples unrelated features together, and un-picking a bad shared component is far more expensive than copying a bit of markup.</div>
+    </section>
+
+    <section id="context">
+      <div class="kicker">04 — The hidden re-render cost</div>
+      <h2>Prop drilling vs Context</h2>
+      <p>Prop drilling (threading a prop through many layers) is tedious but explicit — though every layer in the chain re-renders too. Context removes the threading — but has a cost interviewers love: <strong>when a provider's <code class="k">value</code> changes, every consumer re-renders</strong>, even those that only use part of it, and even if their slice didn't change.</p>
+      <p>Mitigations:</p>
+      <ul class="body">
+        <li><strong>Split contexts</strong> by concern (e.g. separate a rarely-changing theme from fast-changing state), so a change wakes only the relevant consumers.</li>
+        <li><strong>Separate state and dispatch</strong> into two contexts — components that only dispatch don't re-render on state changes.</li>
+        <li><strong>Memoize the provider value</strong> so an unrelated parent re-render doesn't hand consumers a new object — though when the data itself changes, they all still re-render.</li>
+        <li>For high-frequency or selective reads, reach for a store with <strong>selectors</strong> (Redux, Zustand) that only re-render subscribers whose selected slice changed.</li>
+      </ul>
+      <div class="note"><span class="lbl">When to reach for a state library</span>Context is a dependency-injection mechanism, not a performance-optimised store. When many components read overlapping slices of frequently-changing global state, a selector-based store scales better than one big context.</div>
+    </section>
+
+    <section id="redux">
+      <div class="kicker">05 — When Context is the wrong tool</div>
+      <h2>Redux &amp; client state libraries</h2>
+
+      <p>Context solves <em>distribution</em> — getting a value to a deep consumer without threading props. It does not solve <em>subscription</em>: every consumer re-renders whenever the context value changes, whether or not it cares about the part that changed. A store library solves the second problem.</p>
+      <h3>The Redux model, in four rules</h3>
+      <ul class="body">
+        <li>All shared state lives in <strong>one store</strong>, a single serialisable object tree.</li>
+        <li>State is <strong>read-only</strong>. The only way to change it is to <code class="k">dispatch</code> an <strong>action</strong> — a plain object describing what happened, not what to set.</li>
+        <li>Changes are computed by <strong>pure reducers</strong>: <code class="k">(state, action) =&gt; newState</code>, returning a new object rather than mutating.</li>
+        <li>Components <strong>select</strong> the slice they need, and re-render only when that slice changes.</li>
+      </ul>
+      <p>Immutability is not stylistic. Reference comparison is what makes selector-level subscriptions cheap, what makes <code class="k">React.memo</code> work, and what makes time-travel debugging possible at all — every past state still exists because nothing was overwritten.</p>
+      <h3>Redux Toolkit is the answer to &ldquo;isn't Redux a lot of boilerplate?&rdquo;</h3>
+      <pre>const cartSlice = createSlice({
+  name: 'cart',
+  initialState: { items: [] },
+  reducers: {
+    added(state, action) { state.items.push(action.payload); },  <span class="cmt">// Immer draft</span>
+    removed(state, action) {
+      state.items = state.items.filter(i =&gt; i.id !== action.payload);
+    },
+  },
+});
+export const { added, removed } = cartSlice.actions;
+const store = configureStore({ reducer: { cart: cartSlice.reducer } });</pre>
+      <p>RTK generates the action types and creators, wires the DevTools and thunk middleware, and uses <strong>Immer</strong> so you write what looks like mutation against a draft while an immutable update is produced underneath. Hand-written switch statements and <code class="k">ACTION_TYPE</code> constants are legacy Redux, and saying so is part of the modern answer.</p>
+      <h3>Selectors</h3>
+      <pre>const total = useSelector(s =&gt; s.cart.items.length);          <span class="cmt">// fine: primitive</span>
+const items = useSelector(s =&gt; s.cart.items.filter(i =&gt; i.active)); <span class="cmt">// new array every time!</span></pre>
+      <p><code class="k">useSelector</code> re-renders when the selected value changes by reference. A selector that builds a new array or object on each call therefore re-renders on <em>every</em> store update. Fix it with <code class="k">createSelector</code> from Reselect, which memoises the derived result, or by selecting primitives and composing in the component. This is the most common real Redux performance bug and a very common interview question.</p>
+      <div class="note"><span class="lbl">Two more things worth knowing</span><strong>Normalise</strong> collections by id rather than storing nested arrays — <code class="k">createEntityAdapter</code> does this — so an update touches one entity instead of rewriting a list. And <strong>do not store derived data</strong>: compute it in a selector, or the two representations will drift.</div>
+      <h3>Do you actually need it?</h3>
+      <table class="tbl">
+        <tr><th>Need</th><th>Reach for</th></tr>
+        <tr><td>Server data — fetched, cached, refetched</td><td>TanStack Query, RTK Query, SWR — not a hand-rolled store</td></tr>
+        <tr><td>Local UI state</td><td><code class="k">useState</code> / <code class="k">useReducer</code>, colocated</td></tr>
+        <tr><td>A few stable values shared widely (theme, locale, current user)</td><td>Context</td></tr>
+        <tr><td>Complex client state, many writers, cross-cutting updates</td><td>A store: Redux Toolkit, Zustand, Jotai</td></tr>
+        <tr><td>Time-travel, replayable actions, offline queues, undo/redo</td><td>Redux specifically — the action log is the feature</td></tr>
+      </table>
+      <p><strong>Zustand</strong> gives you the same selector-based subscription with far less ceremony and no provider; <strong>Jotai</strong> models state as atoms rather than a single tree. Redux's distinguishing advantage is the serialisable action log — DevTools, replay, middleware — which is worth real boilerplate only if you use it.</p>
+      <div class="note gold"><span class="lbl">The answer to &ldquo;Redux or Context?&rdquo;</span>&ldquo;They solve different problems. Context distributes a value; it has no subscription granularity, so every consumer re-renders when it changes. A store adds selectors, so only components reading the changed slice re-render. I use Context for stable values, a query library for server state, and a store only when client state is genuinely complex and shared — and in that case Redux Toolkit, because the modern API is small.&rdquo;</div>
+    </section>
+
+    <section id="state">
+      <div class="kicker">06 — The textbook split</div>
+      <h2>Server state vs UI state</h2>
+      <p>The single most useful architectural distinction in a data-heavy app:</p>
+      <table class="tbl">
+        <tr><th></th><th>UI / client state</th><th>Server state</th></tr>
+        <tr><td>Examples</td><td>modals, form drafts, toggles, selected tab</td><td>account balances, order history, market data</td></tr>
+        <tr><td>Owned by</td><td>the client</td><td>the backend (you hold a cached copy)</td></tr>
+        <tr><td>Tools</td><td>local state / Redux / Zustand</td><td>TanStack Query / RTK Query / SWR</td></tr>
+        <tr><td>Concerns</td><td>synchronous, ephemeral</td><td>caching, dedup, background refetch, staleness</td></tr>
+      </table>
+      <p>Server state is asynchronous and <em>owned elsewhere</em>, so it needs caching, request de-duplication, background refetching, and stale-while-revalidate — exactly what a query library gives you. Dumping server data into Redux by hand means re-implementing all of that (loading flags, cache invalidation, refetch) manually and badly.</p>
+      <div class="note"><span class="lbl">The sharp answer</span>&ldquo;I keep UI state in a lightweight client store and server state in TanStack Query. Conflating them — hand-managing fetched data in Redux — recreates caching and invalidation logic the query layer already solves.&rdquo;</div>
+    </section>
+
+    <section id="native">
+      <div class="kicker">07 — Same React, different renderer</div>
+      <h2>React vs React Native</h2>
+
+      <p>The framing that answers this cleanly: <strong>React is the component model and reconciler; the renderer is pluggable.</strong> <code class="k">react-dom</code> renders to the DOM, <code class="k">react-native</code> renders to native platform views. Components, props, state, hooks, context, reconciliation and Suspense are the same library doing the same thing — what changes is what a &ldquo;host component&rdquo; is.</p>
+      <table class="tbl">
+        <tr><th></th><th>React DOM</th><th>React Native</th></tr>
+        <tr><td>Primitives</td><td><code class="k">div</code>, <code class="k">span</code>, <code class="k">img</code>, <code class="k">button</code></td><td><code class="k">View</code>, <code class="k">Text</code>, <code class="k">Image</code>, <code class="k">Pressable</code>, <code class="k">ScrollView</code></td></tr>
+        <tr><td>Styling</td><td>CSS: cascade, inheritance, selectors, media queries</td><td>JS style objects. No cascade, no selectors, no media queries; inheritance exists only inside <code class="k">&lt;Text&gt;</code> subtrees. Flexbox only, with different Yoga defaults — <code class="k">flexDirection: column</code>, <code class="k">flexShrink: 0</code></td></tr>
+        <tr><td>Units</td><td>px, rem, %, vh</td><td>Unitless density-independent numbers; percentages in some places</td></tr>
+        <tr><td>Text</td><td>Any element can hold text</td><td>Every string must be inside a <code class="k">&lt;Text&gt;</code></td></tr>
+        <tr><td>Navigation</td><td>URLs and the History API</td><td>React Navigation with a native stack; URLs only via deep linking</td></tr>
+        <tr><td>Storage</td><td>localStorage, IndexedDB, cookies</td><td>AsyncStorage or MMKV; no cookies by default</td></tr>
+        <tr><td>Platform APIs</td><td><code class="k">window</code>, <code class="k">document</code>, DOM events</td><td>Native modules; no DOM at all</td></tr>
+        <tr><td>Release</td><td>Deploy and every user has it</td><td>App store review; only JS-only changes can ship over the air (Expo/EAS Update — Microsoft's hosted CodePush shut down in March 2025)</td></tr>
+      </table>
+      <h3>How it runs</h3>
+      <p>Your JavaScript executes in an engine on the device — <strong>Hermes</strong>, these days — on its own thread, separate from the platform's main UI thread. Layout is computed with <strong>Yoga</strong>, a cross-platform flexbox implementation, which is why the layout system is flexbox and nothing else.</p>
+      <ul class="body">
+        <li><strong>The old architecture</strong> passed messages between JavaScript and native over an asynchronous <em>bridge</em>, serialising to JSON. That is the source of the classic complaints: janky lists, laggy gestures, an expensive startup.</li>
+        <li><strong>The new architecture</strong> replaces it with <strong>JSI</strong>, which lets JavaScript hold direct references to native objects and call them synchronously, plus <strong>Fabric</strong> (the new renderer) and <strong>TurboModules</strong> (lazily-loaded native modules with generated type-safe interfaces).</li>
+        <li>Animations should run on the UI thread, not the JS thread — <code class="k">useNativeDriver: true</code> with the Animated API, or Reanimated worklets. An animation driven from JS stutters as soon as the JS thread is busy. The standard follow-up: <code class="k">useNativeDriver</code> only supports non-layout properties such as <code class="k">transform</code> and <code class="k">opacity</code>, so you cannot native-drive <code class="k">width</code> or <code class="k">height</code> — the same compositor-versus-layout distinction as on the web.</li>
+      </ul>
+      <h3>What actually transfers between the two</h3>
+      <p>Say this plainly, because it is the practically useful part: <strong>logic ports, UI does not.</strong> Hooks, state management, API clients, validation, formatting, and tests around them are shared almost unchanged. Anything touching layout, styling, gestures, or navigation is rewritten. Teams that want more sharing use React Native for Web and a design system built on shared primitives — which works, at the cost of designing to the intersection of both platforms.</p>
+      <div class="note warn"><span class="lbl">Do not say &ldquo;React Native compiles to native code&rdquo;</span>It does not. Your JavaScript stays JavaScript, running in an engine on the device; React Native drives <em>real native views</em> rather than a WebView, which is the meaningful distinction from Cordova or Ionic. The components are genuinely native; the code driving them is not.</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">08 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the context that re-renders everything</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We put the whole app state in one Context. Now typing in a search box re-renders the entire tree. Why, and what do you change?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Any change to the provider's value re-renders all consumers. Since everything reads that one context, one keystroke wakes the whole tree. Fixes: split the context by concern, separate fast- from slow-changing state, memoize the value, or move to a selector-based store so only components using the changed slice re-render.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — reusable or not?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A teammate wants to extract a <code class='k'>&lt;Button&gt;</code> that already needs 11 boolean props to cover every screen. Good idea?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">The prop explosion is the tell — the abstraction is fighting its use cases. Prefer composition: a small unstyled base plus slots (icon, label) and a handful of variants, letting callers compose the rest. 11 booleans means 2^11 configurations you now own and must test.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — where does this data live?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Order-book data from the API and the &lsquo;is the trade panel open&rsquo; flag — same store?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">No. The order book is server state — cache it in a query library (dedup, background refetch, staleness). The panel-open flag is ephemeral UI state — local component state or a small UI store. Mixing them means hand-rolling caching for server data in a store that isn't built for it.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — HOC vs hook</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;You need to share &lsquo;current user&rsquo; logic across many components. HOC or custom hook today?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">A custom hook (<code class="k">useCurrentUser()</code>). It shares logic without adding wrapper layers, avoids prop-name collisions, and keeps the component tree flat. HOCs are legacy for this; render props are for sharing <em>structure</em>, not plain logic.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — the conceptual one</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Why 'composition over inheritance' in React specifically?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">React components are functions of props, not classes in a hierarchy; there's no meaningful 'extend a component.' Composition — children, slots, wrapping, and hooks — lets you specialise behaviour and structure without the fragile-base-class and tight-coupling problems inheritance brings. It's more flexible and matches React's data-flow model.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">09 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="compose">Composition</button>
+        <button class="fchip" data-f="patterns">Patterns</button>
+        <button class="fchip" data-f="bound">Boundaries</button>
+        <button class="fchip" data-f="context">Context</button>
+        <button class="fchip" data-f="redux">Redux</button>
+        <button class="fchip" data-f="state">Server vs UI</button>
+        <button class="fchip" data-f="rn">React Native</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · prefer duplication over the wrong abstraction.</footer>
+
+<script>
+const QA = [["compose", "Composition", "Why composition over inheritance in React?", "React components are functions of props with no inheritance model. You specialise via children, slots (elements as props), wrapping, and hooks — avoiding fragile base classes and tight coupling, and matching React's one-way data flow."], ["compose", "Composition", "What is a 'slot' in React?", "A prop that accepts renderable content (an element or node) which the component drops into a specific place — e.g. header/footer props on a Card. It's composition by named holes instead of configuration."], ["patterns", "Patterns", "What are compound components?", "A group of components that share implicit state through Context so consumers write declarative markup (Tabs/Tab, Select/Option). The parent holds state; children read it from context."], ["patterns", "Patterns", "What are render props / children-as-a-function?", "A component owns some behaviour or state and passes it back to the caller through a function child: <Mouse>{pos => ...}</Mouse>. Good for sharing structure/behaviour; custom hooks now cover many former use cases."], ["patterns", "Patterns", "HOCs vs custom hooks?", "HOCs wrap a component to inject props — legacy, prone to wrapper-hell and prop collisions. Custom hooks share stateful logic without touching the tree and are the modern default. Hooks share logic; compound/render-prop patterns share structure."], ["bound", "Boundaries", "When should you extract a reusable component?", "Around the rule of three — on the third real occurrence, not the first. Two similarities are often coincidence; abstracting too early couples unrelated features."], ["bound", "Boundaries", "Why is a pile of boolean/variant props a smell?", "It signals the abstraction is fighting its use cases — you own an exponential number of configurations to test. Prefer composition (slots + a few variants) over configuration by flags."], ["bound", "Boundaries", "What makes a component NOT reusable despite the name?", "Coupling — reaching into a specific store, route, or API. Keep presentational components dumb and inject data via props so they can be reused across contexts."], ["bound", "Boundaries", "'Duplication over the wrong abstraction' — meaning?", "A little copied code is cheap and local; a wrong shared abstraction couples unrelated callers so every change risks all of them. Wait for the pattern to be clear before abstracting."], ["context", "Context", "What is Context's main performance cost?", "When the provider's value changes, every consumer re-renders — even ones using only part of the value, and even if their slice didn't change. Context isn't a selective store."], ["context", "Context", "How do you reduce Context re-renders?", "Split contexts by concern, separate state from dispatch into two contexts, memoize the provider value, or use a selector-based store (Redux/Zustand) so only subscribers to the changed slice re-render."], ["context", "Context", "Prop drilling vs Context — trade-off?", "Prop drilling is explicit and cheap but verbose across many layers. Context removes threading but broadcasts re-renders to all consumers. Use Context for cross-cutting, slow-changing values; a store for frequently-changing shared state."], ["context", "Context", "When reach for a state library over Context?", "When many components read overlapping slices of frequently-changing global state. Selector-based stores re-render only affected subscribers, which Context can't do out of the box."], ["redux", "Redux", "What problem does Redux solve that Context does not?", "Subscription granularity. Context distributes a value, and every consumer re-renders whenever that value changes. A store lets each component select the slice it needs and re-render only when that slice changes, which is what makes widely-shared, frequently-updated state viable."], ["redux", "Redux", "Describe the Redux data flow.", "A component dispatches an action — a plain object describing what happened. A pure reducer computes the next state from the previous state and that action. Subscribed selectors see the change and the components reading the affected slice re-render. Data flows in one direction and every change has a named cause."], ["redux", "Redux", "Why does Redux insist on immutability?", "Because reference comparison drives everything: selectors detect change by identity, memoised components skip work by identity, and every past state remains intact, which is what makes time-travel debugging and action replay possible. Mutation breaks all three silently."], ["redux", "Redux", "What does Redux Toolkit change?", "It is the official modern API: configureStore wires the store, DevTools and thunk middleware; createSlice generates action types and creators from reducer functions; and Immer lets you write mutating-looking code against a draft while producing an immutable update. Hand-written switch reducers and action-type constants are legacy Redux."], ["redux", "Redux", "What is the most common Redux performance bug?", "A selector that returns a newly-created array or object, such as one ending in filter or map. useSelector compares by reference, so a fresh object every call means a re-render on every store update. Fix it with createSelector to memoise, or select primitives and derive in the component."], ["redux", "Redux", "What is createSelector for?", "Memoising derived state. It recomputes only when its input selectors return different references, so an expensive filter or aggregation runs once per real change rather than on every store update, and returns a stable reference that will not trigger re-renders."], ["redux", "Redux", "Should server data live in Redux?", "Usually not. Fetched data needs caching, deduplication, background refetching and staleness rules, which a query library — TanStack Query, RTK Query, SWR — provides. Hand-managing it in a store means reimplementing all of that badly."], ["redux", "Redux", "When would you choose Zustand or Jotai over Redux?", "When you want selector-based subscriptions without the ceremony: Zustand is a hook-based store with no provider and far less boilerplate, and Jotai models state as composable atoms rather than one tree. Redux earns its overhead when you actually use the serialisable action log — DevTools, replay, middleware, undo."], ["redux", "Redux", "Why normalise state?", "Storing entities in a lookup keyed by id, rather than nested inside arrays, means an update touches one record instead of rewriting a list, avoids duplicate copies drifting apart, and keeps selectors cheap. createEntityAdapter in RTK provides this shape and its reducers."], ["state", "Server vs UI", "What's the difference between server state and UI state?", "UI/client state is owned by the client and is ephemeral (modals, drafts, toggles). Server state is owned by the backend and cached client-side (balances, orders, market data) — it needs caching, dedup, refetching, and staleness handling."], ["state", "Server vs UI", "Why use TanStack Query instead of Redux for fetched data?", "Server state needs caching, request de-duplication, background refetch, and stale-while-revalidate. A query library provides those; hand-managing fetched data in Redux means re-implementing all of it manually (loading flags, invalidation, refetch)."], ["state", "Server vs UI", "Give the one-sentence split for a trading app.", "UI state (panel open, selected market) in local/lightweight client state; server state (order book, balances, order history) in a query library that caches and revalidates. Don't conflate them."], ["state", "Server vs UI", "Is Redux dead for this reason?", "No — Redux/Zustand are excellent for genuinely client-owned, cross-cutting UI/app state. The point is not to store server-owned data there by hand; pair a client store with a server-cache library."], ["rn", "React Native", "How does React Native differ from React?", "It is the same React — same components, hooks, state and reconciler — with a different renderer. Instead of producing DOM nodes it drives real native views, so the host primitives are View, Text and Image rather than div and span, and there is no DOM, no CSS, and no URL-based routing."], ["rn", "React Native", "Does React Native compile your JavaScript to native code?", "No. The JavaScript runs in an engine on the device, usually Hermes, on its own thread. What is native is the views it renders — unlike Cordova or Ionic, which render a web page inside a WebView."], ["rn", "React Native", "How does styling differ?", "Styles are JavaScript objects with no cascade and no selectors; inheritance exists only within Text subtrees, where a nested Text inherits colour and font from its parent. There are no media queries — responsive behaviour comes from useWindowDimensions. Layout is flexbox only, implemented by Yoga, with different defaults from the web: flexDirection is column and flexShrink is 0. Sizes are unitless density-independent numbers."], ["rn", "React Native", "What is the new architecture?", "The replacement for the old asynchronous JSON bridge: JSI lets JavaScript hold direct references to native objects and call them synchronously, Fabric is the new renderer, and TurboModules are lazily-loaded native modules with generated type-safe interfaces. It targets the startup cost and the list and gesture jank the bridge caused."], ["rn", "React Native", "Why do animations need useNativeDriver or Reanimated?", "Because an animation driven frame by frame from the JavaScript thread stutters whenever that thread is busy. Handing it to the UI thread keeps it smooth independently of what JavaScript is doing. Note the limit: useNativeDriver only supports non-layout properties like transform and opacity, so width and height cannot be native-driven."], ["rn", "React Native", "How much code can you share between web and native?", "Logic shares well: hooks, state management, API clients, validation, formatting, and their tests. UI generally does not, because layout, styling, gestures and navigation are platform-specific. React Native for Web plus a shared design system increases the overlap at the cost of designing to both platforms' intersection."], ["rn", "React Native", "How does releasing differ?", "Web deploys reach every user immediately. A native release goes through app store review, users may never update, and you must support older versions in the field. JavaScript-only changes can ship over the air with Expo or EAS Update — Microsoft's hosted CodePush shut down with App Center in March 2025, so a self-hosted server is the alternative — but anything touching native code needs a new binary."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

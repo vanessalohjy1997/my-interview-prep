@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Workers &amp; PWA — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#C084FC;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(192,132,252,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#E2C7FD}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(192,132,252,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#E2C7FD}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Service Workers &amp; <em>PWA</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> What a PWA is</a>
+    <a href="#lifecycle"><span class="n">01</span> The lifecycle</a>
+    <a href="#context"><span class="n">02</span> Scope &amp; context</a>
+    <a href="#strategies"><span class="n">03</span> Caching strategies</a>
+    <a href="#cache"><span class="n">04</span> The Cache API</a>
+    <a href="#update"><span class="n">05</span> The update problem</a>
+    <a href="#offline"><span class="n">06</span> Offline &amp; background</a>
+    <a href="#manifest"><span class="n">07</span> Manifest &amp; install</a>
+    <a href="#push"><span class="n">08</span> Push notifications</a>
+    <a href="#debug"><span class="n">09</span> Debugging &amp; pitfalls</a>
+    <a href="#drills"><span class="n">10</span> Drills</a>
+    <a href="#bank"><span class="n">11</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>A proxy you install on <span>someone else's device.</span></h1>
+      <p class="lede">Service workers make offline and installability possible — and make shipping an update genuinely hard. Lifecycle, caching strategies, the waiting problem, and the killswitch you want to have rehearsed before you need it.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Lifecycle</span>
+        <span class="chip"><span class="dot d-pending"></span>Caching</span>
+        <span class="chip"><span class="dot d-chain"></span>Updates</span>
+        <span class="chip"><span class="dot d-rej"></span>Install &amp; push</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — Three promises, one mechanism</div>
+      <h2>What a progressive web app actually is</h2>
+
+      <p>A PWA is not a framework or a checklist badge. It is a web app that makes three promises, each backed by a specific platform feature:</p>
+      <div class="states">
+        <div class="statebox ful"><div class="st-name">Reliable</div><p>It loads regardless of network — a <strong>service worker</strong> intercepting requests.</p></div>
+        <div class="statebox pending"><div class="st-name">Installable</div><p>It can live on the home screen and launch without browser chrome — a <strong>web app manifest</strong>.</p></div>
+        <div class="statebox"><div class="st-name">Capable</div><p>Push, background sync, file access, share targets — <strong>platform APIs</strong>, progressively.</p></div>
+      </div>
+      <p>The word that matters is <strong>progressive</strong>. Everything here is an enhancement: the app must work as an ordinary website first, and the service worker layer must be removable without breaking it. An interviewer asking about PWAs is usually really asking about the service worker — its lifecycle, its caching model, and the update problem it creates.</p>
+      <div class="note warn"><span class="lbl">The honest framing</span>A service worker is a programmable proxy you install on your users' devices, and it persists after you deploy. That power is exactly why the update story is the hard part — and why &ldquo;how do you ship a fix to users stuck on a bad service worker&rdquo; is a favourite senior question.</div>
+    </section>
+    <section id="lifecycle">
+      <div class="kicker">01 — Install, wait, activate</div>
+      <h2>The service worker lifecycle</h2>
+
+      <pre><span class="cmt">// page — register after load so it never competes with the first paint</span>
+<span class="kw">if</span> ('serviceWorker' <span class="kw">in</span> navigator) {
+  window.addEventListener('load', () =&gt; navigator.serviceWorker.register('/sw.js'));
+}</pre>
+      <pre><span class="cmt">// sw.js</span>
+<span class="kw">const</span> VERSION = 'v7';
+
+self.addEventListener('install', e =&gt; {
+  e.waitUntil(caches.open(VERSION).then(c =&gt; c.addAll(PRECACHE_URLS)));
+});
+
+self.addEventListener('activate', e =&gt; {
+  e.waitUntil(
+    caches.keys().then(keys =&gt;
+      Promise.all(keys.filter(k =&gt; k !== VERSION).map(k =&gt; caches.delete(k))))
+  );
+});
+
+self.addEventListener('fetch', e =&gt; { <span class="cmt">/* strategy goes here */</span> });</pre>
+      <table class="tbl">
+        <tr><th>Stage</th><th>What happens</th></tr>
+        <tr><td>register</td><td>The browser downloads <code class="k">sw.js</code> and compares it byte-for-byte with the installed copy. Identical means nothing happens.</td></tr>
+        <tr><td>install</td><td>Fires once per worker version. This is where you precache. <code class="k">waitUntil</code> keeps the worker alive until the promise settles; if it rejects, the install fails and the worker is discarded.</td></tr>
+        <tr><td>waiting</td><td>If an older worker still controls any open page, the new one <strong>waits</strong> — indefinitely. This is the single biggest source of &ldquo;my users are on an old build&rdquo;.</td></tr>
+        <tr><td>activate</td><td>Fires once the old worker is gone. Delete stale caches here — on the normal path nothing is using them any more. Note that <code class="k">skipWaiting()</code> breaks that guarantee: activate then runs while pages built against the old assets are still open, so keep the previous version's cache for one release.</td></tr>
+        <tr><td>idle / terminated</td><td>The browser kills an idle worker aggressively and restarts it on the next event. Nothing in module scope survives.</td></tr>
+      </table>
+      <div class="note"><span class="lbl">The detail people miss</span>The page that <em>registers</em> a service worker is not controlled by it. Control begins on the next navigation — or immediately if the worker calls <code class="k">clients.claim()</code> during activation. So a first-visit user gets no caching benefit at all, which is correct: they had to download everything anyway.</div>
+    </section>
+    <section id="context">
+      <div class="kicker">02 — A worker, not a page</div>
+      <h2>Scope, origin and execution context</h2>
+
+      <ul class="body">
+        <li><strong>HTTPS only</strong> — plus <code class="k">localhost</code> for development. A proxy that can rewrite every response is not something to expose over plain HTTP.</li>
+        <li><strong>Scope is path-based.</strong> A worker at <code class="k">/sw.js</code> controls the whole origin; one at <code class="k">/app/sw.js</code> controls only <code class="k">/app/</code>. You can widen scope beyond the script's directory only with a <code class="k">Service-Worker-Allowed</code> response header. This is why the file lives at the root.</li>
+        <li><strong>No DOM.</strong> There is no <code class="k">window</code>, no <code class="k">document</code>, no direct access to the page. The global is <code class="k">self</code>. You talk to pages via <code class="k">postMessage</code> and the <code class="k">Client</code> API.</li>
+        <li><strong>No synchronous storage.</strong> <code class="k">localStorage</code> is unavailable; use the <strong>Cache API</strong> and <strong>IndexedDB</strong>.</li>
+        <li><strong>It is event-driven and disposable.</strong> Never hold state in module scope expecting it to persist — the worker is terminated between events. Anything that must survive goes in IndexedDB.</li>
+        <li><strong>One worker, many tabs.</strong> The same worker serves every client in scope, so a message from one tab affects all of them.</li>
+      </ul>
+    </section>
+    <section id="strategies">
+      <div class="kicker">03 — Pick per request type</div>
+      <h2>Caching strategies</h2>
+
+      <p>There is no single right strategy — the correct one depends on whether staleness or unavailability is worse for that resource.</p>
+      <table class="tbl">
+        <tr><th>Strategy</th><th>Behaviour</th><th>Use for</th></tr>
+        <tr><td>Cache first</td><td>Serve from cache; only hit the network on a miss</td><td>Hashed, immutable build assets — fonts, JS, CSS with a content hash in the filename</td></tr>
+        <tr><td>Network first</td><td>Try the network; fall back to cache on failure or timeout</td><td>HTML documents and API reads where staleness is worse than latency</td></tr>
+        <tr><td>Stale-while-revalidate</td><td>Return the cached copy immediately, fetch and update in the background</td><td>Avatars, non-critical API data, anything where &ldquo;fast and slightly old&rdquo; wins</td></tr>
+        <tr><td>Cache only</td><td>Never touch the network</td><td>Precached app shell in a strictly offline-first design</td></tr>
+        <tr><td>Network only</td><td>Never cache</td><td>Analytics beacons, mutations, anything personalised or authenticated</td></tr>
+      </table>
+      <pre><span class="cmt">// stale-while-revalidate, by hand</span>
+self.addEventListener('fetch', event =&gt; {
+  <span class="kw">if</span> (event.request.method !== 'GET') <span class="kw">return</span>;   <span class="cmt">// never cache mutations</span>
+  event.respondWith((<span class="kw">async</span> () =&gt; {
+    <span class="kw">const</span> cache = <span class="kw">await</span> caches.open('runtime');
+    <span class="kw">const</span> cached = <span class="kw">await</span> cache.match(event.request);
+    <span class="kw">const</span> network = fetch(event.request).then(res =&gt; {
+      <span class="kw">if</span> (res.ok) cache.put(event.request, res.clone()); <span class="cmt">// clone: a body is read once</span>
+      <span class="kw">return</span> res;
+    }).catch(() =&gt; cached);                         <span class="cmt">// offline: don't reject</span>
+    event.waitUntil(network);                        <span class="cmt">// keep the worker alive for the write</span>
+    <span class="kw">return</span> cached || network;
+  })());
+});</pre>
+      <div class="note warn"><span class="lbl">Two rules that catch everyone</span>Only ever cache <code class="k">GET</code> — the Cache API rejects other methods, and caching a mutation is a correctness bug regardless. And <strong>clone the response before caching</strong>: a body stream can be consumed only once, so putting the original in the cache leaves the page with an already-read response.</div>
+    </section>
+    <section id="cache">
+      <div class="kicker">04 — Storage you control completely</div>
+      <h2>The Cache API</h2>
+
+      <p>The Cache API stores <code class="k">Request</code>/<code class="k">Response</code> pairs and is entirely under your control — it ignores <code class="k">Cache-Control</code>, has no expiry, and evicts nothing on its own. That is a feature and a hazard: <strong>nothing expires until you delete it</strong>.</p>
+      <pre><span class="kw">const</span> cache = <span class="kw">await</span> caches.open('assets-v7');
+<span class="kw">await</span> cache.addAll(['/', '/app.css', '/app.js']);  <span class="cmt">// atomic: all or nothing</span>
+<span class="kw">const</span> hit = <span class="kw">await</span> caches.match(req, { ignoreSearch: <span class="kw">true</span> });
+<span class="kw">await</span> caches.delete('assets-v6');</pre>
+      <h3>Service worker cache vs HTTP cache</h3>
+      <p>They are separate layers. A request goes <strong>page &rarr; service worker &rarr; HTTP cache &rarr; network</strong>. So a <code class="k">fetch()</code> inside your worker can still be answered by the browser's HTTP cache — pass <code class="k">{ cache: 'no-store' }</code> or <code class="k">'reload'</code> when you need to guarantee a real network hit, for instance when revalidating.</p>
+      <h3>Opaque responses</h3>
+      <p>A cross-origin request without CORS returns an <strong>opaque</strong> response: status <code class="k">0</code>, unreadable body and headers. You can cache it and replay it, but you cannot tell whether it succeeded — a 404 caches just as happily as a 200 — and browsers pad its quota cost substantially. Prefer requesting cross-origin assets with CORS (<code class="k">crossorigin</code> on the tag) so you get a real response to inspect.</p>
+      <h3>Quota</h3>
+      <p>Cache Storage and IndexedDB share one origin quota. Check it with <code class="k">navigator.storage.estimate()</code>, and request durability with <code class="k">navigator.storage.persist()</code> — without it, storage is best-effort and can be evicted under pressure, which is a normal condition to design for rather than an error.</p>
+    </section>
+    <section id="update">
+      <div class="kicker">05 — The genuinely hard part</div>
+      <h2>The update problem</h2>
+
+      <p>Here is the sequence that produces a support ticket. You deploy. The browser fetches <code class="k">sw.js</code> on the next navigation, sees it changed, installs the new worker — and then it <strong>waits</strong>, because the open tab is still controlled by the old one. A normal reload does not help: navigating within the tab keeps that client alive. The user must close every tab on the origin. Most never will.</p>
+      <p>You have two ways out, and you should be able to argue for both.</p>
+      <table class="tbl">
+        <tr><th>Approach</th><th>Trade-off</th></tr>
+        <tr><td><code class="k">self.skipWaiting()</code> in install</td><td>The new worker activates immediately. But the currently-loaded page was built against the <em>old</em> assets and is now served by the new worker and new cache — lazily-loaded chunks it expects may be gone. Version skew, mid-session.</td></tr>
+        <tr><td>Prompt to reload</td><td>Detect the waiting worker, show &ldquo;A new version is available — Reload&rdquo;, and only then message the worker to <code class="k">skipWaiting</code> and reload the page. Slower to roll out, but never breaks a live session.</td></tr>
+      </table>
+      <pre><span class="cmt">// page: detect an update and offer a reload</span>
+<span class="kw">const</span> offer = sw =&gt; showUpdateToast(() =&gt; sw.postMessage({ type: 'SKIP_WAITING' }));
+
+<span class="kw">const</span> reg = <span class="kw">await</span> navigator.serviceWorker.register('/sw.js');
+<span class="kw">if</span> (reg.waiting) offer(reg.waiting);   <span class="cmt">// already waiting before we loaded</span>
+reg.addEventListener('updatefound', () =&gt; {
+  <span class="kw">const</span> sw = reg.installing;
+  sw.addEventListener('statechange', () =&gt; {
+    <span class="kw">if</span> (sw.state === 'installed' &amp;&amp; navigator.serviceWorker.controller) offer(sw);
+  });
+});
+
+<span class="cmt">// reload once the new worker takes over — guard it, or this can loop</span>
+<span class="kw">let</span> refreshing = <span class="kw">false</span>;
+navigator.serviceWorker.addEventListener('controllerchange', () =&gt; {
+  <span class="kw">if</span> (refreshing) <span class="kw">return</span>;
+  refreshing = <span class="kw">true</span>;
+  location.reload();
+});</pre>
+      <div class="note warn"><span class="lbl">Never cache sw.js aggressively</span>Since Chrome 68 browsers <strong>ignore caching headers on the top-level worker script by default</strong> (the registration's <code class="k">updateViaCache</code> defaults to <code class="k">'imports'</code>), so the update check is already a real network revalidation. Serve it with <code class="k">Cache-Control: no-cache</code> anyway: that protects you from CDN and proxy caches, from anyone setting <code class="k">updateViaCache: 'all'</code>, and it still governs anything you pull in with <code class="k">importScripts()</code>. Cache the assets, never the thing that controls them.</div>
+      <div class="note gold"><span class="lbl">The killswitch — a great answer to have ready</span>&ldquo;If a bad worker ships, I deploy a minimal <code class="k">sw.js</code> that calls <code class="k">self.registration.unregister()</code>, clears all caches, and reloads its clients. Because the browser revalidates the worker script over the network on the next in-scope navigation, that reaches every affected user without them having to clear anything. It is worth knowing before you need it.&rdquo;</div>
+    </section>
+    <section id="offline">
+      <div class="kicker">06 — Design for the failure, not just the cache</div>
+      <h2>Offline UX &amp; background work</h2>
+
+      <ul class="body">
+        <li><strong>An offline fallback page.</strong> Precache <code class="k">/offline.html</code> and serve it when a navigation request fails. It is a few lines and the difference between your brand and the browser's dinosaur.</li>
+        <li><strong>Navigation preload.</strong> Booting a terminated worker adds latency to every navigation. <code class="k">self.registration.navigationPreload.enable()</code> starts the network request in parallel with worker startup; read it from <code class="k">event.preloadResponse</code>.</li>
+        <li><strong>IndexedDB for data.</strong> The Cache API stores responses; structured, queryable, mutable data belongs in IndexedDB (via <code class="k">idb</code> or Dexie — the raw API is unpleasant).</li>
+        <li><strong>Background Sync.</strong> Queue a failed mutation and register a <code class="k">sync</code> tag; the browser fires a <code class="k">sync</code> event when connectivity returns, even if the page is closed. Chromium-only, so treat it as an enhancement over an in-page retry queue, never as the only path.</li>
+        <li><strong>Be honest in the UI.</strong> Show what is cached versus live, disable actions that cannot work offline, and queue the ones that can. Silently accepting a write that never lands is worse than refusing it.</li>
+      </ul>
+      <div class="note"><span class="lbl">navigator.onLine is not a connectivity check</span>It only reports whether the device has a network interface. Connected to a captive-portal Wi-Fi with no route out, it is <code class="k">true</code>. Use it as a hint; determine real reachability from whether your requests succeed.</div>
+    </section>
+    <section id="manifest">
+      <div class="kicker">07 — Making it installable</div>
+      <h2>The web app manifest</h2>
+
+      <pre>{
+  "name": "Acme Markets",
+  "short_name": "Acme",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1416",
+  "theme_color": "#0B1416",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}</pre>
+      <ul class="body">
+        <li><code class="k">display: standalone</code> removes browser chrome; <code class="k">minimal-ui</code> keeps a slim bar; <code class="k">browser</code> opts out of an app window entirely.</li>
+        <li><strong>Maskable icons</strong> matter: Android crops icons to the platform's shape, and a non-maskable icon gets its edges cut off. Provide a <code class="k">purpose: "maskable"</code> variant with padding.</li>
+        <li><code class="k">start_url</code> is where a launch from the home screen lands — usually worth tagging so you can measure installed usage separately.</li>
+        <li>Installability on Chromium requires HTTPS (or localhost) and a manifest with a <code class="k">name</code> or <code class="k">short_name</code>, 192px and 512px icons, a <code class="k">start_url</code>, and a suitable <code class="k">display</code>. A service worker with a <code class="k">fetch</code> handler <em>used</em> to be required; Chrome dropped that for menu installs in version 108 on Android and 112 on desktop. Know both, because a lot of material still recites the old list.</li>
+      </ul>
+      <h3>The install prompt</h3>
+      <pre><span class="kw">let</span> deferred;
+window.addEventListener('beforeinstallprompt', e =&gt; {
+  e.preventDefault();          <span class="cmt">// stop the mini-infobar</span>
+  deferred = e;                <span class="cmt">// stash it</span>
+  showInstallButton();
+});
+installBtn.onclick = <span class="kw">async</span> () =&gt; { deferred.prompt(); <span class="kw">await</span> deferred.userChoice; deferred = <span class="kw">null</span>; };</pre>
+      <div class="note warn"><span class="lbl">iOS is different</span>Safari has no <code class="k">beforeinstallprompt</code> — users install via Share &rarr; Add to Home Screen, so you can only <em>instruct</em>, not prompt. iOS has supported service workers since 11.3, but Safari clears a site's script-writable storage — including its service worker registration — after <strong>seven days of Safari use without interaction with that site</strong>. A web app the user has added to the Home Screen is exempt: it runs outside Safari with its own use counter. So the cache is fragile for a browsed tab and durable for an installed app, which is one more argument for driving installs on iOS.</div>
+    </section>
+    <section id="push">
+      <div class="kicker">08 — Two APIs, one permission</div>
+      <h2>Push notifications</h2>
+
+      <p>Push is two specs working together, and confusing them is a common stumble. The <strong>Push API</strong> delivers a message from your server to the service worker, even with the page closed. The <strong>Notifications API</strong> is what actually displays something. Push does not have to result in a notification — although on most browsers you are required to show one for every push you receive.</p>
+      <pre><span class="cmt">// page: subscribe (must be behind a user gesture and a real explanation)</span>
+<span class="kw">const</span> sub = <span class="kw">await</span> reg.pushManager.subscribe({
+  userVisibleOnly: <span class="kw">true</span>,
+  applicationServerKey: vapidPublicKey,
+});
+<span class="kw">await</span> fetch('/api/subscriptions', { method: 'POST', body: JSON.stringify(sub) });
+
+<span class="cmt">// sw.js: receive</span>
+self.addEventListener('push', e =&gt; {
+  <span class="kw">const</span> data = e.data.json();
+  e.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body,
+    data: { url: data.url },          <span class="cmt">// travels with the notification</span>
+  }));
+});
+self.addEventListener('notificationclick', e =&gt; {
+  e.notification.close();
+  <span class="cmt">// e.notification.data — NOT e.data, which does not exist on this event</span>
+  e.waitUntil(clients.openWindow(e.notification.data?.url ?? '/'));
+});</pre>
+      <ul class="body">
+        <li><strong>VAPID</strong> keys identify your server to the push service; the subscription object contains the endpoint and the keys needed to encrypt payloads.</li>
+        <li><strong>Ask at the right moment.</strong> Requesting permission on page load is the fastest way to a permanent block — and a denial cannot be re-prompted. Explain the value first, ask on a gesture.</li>
+        <li><strong>iOS requires installation.</strong> Web push works on iOS 16.4 and later, but only for a web app added to the Home Screen.</li>
+      </ul>
+    </section>
+    <section id="debug">
+      <div class="kicker">09 — Where it goes wrong</div>
+      <h2>Debugging &amp; the classic failures</h2>
+
+      <ul class="body">
+        <li><strong>DevTools &rarr; Application &rarr; Service Workers.</strong> &ldquo;Update on reload&rdquo; forces a new worker every load — the single most useful development setting. &ldquo;Bypass for network&rdquo; ignores the worker entirely; &ldquo;Unregister&rdquo; resets the state you have accidentally cached.</li>
+        <li><strong>Cache Storage</strong> in the same panel shows exactly what you cached, which is usually where the bug is visible.</li>
+        <li><strong>Lighthouse no longer has a PWA category</strong> — it was removed in Lighthouse 12. Verify installability from the Application panel and the browser's install affordance, not from an audit score.</li>
+      </ul>
+      <table class="tbl">
+        <tr><th>Failure</th><th>Cause</th><th>Fix</th></tr>
+        <tr><td>Users stuck on an old build</td><td>The new worker is stuck in <em>waiting</em></td><td>An update prompt, or skipWaiting with versioned assets</td></tr>
+        <tr><td>White screen after deploy</td><td>Cached HTML references hashed chunks that no longer exist</td><td>Network-first for documents; keep the previous build's assets around for one release</td></tr>
+        <tr><td>Stale API data forever</td><td>Cache-first applied to an API route</td><td>Network-first or SWR, and never cache authenticated responses</td></tr>
+        <tr><td>Cached 404s and errors</td><td>Caching a response without checking <code class="k">res.ok</code>, or caching opaque responses</td><td>Only cache successful, non-opaque responses</td></tr>
+        <tr><td>One user seeing another's data</td><td>Caching a personalised response in a shared cache</td><td>Network-only for anything behind auth; clear caches on logout</td></tr>
+      </table>
+      <div class="note gold"><span class="lbl">Closing line</span>&ldquo;I treat the service worker as deployed infrastructure, not a build artifact: versioned caches, cleanup on activate, network-first for documents, cache-first only for content-hashed assets, an explicit update prompt, and a rehearsed killswitch.&rdquo;</div>
+    </section>
+    <section id="drills">
+      <div class="kicker">10 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the deploy that nobody receives</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We shipped a fix two days ago. Analytics say a third of users are still on the old bundle. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">The new service worker installed and is sitting in <em>waiting</em>, because those users have never closed every tab on the origin — a reload is not enough to release the old worker. Short term: ship an update flow that detects <code class='k'>reg.waiting</code>, tells the user a new version is available, posts <code class='k'>SKIP_WAITING</code>, and reloads on <code class='k'>controllerchange</code>. Also confirm <code class='k'>sw.js</code> is served with <code class='k'>Cache-Control: no-cache</code>, or the browser may not even have noticed the change.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — white screen after release</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;After each deploy, some users get a blank page until they hard-refresh. What is happening?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">The HTML is being served cache-first. Users get the previous <code class='k'>index.html</code>, which references content-hashed chunks that no longer exist on the CDN, so the app fails to boot. Use <strong>network-first for navigation requests</strong> with a cached fallback, keep cache-first only for hashed assets (which are safe because their URL changes), and retain the previous build's assets for one release so an in-flight session can still load its chunks.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — pick a strategy</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;For each: the app shell HTML, /static/main.4f3a.js, GET /api/portfolio, a user avatar image.&rdquo;</div>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">network-first · cache-first · network-only · SWR</div>
+          <p style="margin:0"><strong>Shell HTML</strong> — network-first with a cached fallback: you want the newest, but never a blank page offline. <strong>Hashed JS</strong> — cache-first: the URL changes when the content changes, so it can be treated as immutable. <strong>/api/portfolio</strong> — network-only or network-first with a short-lived cache; it is authenticated and personalised, so a shared cache is a data-leak risk and must be cleared on logout. <strong>Avatar</strong> — stale-while-revalidate: instant, and slightly stale is harmless.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — spot the bug</div>
+        <pre>self.addEventListener('fetch', e =&gt; {
+  e.respondWith(
+    fetch(e.request).then(res =&gt; {
+      caches.open('v1').then(c =&gt; c.put(e.request, res));
+      return res;
+    })
+  );
+});</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Missing clone, no method/status guard, unawaited write</div>
+          <p style="margin:0">Three problems. <strong>1)</strong> The response body is a stream that can be read once — putting <code class='k'>res</code> in the cache and also returning it means one consumer gets an empty body. Cache <code class='k'>res.clone()</code>. <strong>2)</strong> There is no method or status check: this caches <code class='k'>POST</code>s (<code class='k'>cache.put</code> rejects with a <code class='k'>TypeError</code> for any non-GET request, and since nothing awaits it you get a silent unhandled rejection) and caches 404s and 500s as if they were content. Guard on <code class='k'>e.request.method === 'GET'</code> and <code class='k'>res.ok</code>. <strong>3)</strong> The <code class='k'>caches.open</code> promise is not passed to <code class='k'>e.waitUntil</code>, so the worker may be terminated before the write completes.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — get me out of this</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A service worker we shipped breaks the site for anyone who has it. What do you do?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Deploy a killswitch worker at the same URL: it calls <code class='k'>self.skipWaiting()</code> on install, then on activate calls <code class='k'>self.registration.unregister()</code>, deletes every cache with <code class='k'>caches.keys()</code>, and reloads its clients via the Clients API. Because the browser revalidates the worker script over the network on their next in-scope navigation, this reaches every affected user without them having to clear anything — though a user who never returns is never reached. Serving <code class='k'>sw.js</code> with <code class='k'>no-cache</code> from day one keeps CDNs and proxies out of that path.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">11 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="life">Lifecycle</button>
+        <button class="fchip" data-f="cache">Caching</button>
+        <button class="fchip" data-f="update">Updates</button>
+        <button class="fchip" data-f="offline">Offline</button>
+        <button class="fchip" data-f="install">Install</button>
+        <button class="fchip" data-f="push">Push</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · deployed infrastructure, not a build artifact</footer>
+
+<script>
+const QA = [["life", "Lifecycle", "What is a service worker?", "A script the browser runs in a worker context, separate from any page, that acts as a programmable network proxy for its scope. It can intercept fetches, serve from its own cache, and receive push and sync events while no page is open. It has no DOM access and is terminated whenever idle."], ["life", "Lifecycle", "What are the lifecycle stages?", "Register, install, waiting, activate, then idle or terminated. Install is where you precache; the worker waits while an older one still controls a page; activate is where you delete stale caches; and the browser kills an idle worker and restarts it on the next event."], ["life", "Lifecycle", "Why does a new service worker get stuck in waiting?", "Because an older worker still controls at least one open client. Reloading a tab does not release it — every tab on the origin must be closed. skipWaiting activates immediately instead, at the cost of version skew for pages already loaded."], ["life", "Lifecycle", "What do skipWaiting and clients.claim do?", "skipWaiting tells an installing worker not to wait for old clients to close, so it activates right away. clients.claim makes a newly activated worker take control of pages that are already open and would otherwise remain uncontrolled until their next navigation."], ["life", "Lifecycle", "Is the page that registers a service worker controlled by it?", "No. Control starts on the next navigation, unless the worker calls clients.claim during activation. So the first visit gets no caching benefit, which is expected — those assets had to be downloaded anyway."], ["life", "Lifecycle", "Why can't you keep state in a service worker's module scope?", "The browser terminates an idle worker aggressively and restarts it for the next event, so module-level variables are lost without warning. Anything that must survive belongs in IndexedDB or the Cache API."], ["life", "Lifecycle", "What does event.waitUntil do?", "It extends the lifetime of the event so the browser will not terminate the worker until the promise you pass settles. Without it, asynchronous work started in install, activate, or push can be killed halfway."], ["life", "Lifecycle", "What is service worker scope?", "The path prefix a worker controls, defaulting to the directory of its script. A worker at /sw.js controls the whole origin; one at /app/sw.js controls only /app/. Serving a Service-Worker-Allowed header lets you widen the scope beyond the script's directory."], ["cache", "Caching", "Name the main caching strategies and when to use each.", "Cache-first for content-hashed immutable assets. Network-first for HTML documents and API reads where staleness is worse than latency. Stale-while-revalidate for things that can be slightly old, like avatars. Cache-only for a strictly offline shell, and network-only for mutations, analytics, and anything authenticated."], ["cache", "Caching", "How does the Cache API differ from the HTTP cache?", "The Cache API is explicit storage you control from JavaScript: it ignores Cache-Control, never expires entries, and evicts nothing until you delete it. The HTTP cache is managed by the browser according to response headers. They are separate layers — a fetch inside the worker still passes through the HTTP cache."], ["cache", "Caching", "Why must you clone a response before caching it?", "A Response body is a stream that can be consumed only once. If you put the original into the cache and also return it to the page, one of them receives an empty body. Cache res.clone() and return the original."], ["cache", "Caching", "What is an opaque response?", "The result of a no-cors cross-origin request: status 0, with no readable headers or body. You can cache and replay it but cannot tell whether it succeeded, so errors cache as readily as content, and browsers pad its quota cost heavily. Request cross-origin assets with CORS where you can."], ["cache", "Caching", "How do you avoid caching the wrong things?", "Only handle GET, check res.ok before caching, never cache authenticated or personalised responses in a shared cache, and clear caches on logout. Caching a 404 or one user's data is the failure mode people actually hit in production."], ["cache", "Caching", "How do you manage cache size and cleanup?", "Version the cache name and delete other versions in the activate event, capping runtime caches by entry count or age. One caveat: if you call skipWaiting, activate runs while pages built against the old assets are still open, so retain the previous version for one release. Check space with navigator.storage.estimate, and remember that without navigator.storage.persist the browser may evict your storage under pressure."], ["update", "Updates", "How does the browser decide a service worker has changed?", "On navigation, and periodically, it refetches the worker script and compares it byte-for-byte with the installed copy. Any difference starts a new install. This is also why the script must not be cached aggressively."], ["update", "Updates", "What headers should sw.js be served with?", "Cache-Control: no-cache. Since Chrome 68 browsers ignore caching headers on the top-level worker script by default — updateViaCache defaults to 'imports' — so the update check is already a real network revalidation. Sending no-cache anyway protects you from CDN and proxy caches, from anyone setting updateViaCache to 'all', and it still governs scripts pulled in with importScripts."], ["update", "Updates", "How do you prompt users to update?", "Check reg.waiting on load in case a worker was already waiting, and listen for updatefound — when the installing worker reaches the installed state and a controller already exists, an update is ready. Show a toast, post SKIP_WAITING to that worker on click, and reload on controllerchange behind a guard flag so the reload cannot loop."], ["update", "Updates", "What is the risk of calling skipWaiting unconditionally?", "The page currently open was built against the old assets but is now served by the new worker and its new cache. Lazily-loaded chunks it expects may no longer exist, breaking a live session. It is safe only if you keep old assets available or accept an immediate reload."], ["update", "Updates", "How do you recover from shipping a broken service worker?", "Deploy a killswitch at the same URL: skipWaiting on install, then on activate call registration.unregister, delete all caches, and reload the clients. The browser revalidates the worker script over the network, so it reaches each affected user on their next in-scope navigation without them clearing anything."], ["offline", "Offline", "How do you build an offline experience?", "Precache an app shell and an offline fallback page during install, serve navigations network-first and fall back to the cached shell or offline page, keep data in IndexedDB, and make the UI honest about what is cached versus live rather than silently accepting writes that cannot land."], ["offline", "Offline", "What is navigation preload?", "An optimisation that lets the browser start the network request for a navigation in parallel with booting a terminated service worker, so worker startup no longer adds latency. Enable it in activate and read event.preloadResponse in the fetch handler."], ["offline", "Offline", "When would you use IndexedDB over the Cache API?", "The Cache API stores whole request and response pairs — good for assets and fetched documents. IndexedDB stores structured, queryable, mutable records, which is what you need for offline data, a mutation queue, or anything you must read by key or index."], ["offline", "Offline", "What is Background Sync?", "A service worker event that fires when connectivity returns, letting you flush queued mutations even if the page has been closed. It is Chromium-only, so it must be an enhancement on top of an in-page retry queue, never the only delivery path."], ["offline", "Offline", "Is navigator.onLine reliable?", "No. It only tells you whether the device has a network interface, so it reports true on a captive-portal Wi-Fi with no route out. Treat it as a hint and infer real reachability from whether your requests succeed."], ["install", "Install", "What is the web app manifest for?", "It describes the app to the operating system: name, icons, start_url, scope, display mode, and theme colours. It is what makes the app installable and controls how it launches from the home screen."], ["install", "Install", "What is a maskable icon?", "An icon with enough padding that a platform can crop it to its own shape — a circle, a squircle — without cutting off content. Declare it with purpose: 'maskable'; without one, Android crops your normal icon and it looks wrong."], ["install", "Install", "How does the install prompt work?", "On Chromium, the browser fires beforeinstallprompt; you preventDefault to suppress the default mini-infobar, stash the event, and call prompt() later from your own button in response to a user gesture. Safari has no such API — iOS users install through Share, Add to Home Screen."], ["install", "Install", "What is different about PWAs on iOS?", "No beforeinstallprompt, so you can only instruct users to add to the home screen. Service workers have been supported since 11.3, but Safari clears a site's script-writable storage, including its service worker registration, after seven days of Safari use without interaction with that site — a home-screen app is exempt because it runs outside Safari with its own counter. Web push requires iOS 16.4 or later and an installed home-screen app."], ["push", "Push", "How do web push notifications work?", "The page subscribes via pushManager.subscribe with a VAPID public key and sends the resulting subscription to your server. Your server posts an encrypted payload to the subscription endpoint; the browser wakes the service worker with a push event, which calls showNotification."], ["push", "Push", "What is the difference between the Push API and the Notifications API?", "Push delivers a message from your server to the service worker, even with no page open. Notifications display something to the user. They are separate — though most browsers require that you show a notification for each push you receive, which is what userVisibleOnly declares."], ["push", "Push", "What is the right permission UX for notifications?", "Never ask on page load. Explain the value in your own UI first, then request permission from a user gesture at a moment where the benefit is obvious. A denial is permanent as far as your code is concerned — only the user can undo it in site settings — and browsers auto-block after repeated dismissals, not just after an explicit no."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

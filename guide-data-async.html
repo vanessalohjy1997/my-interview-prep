@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Fetching & Async UI — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#F472B6;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(244,114,182,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#F9BFDD}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(244,114,182,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#F9BFDD}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Data &amp; <em>Async UI</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Four states</a>
+    <a href="#fetch"><span class="n">01</span> Fetching patterns</a>
+    <a href="#race"><span class="n">02</span> Race conditions</a>
+    <a href="#optimistic"><span class="n">03</span> Optimistic updates</a>
+    <a href="#ws"><span class="n">04</span> WebSocket state</a>
+    <a href="#drills"><span class="n">05</span> Drills</a>
+    <a href="#bank"><span class="n">06</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Async UI is <span>honest state</span> under changing inputs.</h1>
+      <p class="lede">Represent loading, error, and data truthfully — then handle the hard parts: out-of-order responses, cancellation, optimistic rollback, and high-frequency websocket streams like an order book.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-pending"></span>Loading</span>
+        <span class="chip"><span class="dot d-rej"></span>Error</span>
+        <span class="chip"><span class="dot d-ful"></span>Data</span>
+        <span class="chip"><span class="dot d-micro"></span>Live streams</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The shape of async data</div>
+      <h2>Model the states honestly</h2>
+      <p>Every data-driven view is a small state machine: <strong>idle &rarr; loading &rarr; (success | error)</strong>, plus refetching. Bugs come from collapsing that into loose booleans that permit impossible combinations. Model it as one value (a discriminated union — see the TypeScript tab), and the UI can't show a spinner and an error at once.</p>
+      <p>Promises themselves have their own tab; here the focus is the <em>UI patterns</em> around fetching data.</p>
+    </section>
+
+    <section id="fetch">
+      <div class="kicker">01 — How to fetch</div>
+      <h2>Data-fetching patterns</h2>
+      <ul class="body">
+        <li><strong>Fetch-on-render</strong> — component mounts, <em>then</em> its effect starts the request. Simple, but causes request <em>waterfalls</em> when nested components each fetch after rendering.</li>
+        <li><strong>Render-as-you-fetch</strong> — kick off the request as early as possible (on navigation/event), before or as you render, so data and UI load in parallel.</li>
+      </ul>
+      <h3>The naive effect, and its pitfalls</h3>
+      <pre>useEffect(() =&gt; {
+  setLoading(true);
+  fetch(`/user/${id}`).then(r =&gt; r.json())
+    .then(setUser).finally(() =&gt; setLoading(false));
+}, [id]);</pre>
+      <p>This works but has no caching, no de-duplication (two components asking for the same <code class="k">id</code> fetch twice), refetches on every remount, and — critically — a <strong>race condition</strong> when <code class="k">id</code> changes fast (next section). This is why teams reach for a <strong>server-cache library</strong> (TanStack Query): it keys responses by a query key, dedupes in-flight requests, refetches in the background, and serves stale-while-revalidate.</p>
+    </section>
+
+    <section id="race">
+      <div class="kicker">02 — The classic bug</div>
+      <h2>Race conditions &amp; cancellation</h2>
+      <p>User types in a search box: request <strong>A</strong> (&ldquo;ab&rdquo;) is slow, request <strong>B</strong> (&ldquo;abc&rdquo;) is fast. B returns first and renders; then A returns and <strong>overwrites</strong> the newer results with stale data. The last response to arrive wins — but it should be the last one <em>requested</em>.</p>
+      <h3>Fix 1 — ignore stale responses (cleanup flag)</h3>
+      <pre>useEffect(() =&gt; {
+  let ignore = false;
+  fetch(`/search?q=${q}`).then(r =&gt; r.json()).then(data =&gt; {
+    if (!ignore) setResults(data);   <span class="out">// drop superseded responses</span>
+  });
+  return () =&gt; { ignore = true; };    <span class="cmt">// cleanup runs before the next effect</span>
+}, [q]);</pre>
+      <p>When <code class="k">q</code> changes, React runs the previous effect's cleanup <em>before</em> the new effect, flipping the old closure's <code class="k">ignore</code> to <code class="k">true</code>. The stale response still arrives but is dropped. This works precisely because each effect run has its own <code class="k">ignore</code> in its own closure.</p>
+      <h3>Fix 2 — actually cancel (AbortController)</h3>
+      <pre>useEffect(() =&gt; {
+  const ctrl = new AbortController();
+  fetch(`/search?q=${q}`, { signal: ctrl.signal })
+    .then(r =&gt; r.json()).then(setResults)
+    .catch(e =&gt; { if (e.name !== 'AbortError') throw e; });
+  return () =&gt; ctrl.abort();          <span class="cmt">// cancels the in-flight request</span>
+}, [q]);</pre>
+      <p>The flag prevents a stale <em>state update</em>; <code class="k">AbortController</code> also stops the wasted <em>network work</em>. Use abort for real cancellation; the ignore flag is the minimal fix.</p>
+    </section>
+
+    <section id="optimistic">
+      <div class="kicker">03 — Perceived speed</div>
+      <h2>Optimistic updates</h2>
+      <p>Update the UI <em>immediately</em> as if the mutation succeeded, then reconcile with the server — rolling back if it fails. It trades a bit of complexity for a UI that feels instant (a &ldquo;favourite&rdquo; toggle, adding to a watchlist).</p>
+      <pre><span class="cmt">// TanStack Query optimistic mutation</span>
+useMutation({
+  mutationFn: toggleFavorite,
+  onMutate: async (id) =&gt; {
+    await queryClient.cancelQueries({ queryKey: ['favs'] });
+    const prev = queryClient.getQueryData(['favs']);   <span class="cmt">// snapshot</span>
+    queryClient.setQueryData(['favs'], optimistic(prev, id)); <span class="cmt">// apply now</span>
+    return { prev };
+  },
+  onError: (_e, _id, ctx) =&gt; queryClient.setQueryData(['favs'], ctx.prev), <span class="cmt">// rollback</span>
+  onSettled: () =&gt; queryClient.invalidateQueries({ queryKey: ['favs'] }),  <span class="cmt">// reconcile</span>
+});</pre>
+      <div class="note warn"><span class="lbl">Name the trade-off</span>Optimistic UI improves perceived latency but you must handle <strong>rollback</strong> and <strong>drift</strong> — the optimistic value can differ from what the server ultimately stores, so reconcile on settle (refetch/invalidate). Don't use it for operations where showing an unconfirmed result is dangerous (e.g. &ldquo;order filled&rdquo;).</div>
+    </section>
+
+    <section id="ws">
+      <div class="kicker">04 — Live data</div>
+      <h2>WebSocket-driven state</h2>
+      <p>Trading UIs stream high-frequency updates (order books, tickers, fills). Patterns that keep this sane:</p>
+      <ul class="body">
+        <li><strong>Reducer-merge</strong> — apply each incoming delta to local state via a reducer (<code class="k">(book, delta) =&gt; merged</code>) so updates are a pure, testable transition rather than scattered <code class="k">setState</code>s.</li>
+        <li><strong>Patch the query cache</strong> — for data also fetched over REST, write socket updates into the same cache (<code class="k">queryClient.setQueryData</code>) so the snapshot and the live stream share one source of truth.</li>
+        <li><strong>Coalesce / throttle</strong> — batch bursts of messages into one state update per animation frame (or every N ms). A book updating hundreds of times a second must not trigger hundreds of renders.</li>
+        <li><strong>Gap detection &amp; reconnection</strong> — one socket is TCP-ordered, so messages never arrive scrambled; the sequence number is there to catch <em>gaps</em>. On reconnect, resync from a REST snapshot, discard buffered events older than its sequence id, then apply deltas contiguously — and back off between attempts.</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;I treat the socket as a stream of deltas reduced into a single canonical state, batch high-frequency updates into a per-frame render, and on reconnect re-snapshot before replaying — so the UI never renders a partial or stale book.&rdquo;</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">05 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the flickering search</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Search results sometimes show data for a previous query. What's happening and how do you fix it?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">A race: a slower earlier request resolves after a faster later one and overwrites it. Fix by dropping superseded responses — an <code class="k">ignore</code> flag flipped in the effect cleanup, or <code class="k">AbortController</code> to cancel the previous request when the query changes. Abort also saves the wasted network work.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — why does cleanup fix the race?</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Each effect run creates its own closure with its own <code class="k">ignore</code>. When the dependency changes, React runs the previous run's cleanup before the next effect, setting that old closure's <code class="k">ignore = true</code>. So when the stale response finally resolves, its <code class="k">if (!ignore)</code> guard is false and it's discarded — only the latest request can write state.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — optimistic rollback</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Walk through an optimistic 'add to watchlist' that can fail.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">On mutate: cancel outstanding refetches, snapshot the current cache, and write the optimistic value so the UI updates instantly. On error: restore the snapshot (rollback). On settle: invalidate/refetch to reconcile with the server's actual state. The snapshot is what makes rollback possible.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — the render storm</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;An order-book socket pushes ~300 msgs/sec and the page pins the CPU. What do you do?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Decouple message rate from render rate: buffer incoming deltas and flush them into one state update per <code class="k">requestAnimationFrame</code> (or every ~16&ndash;100ms). Merge deltas with a reducer and virtualize the visible rows. The screen only needs one update per animation frame &mdash; ~60/sec, 120 on a ProMotion display &mdash; regardless of message volume.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — snapshot on reconnect</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;The websocket drops and reconnects. Why not just resume applying deltas?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">You may have missed deltas while disconnected, so replaying from where you left off yields a corrupt book. Re-fetch a fresh REST snapshot, then apply only deltas newer than the snapshot's sequence number, and back off between reconnect attempts to avoid hammering the server.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">06 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="fetch">Fetching</button>
+        <button class="fchip" data-f="race">Races</button>
+        <button class="fchip" data-f="optimistic">Optimistic</button>
+        <button class="fchip" data-f="ws">WebSockets</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · the last write to win should be the newest request.</footer>
+
+<script>
+const QA = [["fetch", "Fetching", "Fetch-on-render vs render-as-you-fetch?", "Fetch-on-render starts the request after the component mounts (simple, but nested components create request waterfalls). Render-as-you-fetch kicks off requests as early as possible so data and UI load in parallel."], ["fetch", "Fetching", "What are the pitfalls of the naive useEffect + fetch pattern?", "No caching, no request de-duplication, refetch on every remount, no error path - fetch resolves on 404/500 and rejects only on network failure, so you must check res.ok yourself - and race conditions when the dependency changes quickly. It also spreads loading/error handling across components."], ["fetch", "Fetching", "Why use a server-cache library like TanStack Query?", "It keys responses by a query key, dedupes in-flight requests, caches, refetches in the background, and serves stale-while-revalidate — the server-state concerns you'd otherwise hand-roll badly."], ["fetch", "Fetching", "How should you model the fetch states?", "As one value/state machine (a discriminated union: loading | error | success), not separate booleans. That prevents impossible combinations like showing a spinner and an error simultaneously."], ["race", "Races", "Describe the data-fetching race condition.", "A slower earlier request resolves after a faster later one and overwrites it, so the UI shows stale data. The last response to arrive wins, when the last request made should win."], ["race", "Races", "How does an ignore flag in effect cleanup fix it?", "Each effect run has its own closure with its own ignore. On dependency change, React runs the old run's cleanup (setting its ignore = true) before the next effect, so the superseded response is dropped when it resolves."], ["race", "Races", "How is AbortController different from the ignore flag?", "The ignore flag only prevents a stale state update; the request still completes. AbortController actually cancels the in-flight request (via a signal), saving network/CPU. Handle the resulting AbortError by ignoring it."], ["race", "Races", "Why does effect cleanup run before the next effect?", "React cleans up the previous effect before running the new one on a dependency change (and on unmount). This is what lets cleanup invalidate the prior request/subscription so only the latest is active."], ["optimistic", "Optimistic", "What is an optimistic update?", "Updating the UI immediately as if a mutation succeeded, before the server confirms, then reconciling — rolling back on failure. It improves perceived latency for actions likely to succeed."], ["optimistic", "Optimistic", "What's the optimistic lifecycle in TanStack Query?", "onMutate: cancel refetches, snapshot the cache, write the optimistic value. onError: restore the snapshot (rollback). onSettled: invalidate/refetch to reconcile with the server."], ["optimistic", "Optimistic", "What's the trade-off / when to avoid it?", "You must handle rollback and drift between the optimistic and real values, so reconcile on settle. Avoid it where showing an unconfirmed result is misleading or dangerous (e.g. 'order filled')."], ["ws", "WebSockets", "How do you manage websocket-driven state?", "Reduce incoming deltas into a single canonical state with a reducer (or patch the shared query cache), so updates are pure, testable transitions and the stream and any REST snapshot share one source of truth."], ["ws", "WebSockets", "How do you stop a high-frequency stream from killing render performance?", "Decouple message rate from render rate: buffer deltas and flush one state update per animation frame (or every N ms), merge with a reducer, and virtualize visible rows. The UI needs ~60fps regardless of message volume."], ["ws", "WebSockets", "What do you do on reconnect?", "Re-fetch a fresh snapshot (e.g. REST), then apply only deltas newer than the snapshot's sequence number — because messages may have been missed while disconnected. Back off between reconnect attempts."], ["ws", "WebSockets", "How do you handle out-of-order messages?", "Track a sequence/monotonic id on each message and drop or reorder ones that arrive out of sequence, so the merged state reflects the correct latest order-book/ticker state."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

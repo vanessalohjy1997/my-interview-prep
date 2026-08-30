@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base href="about:srcdoc">
+<title>Internationalisation & Localisation — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0F1A;
+    --surface:#121A2B;
+    --surface-2:#182339;
+    --border:#26344D;
+    --border-soft:#1B2740;
+    --text:#E7EEF7;
+    --muted:#9AAAC2;
+    --faint:#5F7291;
+    /* semantic colours — each maps to a real concept */
+    --azure:#6FB7FF;   /* the primary / locale / the world */
+    --violet:#A78BFA;  /* the chain / fallback / negotiation */
+    --rose:#FF7A8A;    /* pitfalls / errors */
+    --amber:#F3BA2F;   /* caution / highlight */
+    --cyan:#34D3E6;    /* formatting / Intl */
+    --green:#5FD68A;   /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--azure);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#080D18,#0A0F1A);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--azure);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--azure)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--azure);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--azure)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-azure{background:var(--azure)}.d-cyan{background:var(--cyan)}.d-rose{background:var(--rose)}.d-violet{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--azure);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--azure);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFDAEC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--azure);text-decoration:none;border-bottom:1px solid rgba(111,183,255,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFDAEC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#BFE0FF}
+
+  /* colour-coded key terms */
+  .t-key{color:var(--azure);font-weight:600}
+  .t-fmt{color:var(--cyan);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-gold{color:var(--amber);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--azure);background:linear-gradient(90deg,rgba(111,183,255,.08),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--azure);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#060B14;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--azure)}
+  pre .str{color:var(--cyan)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- compare boxes ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.a .st-name{color:var(--azure)}
+  .statebox.b .st-name{color:var(--cyan)}
+  .statebox.c .st-name{color:var(--violet)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFDAEC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--azure);color:var(--azure)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#060B14;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--azure);color:var(--azure);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--azure);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--azure);color:var(--azure)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--azure)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--azure);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#BFE0FF}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--azure);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Internationalisation &amp; <em>Localisation</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Scope</a>
+    <a href="#intl"><span class="n">01</span> The Intl API</a>
+    <a href="#messages"><span class="n">02</span> Messages &amp; plurals</a>
+    <a href="#negotiation"><span class="n">03</span> Locale negotiation</a>
+    <a href="#rtl"><span class="n">04</span> RTL &amp; bidi</a>
+    <a href="#datamoney"><span class="n">05</span> Dates, zones &amp; money</a>
+    <a href="#drills"><span class="n">06</span> Drills</a>
+    <a href="#bank"><span class="n">07</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Speaking every user's <span>language</span>.</h1>
+      <p class="lede">Internationalisation is the engineering that lets one codebase adapt to any locale; localisation is filling that frame with real translations, formats, and conventions. For a trading product that lists prices in dozens of currencies and mirrors right-to-left across many of its markets, both are load-bearing.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-azure"></span>Locale</span>
+        <span class="chip"><span class="dot d-cyan"></span>Intl / formatting</span>
+        <span class="chip"><span class="dot d-violet"></span>Negotiation</span>
+        <span class="chip"><span class="dot d-rose"></span>RTL / bidi</span>
+      </div>
+    </header>
+
+    <section id="intro">
+      <div class="kicker">00 — What this covers</div>
+      <h2>i18n vs l10n, and why it's not just translation</h2>
+      <p><strong>Internationalisation (i18n)</strong> is the one-time engineering that makes a product <em>capable</em> of adapting: externalising strings, using locale-aware formatters, and building layouts that survive text expansion and direction changes. <strong>Localisation (l10n)</strong> is the per-locale work done on top of that frame — the translations, the number and date conventions, the currency, the calendar, the imagery. The numeronyms count the letters between the first and last: <span class="t-key">i-nternationalisatio-n</span> (18), <span class="t-key">l-ocalisatio-n</span> (10).</p>
+      <p>The naive mental model is "swap the English strings for French ones." The senior model is that <strong>locale touches almost every layer</strong>: the number <code class="k">1234.5</code> renders as <code class="k">1,234.5</code>, <code class="k">1.234,5</code>, or <code class="k">1 234,5</code>; a date's month/day order flips; a name may sort differently; the whole page may mirror. This guide is the browser-native toolkit — the <span class="t-fmt">Intl</span> API — plus the patterns libraries add on top, framed around a trading UI as the hard case.</p>
+      <div class="note gold">
+        <span class="lbl">Why a trading UI is the hard case</span>
+        A financial product is close to a worst case: real-time prices in fiat <em>and</em> assets with eight or more decimals and no ISO currency code, settlement timestamps users read in their own timezone, RTL markets (Arabic, Persian, Hebrew), and legal copy that must be exact per jurisdiction. Getting a decimal separator wrong here isn't a cosmetic bug — it misreports a price.
+      </div>
+    </section>
+
+    <section id="intl">
+      <div class="kicker">01 — The platform gives you a lot for free</div>
+      <h2>The <span style="color:var(--cyan)">Intl</span> API</h2>
+      <p>Modern browsers ship the <a class="inline" href="#intl">ECMAScript Internationalization API</a> (<code class="k">Intl</code>), backed by the Unicode <strong>CLDR</strong> locale database. It handles the mechanical, locale-dependent formatting so you don't ship hand-rolled tables. The workhorses:</p>
+      <table class="tbl">
+        <thead><tr><th>Constructor</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td>NumberFormat</td><td>Numbers, currency, percent, units; grouping &amp; decimal separators; compact notation</td></tr>
+          <tr><td>DateTimeFormat</td><td>Dates &amp; times in a given calendar and <strong>timezone</strong></td></tr>
+          <tr><td>RelativeTimeFormat</td><td>"3 minutes ago", "in 2 days" — localised relative phrasing</td></tr>
+          <tr><td>PluralRules</td><td>Which plural category (<code class="k">one</code>/<code class="k">few</code>/<code class="k">many</code>…) a number takes</td></tr>
+          <tr><td>Collator</td><td>Locale-aware string comparison &amp; sorting</td></tr>
+          <tr><td>ListFormat</td><td>"A, B, and C" vs "A, B et C"</td></tr>
+          <tr><td>Segmenter</td><td>Locale-correct grapheme / word / sentence boundaries</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Numbers &amp; currency</h3>
+      <p>The single most useful class. Grouping and decimal marks are locale-specific, so <span class="t-rej">never build them by hand</span> and never <code class="k">parseFloat</code> a display string back into a number.</p>
+      <pre><span class="cmt">// Same value, three locales — separators differ</span>
+new Intl.NumberFormat(<span class="str">'en-US'</span>).format(1234567.89) <span class="cmt">// → "1,234,567.89"</span>
+new Intl.NumberFormat(<span class="str">'de-DE'</span>).format(1234567.89) <span class="cmt">// → "1.234.567,89"</span>
+new Intl.NumberFormat(<span class="str">'fr-FR'</span>).format(1234567.89) <span class="cmt">// → "1\u202F234\u202F567,89"  — the gaps are U+202F NARROW NO-BREAK SPACE, not " "</span>
+
+<span class="cmt">// Currency: the symbol, placement and spacing all come from the locale</span>
+new Intl.NumberFormat(<span class="str">'en-US'</span>, {style:<span class="str">'currency'</span>, currency:<span class="str">'USD'</span>}).format(9.5) <span class="cmt">// → "$9.50"</span>
+new Intl.NumberFormat(<span class="str">'de-DE'</span>, {style:<span class="str">'currency'</span>, currency:<span class="str">'EUR'</span>}).format(9.5) <span class="cmt">// → "9,50\u00A0€"  — U+00A0 no-break space before the symbol</span>
+
+<span class="cmt">// Compact for dashboards; signDisplay for P&amp;L</span>
+new Intl.NumberFormat(<span class="str">'en'</span>, {notation:<span class="str">'compact'</span>}).format(2_400_000) <span class="cmt">// → "2.4M"</span>
+new Intl.NumberFormat(<span class="str">'en'</span>, {signDisplay:<span class="str">'exceptZero'</span>}).format(3.2) <span class="cmt">// → "+3.2"</span></pre>
+      <div class="note warn">
+        <span class="lbl">Crypto has no ISO 4217 code</span>
+        <code class="k">style:'currency'</code> only knows fiat codes from CLDR. There is no <code class="k">currency:'BTC'</code> that yields a ₿ symbol — a well-formed but unknown code like <code class="k">'BTC'</code> just renders the code literally, joined by a no-break space (<code class="k">"BTC\u00A01.00"</code>) and defaults to 2 fraction digits (you <em>can</em> raise that with <code class="k">maximumFractionDigits</code>; the real blocker is the missing symbol/ticker, not a hard precision cap). For a <strong>crypto amount</strong>, format with <code class="k">style:'decimal'</code>, set <code class="k">maximumFractionDigits</code> to the asset's precision (often 8), and append the ticker/symbol yourself: <code class="k">`${fmt.format(amt)} BTC`</code>.
+      </div>
+
+      <h3>Reuse formatter instances</h3>
+      <p>Constructing an <code class="k">Intl.*</code> formatter is <strong>expensive</strong> — it resolves the locale and loads CLDR data. In a hot path (an order book repainting every tick, a virtualised table of thousands of rows) you must <span class="t-key">create the formatter once</span> and reuse it, not build one per cell.</p>
+      <pre><span class="err">// ✗ builds a formatter per row, per render — a real profiler hotspot</span>
+rows.map(r =&gt; new Intl.NumberFormat(locale, opts).format(r.price))
+
+<span class="kw">// ✓ hoist it (module scope, useMemo, or a small cache keyed by locale+opts)</span>
+const priceFmt = new Intl.NumberFormat(locale, {minimumFractionDigits:2, maximumFractionDigits:2})
+rows.map(r =&gt; priceFmt.format(r.price))</pre>
+      <p>A common pattern is a memoised factory: <code class="k">getFormatter(locale, opts)</code> that caches by a stringified key. The <code class="k">react-intl</code> library (FormatJS) does this internally, which is one reason to prefer it over ad-hoc <code class="k">Intl</code> calls in components.</p>
+
+      <h3>Precision &amp; rounding — the numbers must not lie</h3>
+      <p>On an exchange, <em>how</em> a number is rounded is financially material, so pin it down explicitly rather than trusting defaults:</p>
+      <ul class="body">
+        <li><code class="k">roundingMode</code> — <code class="k">'halfExpand'</code> (default) vs <code class="k">'trunc'</code>, <code class="k">'floor'</code>, <code class="k">'ceil'</code>. A displayed balance you round <em>up</em> when the backend truncates is a support ticket.</li>
+        <li><code class="k">minimumSignificantDigits</code> / <code class="k">maximumSignificantDigits</code> — essential for crypto prices that span many magnitudes (<code class="k">0.00000842</code> and <code class="k">64,120</code> want the same <em>significant</em> precision, not the same fraction digits).</li>
+        <li><code class="k">style:'percent'</code> (with a value already in 0–1) for P&amp;L and funding rates; <code class="k">trailingZeroDisplay:'stripIfInteger'</code> to drop <code class="k">.00</code> where you don't want it.</li>
+      </ul>
+      <div class="note warn">
+        <span class="lbl">Display rounding ≠ settlement rounding</span>
+        <code class="k">Intl</code> rounds for the <em>eye</em>. Match its <code class="k">roundingMode</code> and precision to what the backend actually settles, or a user reconciles a fill against a total that's a cent off. The exact value still lives in your integer/decimal representation (see §05) — this only governs the render.
+      </div>
+
+      <h3>Collation: sorting is locale-aware too</h3>
+      <p>A market list, a coin search, an order history — all need sorting, and JavaScript's default <code class="k">Array.prototype.sort</code> compares UTF-16 code units, which is wrong for accented and CJK text (and even puts <code class="k">"10"</code> before <code class="k">"9"</code>). Use <span class="t-fmt">Intl.Collator</span> — reused like any formatter — as the comparator:</p>
+      <pre>const collator = new Intl.Collator(locale, {numeric:<span class="kw">true</span>, sensitivity:<span class="str">'base'</span>})
+markets.sort((a, b) =&gt; collator.compare(a.symbol, b.symbol))
+<span class="cmt">// numeric:true → "BTC10" sorts after "BTC9"; sensitivity:'base' ignores case/accents</span></pre>
+    </section>
+
+    <section id="messages">
+      <div class="kicker">02 — Text that survives translation</div>
+      <h2>Messages, interpolation &amp; plurals</h2>
+      <p>The cardinal rule: <span class="t-rej">never concatenate translated fragments</span>. Word order, gender agreement, and plural forms differ per language, so a sentence assembled from pieces in English grammar will be wrong elsewhere. Externalise <strong>whole messages</strong> keyed by id, with named placeholders.</p>
+      <pre><span class="err">// ✗ concatenation bakes in English word order &amp; a broken plural</span>
+`You have ` + count + ` new ` + (count === 1 ? <span class="str">'order'</span> : <span class="str">'orders'</span>)
+
+<span class="kw">// ✓ one message with an ICU plural — the translator controls every form</span>
+<span class="cmt">// en: "You have {count, plural, one {# new order} other {# new orders}}"</span>
+<span class="cmt">// pl: needs one / few / many / other; ar: zero / one / two / few / many / other; ar: needs zero / one / two / few / many / other</span>
+t(<span class="str">'orders.badge'</span>, {count})</pre>
+      <h3>ICU MessageFormat</h3>
+      <p>The de-facto standard (used by <code class="k">react-intl</code>/FormatJS, i18next, Lingui) is <strong>ICU MessageFormat</strong>: a mini-syntax for <code class="k">plural</code>, <code class="k">select</code> (e.g. gender), <code class="k">selectordinal</code> ("1st/2nd/3rd"), and inline number/date formatting. The <code class="k">#</code> inside a plural arm is the locale-formatted count.</p>
+      <p><code class="k">Intl.PluralRules</code> is the primitive underneath: it tells you <em>which category</em> a number falls into for a locale — the CLDR set is <code class="k">zero</code>, <code class="k">one</code>, <code class="k">two</code>, <code class="k">few</code>, <code class="k">many</code>, <code class="k">other</code>. English uses only <code class="k">one</code>/<code class="k">other</code>; Chinese and Japanese use <code class="k">other</code> only; Arabic uses all six. Your message catalogue must supply every form the target language needs — you can't assume two.</p>
+      <div class="note">
+        <span class="lbl">Why a library, not raw Intl</span>
+        <code class="k">Intl</code> formats <em>values</em>; it does not parse ICU message strings, manage catalogues, load per-locale bundles, or wire React context. Libraries add message compilation, pluralised interpolation, rich-text tags (<code class="k">&lt;b&gt;{x}&lt;/b&gt;</code> inside a translation), and a fallback chain. Pick one — <code class="k">react-intl</code>, <code class="k">i18next</code>, or <code class="k">Lingui</code> — rather than reinventing them.
+      </div>
+      <h3>Keys, not English, as the source</h3>
+      <p>Reference messages by stable ids (<code class="k">orders.badge</code>) rather than by the English text. English-as-key is tempting but breaks the moment the copy is tweaked, collides on homographs ("Right" the direction vs "Right" the entitlement), and gives translators no context. Ship <strong>context/description</strong> metadata with each key so a translator knows "Buy" is a verb on a button.</p>
+    </section>
+
+    <section id="negotiation">
+      <div class="kicker">03 — Choosing and loading the right locale</div>
+      <h2>Locale negotiation &amp; bundle loading</h2>
+      <h3>BCP 47 language tags</h3>
+      <p>Locales are named with <strong>BCP 47</strong> tags: <code class="k">language[-script][-region][-variant]</code>. So <code class="k">en-US</code>, <code class="k">en-GB</code>, <code class="k">pt-BR</code> vs <code class="k">pt-PT</code>, and script subtags for Chinese: <code class="k">zh-Hans</code> (Simplified) vs <code class="k">zh-Hant</code> (Traditional). Script matters more than region for Chinese — a Traditional reader in Taiwan wants <code class="k">zh-Hant</code>, not "Chinese".</p>
+      <h3>What the user actually prefers</h3>
+      <p>The browser exposes an <em>ordered</em> preference list. Read <code class="k">navigator.languages</code> (plural, best → worst), not just <code class="k">navigator.language</code>. On the server the same information arrives as the <code class="k">Accept-Language</code> header. Your app's job is to <span class="t-chain">match that preference list against the locales you actually ship</span> and fall back gracefully.</p>
+      <pre><span class="kw">const</span> supported = [<span class="str">'en'</span>, <span class="str">'zh-Hans'</span>, <span class="str">'ar'</span>, <span class="str">'pt-BR'</span>]
+
+<span class="cmt">// getCanonicalLocales only normalises a tag (case, subtag order) — it does NOT match:</span>
+Intl.getCanonicalLocales(<span class="str">'ZH-hans-cn'</span>)   <span class="cmt">// → ["zh-Hans-CN"]</span>
+
+<span class="cmt">// Matching is separate: the 'lookup' algorithm walks the fallback chain</span>
+<span class="cmt">// zh-Hans-CN → zh-Hans → zh, picking the first tag you actually support.</span>
+<span class="kw">const</span> best = pickSupported(navigator.languages, supported, <span class="str">'en'</span>)</pre>
+      <p>Design an explicit <span class="t-chain">fallback chain</span>: requested → language-only → region-default → app default. <code class="k">fr-CA</code> should fall back to <code class="k">fr</code> before it ever hits <code class="k">en</code>. Never let a missing key render blank or show the raw id to the user — fall back to the default-locale string.</p>
+      <div class="note warn">
+        <span class="lbl">The user's choice must win — and persist</span>
+        Auto-detection is a default, not a verdict. Offer an explicit switcher, persist the choice (cookie so SSR can read it; or storage), and reflect it in the URL or <code class="k">&lt;html lang&gt;</code> so it survives reload, is shareable, and is crawlable.
+      </div>
+      <h3>Don't ship every locale to every user</h3>
+      <p>Every locale's catalogue but the active one is dead weight for a given user. <strong>Code-split by locale</strong> and load the active one on demand — a dynamic <code class="k">import(`./locales/${locale}.json`)</code>, or per-route message chunks. Load the negotiated locale first, and lazy-load others only on switch. On SSR, inline the chosen locale's messages into the initial HTML so there's no flash of untranslated content — and, more generally, any server/client divergence in locale <em>or</em> timezone produces a hydration mismatch, so the server must format with the same locale and zone the client will.</p>
+      <div class="note gold">
+        <span class="lbl">Language is not jurisdiction</span>
+        The most senior distinction here: a user's <em>language</em> (<code class="k">navigator.language</code>) is not their <em>legal region</em>. A German speaker may be trading from Singapore; an English speaker may be in a jurisdiction where a product is restricted. Which features, risk disclaimers, and regulatory copy you must show is driven by <strong>geo/jurisdiction</strong> (KYC, IP, account region) — a separate axis from the locale that controls formatting and translation. Never gate a legal obligation on <code class="k">Accept-Language</code>.
+      </div>
+    </section>
+
+    <section id="rtl">
+      <div class="kicker">04 — When the layout flips</div>
+      <h2>RTL &amp; bidirectional text</h2>
+      <p>Arabic, Hebrew, Persian and Urdu read <strong>right-to-left</strong>. This is not "align text right" — the entire layout mirrors: the nav moves to the right, back-arrows point right, progress runs right-to-left, and the reading order of rows reverses. Set direction at the root so everything inherits:</p>
+      <pre><span class="kw">&lt;html</span> lang=<span class="str">"ar"</span> dir=<span class="str">"rtl"</span><span class="kw">&gt;</span></pre>
+      <h3>Logical properties do the mirroring for you</h3>
+      <p>Author with <span class="t-key">CSS logical properties</span> instead of physical <code class="k">left</code>/<code class="k">right</code>. They resolve relative to the writing direction, so one stylesheet serves both. This is the single biggest lever for RTL support.</p>
+      <div class="states">
+        <div class="statebox b"><div class="st-name">Physical ✗</div><p><code class="k">margin-left</code>, <code class="k">padding-right</code>, <code class="k">left: 0</code>, <code class="k">text-align: left</code>, <code class="k">border-top-left-radius</code></p></div>
+        <div class="statebox a"><div class="st-name">Logical ✓</div><p><code class="k">margin-inline-start</code>, <code class="k">padding-inline-end</code>, <code class="k">inset-inline-start: 0</code>, <code class="k">text-align: start</code>, <code class="k">border-start-start-radius</code></p></div>
+      </div>
+      <p>Target direction-specific tweaks with the <code class="k">:dir(rtl)</code> selector or a <code class="k">[dir="rtl"]</code> attribute — for example mirroring a chevron icon (<code class="k">transform: scaleX(-1)</code>) that shouldn't flip automatically.</p>
+      <h3>Bidi: numbers and tickers inside RTL text</h3>
+      <p>A trading UI mixes scripts constantly — an Arabic sentence containing a Latin ticker <code class="k">BTCUSDT</code> and a Western-Arabic number. The Unicode <strong>bidirectional algorithm</strong> orders these runs, and it can reorder punctuation next to a number in surprising ways. When you splice user- or data-supplied strings of unknown direction into your text, <span class="t-key">isolate</span> them so they can't corrupt the surrounding order:</p>
+      <pre><span class="cmt">// Isolate a value of unknown direction inside a sentence</span>
+<span class="kw">&lt;bdi&gt;</span>{symbol}<span class="kw">&lt;/bdi&gt;</span>          <span class="cmt">// HTML element, or…</span>
+.iso { unicode-bidi: isolate; }   <span class="cmt">// …the CSS equivalent</span></pre>
+      <div class="note gold">
+        <span class="lbl">Keep the chart LTR</span>
+        Direction flips reading order, but <strong>price axes, candlestick time-series and order books stay left-to-right</strong> — time and magnitude aren't language. Mirror the chrome (labels, panels, nav) and pin the data viz to <code class="k">dir="ltr"</code>. Numerals themselves are also usually kept Western even in Arabic locales; digit shaping (Arabic-Indic ٠١٢) is a separate, deliberate choice via <code class="k">numberingSystem</code>. Careful: CLDR defaults <code class="k">ar-EG</code>, <code class="k">ar-SA</code> and <code class="k">fa</code> to Arabic-Indic digits, so keeping Western digits is the <em>deliberate</em> choice (pass <code class="k">numberingSystem:'latn'</code>).
+      </div>
+    </section>
+
+    <section id="datamoney">
+      <div class="kicker">05 — The details that misreport a trade</div>
+      <h2>Dates, timezones &amp; money</h2>
+      <h3>Store UTC, format per user timezone</h3>
+      <p>The rule for time: <span class="t-key">store and transmit in UTC</span> (an epoch or ISO-8601 with offset), and format to the user's timezone only at the edge with <code class="k">Intl.DateTimeFormat</code>. A funding time or trade fill must read correctly whether the user is in Singapore or São Paulo.</p>
+      <pre>const fmt = new Intl.DateTimeFormat(<span class="str">'en-GB'</span>, {
+  dateStyle:<span class="str">'medium'</span>, timeStyle:<span class="str">'short'</span>, timeZone:<span class="str">'Asia/Singapore'</span>
+})
+fmt.format(new Date(<span class="str">'2026-08-27T00:00:00Z'</span>)) <span class="cmt">// → "27 Aug 2026, 08:00"</span>
+
+<span class="cmt">// Relative phrasing, localised</span>
+new Intl.RelativeTimeFormat(<span class="str">'en'</span>, {numeric:<span class="str">'auto'</span>}).format(-1, <span class="str">'day'</span>) <span class="cmt">// → "yesterday"</span></pre>
+      <div class="note">
+        <span class="lbl">Date math is not formatting</span>
+        <code class="k">Intl</code> only <em>displays</em>. For arithmetic across zones and DST — "the daily settlement at 00:00 UTC in the user's zone" — use the <strong><code class="k">Temporal</code></strong> API (<code class="k">ZonedDateTime</code> — <strong>ES2026</strong>, shipped in Chrome/Edge 144+ and Firefox 139+, but <em>not</em> Safari stable yet, so ship <code class="k">temporal-polyfill</code>) or a maintained library, not hand-rolled offset math on <code class="k">Date</code>, which mishandles DST transitions. Also mind calendar systems: <code class="k">Intl.DateTimeFormat</code> supports <code class="k">calendar:'islamic'</code>, <code class="k">'buddhist'</code>, etc., and <code class="k">Intl.Locale</code> exposes week metadata (first day of the week, weekend) — via <code class="k">getWeekInfo()</code> in current engines (a <code class="k">weekInfo</code> getter in older ones).
+      </div>
+      <h3>Money is never a float</h3>
+      <p>Locale controls the <em>display</em> of money; it never fixes the deeper bug of using binary floating point for value. <code class="k">0.1 + 0.2 !== 0.3</code>, and for an exchange that's real money lost. Hold amounts as <span class="t-key">integer minor units</span> (or a decimal/BigInt type, and strings on the wire), do all math in that exact representation, and use <code class="k">Intl.NumberFormat</code> purely for the final render.</p>
+      <p>Symmetrically: <span class="t-rej">never parse a localised display string back to a number</span> with <code class="k">parseFloat</code> — <code class="k">"1.234,56"</code> becomes <code class="k">1.234</code>. Parse from the raw machine value where you can. When you must read a number a user typed in their own locale (an order-entry field where a German trader types <code class="k">1,5</code>), derive that locale's marks from <code class="k">formatToParts</code> and normalise before parsing:</p>
+      <pre><span class="cmt">// Learn this locale's group + decimal marks, then normalise "1.234,56" → 1234.56</span>
+const parts = new Intl.NumberFormat(locale).formatToParts(11111.1)
+const group   = parts.find(p =&gt; p.type === <span class="str">'group'</span>).value
+const decimal = parts.find(p =&gt; p.type === <span class="str">'decimal'</span>).value
+const toNumber = str =&gt; Number(str.split(group).join(<span class="str">''</span>).replace(decimal, <span class="str">'.'</span>))</pre>
+      <div class="note warn"><span class="lbl">Whitespace trap</span>Strip <em>all</em> space-like characters, not just the exact group mark. A French user types U+0020, but CLDR emits U+202F — so a literal <code class="k">split(group)</code> silently fails to match. Normalise with something like <code class="k">str.replace(/\s|\u00A0|\u202F/g, '')</code> first.</div>
+      <table class="tbl">
+        <thead><tr><th>Locale</th><th>Group</th><th>Decimal</th><th>1234567.5 →</th></tr></thead>
+        <tbody>
+          <tr><td>en-US</td><td>,</td><td>.</td><td>1,234,567.5</td></tr>
+          <tr><td>de-DE</td><td>.</td><td>,</td><td>1.234.567,5</td></tr>
+          <tr><td>fr-FR</td><td>U+202F (narrow no-break)</td><td>,</td><td>1&#8239;234&#8239;567,5</td></tr>
+          <tr><td>en-IN</td><td>, (lakh)</td><td>.</td><td>12,34,567.5</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">06 — Predict the output</div>
+      <h2>Drills</h2>
+      <p>Cover the answer, commit to a prediction out loud, then reveal. These are the ones that catch people.</p>
+
+      <div class="quizcard" data-quiz>
+        <p class="q">1. What does this log?</p>
+        <pre>new Intl.NumberFormat(<span class="str">'de-DE'</span>).format(1234.5)</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer">
+          <div class="out-line">"1.234,5"</div>
+          <p style="margin:0">German groups thousands with <code class="k">.</code> and marks the decimal with <code class="k">,</code> — the mirror image of US English. This is exactly why you must never assemble numbers by hand or <code class="k">parseFloat</code> a display string.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <p class="q">2. Why is this a bug, and what breaks?</p>
+        <pre>`Showing ` + n + ` result` + (n === 1 ? <span class="str">''</span> : <span class="str">'s'</span>)</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer">
+          <div class="out-line">Concatenation + an English-only plural rule</div>
+          <p style="margin:0">It bakes English word order into code and assumes two plural forms. In Polish 2, 3, 4 take <code class="k">few</code> and 5–21 take <code class="k">many</code>; Arabic has six categories. Use an ICU <code class="k">plural</code> message with <code class="k">Intl.PluralRules</code> underneath so each locale supplies its own forms.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <p class="q">3. A price shows correctly on your machine but is 8 hours off for a Singapore user. Likely cause?</p>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer">
+          <div class="out-line">Formatting a Date without an explicit timeZone</div>
+          <p style="margin:0">Left unset, <code class="k">Intl.DateTimeFormat</code> uses the <em>runtime's</em> timezone, so a server or a differently-located user renders a different wall-clock time. Store UTC and pass an explicit <code class="k">timeZone</code>. The same class of bug causes SSR hydration mismatches when server and client zones differ.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <p class="q">4. Your Arabic build mostly works, but paddings and the back-button sit on the wrong side. What did you likely use?</p>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer">
+          <div class="out-line">Physical CSS properties instead of logical ones</div>
+          <p style="margin:0"><code class="k">margin-left</code>, <code class="k">padding-right</code>, <code class="k">left:0</code> don't flip with <code class="k">dir="rtl"</code>. Switch to <code class="k">margin-inline-start</code>, <code class="k">padding-inline-end</code>, <code class="k">inset-inline-start</code>, <code class="k">text-align:start</code> and the layout mirrors itself.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="bank">
+      <div class="kicker">07 — Interview Q&amp;A</div>
+      <h2>Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="concepts">Concepts</button>
+        <button class="fchip" data-f="intl">Intl / format</button>
+        <button class="fchip" data-f="money">Dates &amp; money</button>
+        <button class="fchip" data-f="messages">Messages</button>
+        <button class="fchip" data-f="rtl">RTL / bidi</button>
+        <button class="fchip" data-f="arch">Architecture</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · externalise strings, format with Intl, store UTC, never float money.</footer>
+
+<script>
+const QA = [
+["concepts","Concepts","What's the difference between i18n and l10n?","Internationalisation (i18n) is the one-time engineering that makes a product capable of adapting — externalised strings, locale-aware formatting, flexible layout. Localisation (l10n) is the per-locale work on top: the actual translations, number/date/currency conventions, and cultural adaptation for a specific market."],
+["concepts","Concepts","Give three things beyond translated text that change with locale.","Number formatting (group/decimal separators), date & time formatting plus calendar and first-day-of-week, currency symbol and placement, text direction (LTR/RTL), sorting/collation order, pluralisation rules, and name/address formats. Any of these being hardcoded is an i18n bug."],
+["intl","Intl / format","What is the Intl API and what backs it?","A built-in browser (ECMAScript) API — Intl.NumberFormat, DateTimeFormat, RelativeTimeFormat, PluralRules, Collator, ListFormat, Segmenter — for locale-aware formatting and comparison. It's backed by the Unicode CLDR locale database, so you don't ship your own tables."],
+["intl","Intl / format","Why reuse an Intl formatter instead of creating one inline?","Constructing an Intl.* object resolves the locale and loads CLDR data — it's expensive. In hot paths (a re-rendering order book, a large virtualised table) creating one per value is a measurable hotspot. Hoist it to module scope, memoise it, or cache by locale+options and reuse."],
+["intl","Intl / format","How do you format a crypto amount when there's no ISO currency code?","style:'currency' only supports fiat codes from CLDR, and defaults to each currency's minor units - a default, not a cap, since maximumFractionDigits overrides it. For crypto, use style:'decimal' with maximumFractionDigits set to the asset's precision (often 8) and append the ticker/symbol yourself. Keep the underlying value exact (integer/decimal/string), never a float."],
+["money","Dates & money","How would you correctly display a timestamp for users in different timezones?","Store and send time in UTC (epoch or ISO-8601), then format at render with Intl.DateTimeFormat passing an explicit timeZone (e.g. 'Asia/Singapore'). Without an explicit timeZone it uses the runtime's zone, which differs between server, client, and users — a classic bug and SSR hydration mismatch."],
+["money","Dates & money","How do you stop a displayed price from misreporting via rounding?","Set roundingMode explicitly (halfExpand / trunc / floor / ceil) to match how the backend settles, and use minimum/maximumSignificantDigits for crypto prices that span magnitudes rather than a fixed fraction-digit count. Intl only rounds for display; the exact value must stay in an integer/decimal representation."],
+["money","Dates & money","A German trader types 1,5 in an amount field — how do you parse it?","Don't parseFloat it (that yields 1). Derive the locale's group and decimal marks from Intl.NumberFormat(locale).formatToParts, strip the group separator, replace the decimal mark with '.', then Number() it. Never assume '.' is the decimal separator."],
+["messages","Messages","Why must you never concatenate translated strings?","Word order, grammatical gender, and agreement differ across languages, so a sentence built from fragments in English order is wrong elsewhere. Externalise whole messages with named placeholders and let the translator control the full string, including plural and select forms."],
+["messages","Messages","What is ICU MessageFormat and what does it handle?","A standard message syntax (used by react-intl/FormatJS, i18next, Lingui) supporting plural, select (e.g. gender), selectordinal, and inline number/date formatting with named arguments. The # token renders the locale-formatted count inside a plural arm."],
+["messages","Messages","Explain Intl.PluralRules and why 'add an s' fails.","PluralRules returns which CLDR category a number takes for a locale: zero, one, two, few, many, other. English uses one/other; Chinese/Japanese only other; Arabic all six; Polish uses few/many for different ranges. A binary singular/plural assumption breaks most non-English languages, so the catalogue must supply each needed form."],
+["messages","Messages","Should translation keys be the English text or stable ids?","Stable ids (orders.badge). English-as-key breaks when copy is edited, collides on homographs, and gives translators no context. Ship a description/context with each key so 'Buy' as a button verb is unambiguous."],
+["rtl","RTL / bidi","What actually changes for an RTL language — is it just text alignment?","No — the whole layout mirrors: navigation, icons/arrows, progress direction, and row reading order flip. Set dir='rtl' (and lang) on <html>, and author with CSS logical properties (margin-inline-start, inset-inline-start, text-align:start) so one stylesheet serves both directions."],
+["rtl","RTL / bidi","What are CSS logical properties and why do they matter for RTL?","Direction-relative equivalents of physical properties: margin-inline-start vs margin-left, inset-inline-start vs left, border-start-start-radius, text-align:start. They resolve against the writing direction, so the layout mirrors automatically under dir='rtl' without a separate RTL stylesheet."],
+["rtl","RTL / bidi","How do you stop a ticker or number from corrupting surrounding RTL text?","Isolate the run of unknown/opposite direction with <bdi> or CSS unicode-bidi:isolate so the Unicode bidi algorithm can't reorder adjacent punctuation. In a trading UI, also keep charts, axes and order books LTR — time and magnitude aren't language — while mirroring the surrounding chrome."],
+["arch","Architecture","How does the browser tell you the user's preferred languages?","navigator.languages — an ordered array from most to least preferred (use it, not just navigator.language). Server-side the same preference arrives in the Accept-Language header. You match that list against the locales you ship and fall back gracefully."],
+["arch","Architecture","Describe a sensible locale fallback chain.","Requested tag → language-only → a region/script default → app default. fr-CA falls back to fr before en; zh-Hant-TW to zh-Hant. Never render a blank or the raw key on a miss — fall back to the default-locale string. BCP 47 tags (language-script-region) drive the walk."],
+["arch","Architecture","How do you avoid shipping every translation to every user?","Code-split catalogues by locale and load the active one on demand (dynamic import of the locale bundle, or per-route message chunks). Load the negotiated locale first; lazy-load others on switch. For SSR, inline the chosen locale's messages in the initial HTML to avoid a flash of untranslated content and hydration mismatch."],
+["arch","Architecture","What's pseudo-localisation and why use it?","A fake locale that transforms strings — accents, padding to ~30–40% longer, wrapping in brackets — to surface i18n bugs early: hardcoded strings (they stay plain), truncation/overflow from text expansion, and concatenation. It lets you test readiness without waiting for real translations."],
+["money","Dates & money","Why is money never stored as a JavaScript number, and how does that relate to i18n?","Binary floats can't represent decimal money exactly (0.1 + 0.2 ≠ 0.3), which loses real value on an exchange. Store integer minor units or a decimal/BigInt type (strings on the wire) and do math there; use Intl.NumberFormat only for display. i18n governs how it's shown; it doesn't fix the value bug."],
+["intl","Intl / format","How do you sort a market or asset list correctly across locales?","Use Intl.Collator as the comparator (reused, not built per comparison): list.sort((a,b)=>collator.compare(a,b)). Default Array.sort compares UTF-16 code units — wrong for accented and CJK text, and it orders '10' before '9'. Pass {numeric:true} for natural numeric ordering and sensitivity to control case/accent handling."],
+["arch","Architecture","Why is a user's language not the same as their jurisdiction?","Language (navigator.language) drives formatting and translation; jurisdiction/legal region drives which features, risk disclaimers, and regulatory copy are shown, and is determined by geo/KYC/account region. A German speaker may be trading from Singapore. Never gate a legal obligation on Accept-Language — they're separate axes."]
+];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// two passes: word-boundary tokens first, then punctuation/markup tokens that
+// don't sit on \b boundaries (so the closing quote / '>' stays inside the chip)
+const codeify = s => esc(s)
+  .replace(/\b(Intl\.[A-Za-z]+|navigator\.languages|navigator\.language|Accept-Language|parseFloat|margin-inline-start|inset-inline-start|BigInt|Temporal|PluralRules|MessageFormat|formatToParts|maximumFractionDigits|roundingMode|Collator|BCP ?47|CLDR|zh-Hant|zh-Hans|fr-CA|UTC)\b/g,
+    m => `<code class="k">${m}</code>`)
+  .replace(/(unicode-bidi:isolate|&lt;bdi&gt;|dir='rtl')/g,
+    m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

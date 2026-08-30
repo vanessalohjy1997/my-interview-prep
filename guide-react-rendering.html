@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>React Rendering & Reconciliation — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#38BDF8;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(56,189,248,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#A9E4FB}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(56,189,248,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#A9E4FB}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">React <em>Rendering</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> What render means</a>
+    <a href="#phases"><span class="n">01</span> Render vs commit</a>
+    <a href="#triggers"><span class="n">02</span> What triggers re-render</a>
+    <a href="#vdom"><span class="n">03</span> Virtual DOM &amp; Fiber</a>
+    <a href="#recon"><span class="n">04</span> Reconciliation</a>
+    <a href="#memo"><span class="n">05</span> memo / useMemo</a>
+    <a href="#batch"><span class="n">06</span> Batching &amp; StrictMode</a>
+    <a href="#boundaries"><span class="n">07</span> Errors, lazy &amp; Suspense</a>
+    <a href="#drills"><span class="n">08</span> Drills</a>
+    <a href="#bank"><span class="n">09</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Rendering is <span>calling your function</span>, not touching the DOM.</h1>
+      <p class="lede">Most React performance and correctness questions reduce to one thing: knowing exactly when React re-runs your component, what it does with the result, and why keys and referential identity decide the rest.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-chain"></span>Render phase</span>
+        <span class="chip"><span class="dot d-ful"></span>Commit phase</span>
+        <span class="chip"><span class="dot d-micro"></span>Reconciliation</span>
+        <span class="chip"><span class="dot d-pending"></span>Memoization</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The mental model</div>
+      <h2>What &ldquo;render&rdquo; actually means</h2>
+      <p>A <strong>render</strong> is React calling your component function to produce an <em>element tree</em> — a plain-object description of the UI (&ldquo;what it should look like&rdquo;). That is <strong>not</strong> the same as updating the DOM. React computes the description first, diffs it, then applies the minimal real-DOM changes separately.</p>
+      <ul class="body">
+        <li><strong>Render</strong> = run components, build the virtual tree. Pure, no DOM writes.</li>
+        <li><strong>Commit</strong> = apply the diffed changes to the real DOM, run refs and effects.</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;Re-rendering doesn't mean the DOM changed. When React re-renders it diffs, and only touches the DOM where the diff found a difference — and it may skip re-running the component entirely when <code class="k">memo</code> or a bailout applies.&rdquo;</div>
+    </section>
+
+    <section id="phases">
+      <div class="kicker">01 — Two phases</div>
+      <h2>Render vs commit</h2>
+      <table class="tbl">
+        <tr><th></th><th>Render phase</th><th>Commit phase</th></tr>
+        <tr><td>Job</td><td>Call components, build &amp; diff the element tree</td><td>Apply DOM mutations, run refs &amp; effects</td></tr>
+        <tr><td>Purity</td><td>Must be pure — no side effects, no DOM writes</td><td>Side effects allowed</td></tr>
+        <tr><td>Interruptible?</td><td>Yes in concurrent React — can pause, abort, restart</td><td>No — synchronous, runs to completion</td></tr>
+      </table>
+      <p>Because the render phase can be paused and even <strong>restarted</strong>, doing side effects there (mutating a ref, firing a request, subscribing) is a bug: it may run twice or be thrown away. Side effects belong in event handlers or effects, which run during/after commit.</p>
+      <ul class="body">
+        <li><code class="k">useLayoutEffect</code> runs <strong>synchronously at the end of the commit phase — after React applies the DOM mutations, before the browser paints</strong> — for DOM measurement/adjustment you don't want to flicker.</li>
+        <li><code class="k">useEffect</code> runs <strong>after paint</strong> (asynchronously) — the default for most effects. Caveat worth knowing: when the effect was caused by an interaction like a click, React may flush it <em>before</em> paint.</li>
+      </ul>
+
+      <h3>useLayoutEffect, properly</h3>
+      <p>The ordering within a single commit is worth memorising, because it is exactly what the question is testing:</p>
+      <ol class="body">
+        <li>Old refs are detached (set to <code class="k">null</code>) and <strong><code class="k">useLayoutEffect</code> cleanups</strong> run — both in the mutation phase, <em>before</em> the DOM changes.</li>
+        <li>React applies the DOM mutations.</li>
+        <li><strong><code class="k">useLayoutEffect</code> setups</strong> run and refs are attached — synchronously, blocking the browser, and bottom-up, which is why a parent's layout effect can already read a child's <code class="k">ref.current</code>.</li>
+        <li>The browser paints.</li>
+        <li><code class="k">useEffect</code> cleanups run, then its setups.</li>
+      </ol>
+      <p>So the rule is: <strong>if the user must never see the intermediate state, it has to be a layout effect.</strong> The canonical cases are measuring a node and immediately repositioning something based on the measurement — a tooltip that would otherwise flash in the wrong place — scroll restoration, and reading a value from the DOM before the browser has a chance to show it.</p>
+      <pre>useLayoutEffect(() =&gt; {
+  const { height } = ref.current.getBoundingClientRect();
+  setPosition(anchorTop - height);   <span class="cmt">// re-render before paint: no flicker</span>
+}, [anchorTop]);</pre>
+      <div class="note warn"><span class="lbl">The two costs</span>It <strong>blocks paint</strong>, so anything slow in a layout effect is directly visible as a delay — never fetch or do heavy work there. And it <strong>does not run during server rendering</strong>, so React warns when a server-rendered component uses it; either move the work to <code class="k">useEffect</code>, or use the common <code class="k">isomorphicLayoutEffect</code> shim that falls back to <code class="k">useEffect</code> on the server.</div>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;<code class="k">useEffect</code> by default. <code class="k">useLayoutEffect</code> only when I am measuring the DOM and writing back to it in the same frame, because that is the only case where paint order is observable.&rdquo;</div>
+    </section>
+
+    <section id="triggers">
+      <div class="kicker">02 — The cause of every re-render</div>
+      <h2>What actually triggers a re-render</h2>
+      <p>A component re-renders for one of these reasons — and, notably, <strong>&ldquo;its props changed&rdquo; is not one of them directly</strong>:</p>
+      <ol class="body">
+        <li><strong>Its own state changed</strong> — a <code class="k">useState</code>/<code class="k">useReducer</code> update (and the new value differs by <code class="k">Object.is</code>).</li>
+        <li><strong>Its parent re-rendered</strong> — by default a parent re-render re-renders <em>all</em> its children, whether or not their props changed.</li>
+        <li><strong>A Context it consumes changed</strong> — every consumer of that context re-renders when the provider's <code class="k">value</code> changes.</li>
+      </ol>
+      <p>Props &ldquo;changing&rdquo; is a <em>consequence</em> of reason 2, not an independent trigger — a child re-renders because its parent did, and it happens to receive new props. React's default is &ldquo;re-render the subtree,&rdquo; and it only bails out when you opt in (<code class="k">React.memo</code>) or the state value is identical.</p>
+      <div class="note warn"><span class="lbl">Common misconception</span>&ldquo;My component only re-renders when props change.&rdquo; No — it re-renders whenever its parent does, even with identical props, unless it's wrapped in <code class="k">React.memo</code>.</div>
+    </section>
+
+    <section id="vdom">
+      <div class="kicker">03 — What React is actually holding</div>
+      <h2>The Virtual DOM &amp; Fiber</h2>
+
+      <p>JSX compiles to function calls that return <strong>plain objects</strong>. There is nothing magic in a React element:</p>
+      <pre>&lt;Button size="lg" onClick={fn}&gt;Save&lt;/Button&gt;
+
+<span class="cmt">// becomes, roughly:</span>
+{ type: Button, key: null, props: { size: 'lg', onClick: fn, children: 'Save' } }
+<span class="cmt">// (before React 19 there was also a top-level `ref`; it is now just another prop)</span></pre>
+      <p>The tree of those objects is the <strong>virtual DOM</strong>: a cheap description of what the UI should look like. On each render React builds a new one, compares it with the previous, and derives the minimal set of real DOM operations. You describe the destination; React works out the moves.</p>
+      <div class="note warn"><span class="lbl">Answer the &ldquo;is it faster?&rdquo; question honestly</span>The virtual DOM is <strong>not</strong> faster than well-targeted direct DOM manipulation — it is an extra layer of work on top of it. What it is faster than is the naive alternative it replaced: re-rendering everything, or hand-maintaining consistency between state and DOM. Its real value is the programming model — you write a pure function of state instead of a pile of mutations — and it is fast <em>enough</em> because object comparison is cheap and DOM writes are the expensive part. Saying this rather than &ldquo;the virtual DOM is fast&rdquo; is the difference between a mid and a senior answer.</div>
+      <h3>Fiber</h3>
+      <p>Fiber is the reconciler React has used since version 16. A <strong>fiber</strong> is a mutable object representing one unit of work — one component instance — holding its type, props, state, effects, and pointers to its child, sibling and parent. Because the tree is a linked structure rather than a recursive call stack, React can walk it <strong>incrementally</strong>: do a bit of work, hand control back to the browser, and resume.</p>
+      <ul class="body">
+        <li><strong>Two trees.</strong> React keeps the <code class="k">current</code> tree, which is on screen, and builds a <em>work-in-progress</em> tree alongside it. Commit is a pointer swap — a double-buffering scheme, which is why an abandoned render costs nothing visible.</li>
+        <li><strong>Interruptible render.</strong> Work can be paused, resumed, reprioritised, or thrown away entirely. This is the machinery under <code class="k">useTransition</code> and <code class="k">useDeferredValue</code>.</li>
+        <li><strong>Lanes.</strong> Updates are tagged with a priority — a click is urgent, a transition is not — so a typed character can interrupt a large list re-render already in progress.</li>
+        <li><strong>Commit is never interrupted.</strong> Everything above applies to the render phase only; the DOM is mutated in one synchronous pass so the user never sees a half-applied tree.</li>
+      </ul>
+      <p>This is also why render must be pure: a function that may be called twice and discarded cannot be trusted with side effects.</p>
+      <div class="note"><span class="lbl">Worth mentioning if the topic comes up</span>Not every framework does this. Solid and Svelte compile to fine-grained reactivity: a signal updates exactly the DOM nodes that depend on it, with no diffing at all. React's bet is different — re-run components and diff — which trades some raw update cost for a simpler mental model and a single re-render path. React Compiler is the attempt to recover much of that cost automatically by memoising for you.</p>
+    </section>
+
+    <section id="recon">
+      <div class="kicker">04 — The diff</div>
+      <h2>Reconciliation &amp; why keys matter</h2>
+      <p>Reconciliation is how React decides what changed between the old and new element trees. A full tree diff is O(n&sup3;); React uses an O(n) <strong>heuristic</strong> built on two assumptions:</p>
+      <ul class="body">
+        <li><strong>Different element type &rarr; rebuild.</strong> If a node's type changes (<code class="k">div</code> &rarr; <code class="k">span</code>, or <code class="k">ComponentA</code> &rarr; <code class="k">ComponentB</code>), React tears down that subtree and its state and builds a new one.</li>
+        <li><strong>Same type <em>and same key</em> &rarr; reuse.</strong> It keeps the instance and DOM node, updates changed props, and recurses into children. Change the key on the same type and React discards the old instance and mounts a fresh one.</li>
+        <li><strong>Lists are matched by <code class="k">key</code>.</strong> Keys give siblings a stable identity across renders.</li>
+      </ul>
+      <h3>The index-as-key bug</h3>
+      <pre>{items.map((item, i) =&gt; <span class="kw">&lt;Row key={i} item={item} /&gt;</span>)}</pre>
+      <p>Using the array index as a key means that when the list <strong>reorders, or you insert/remove at the front</strong>, the keys stay <code class="k">0,1,2…</code> but now point at different items. React reuses the wrong instances: local state, focus, and uncontrolled input values &ldquo;stick&rdquo; to the position instead of the data — so a deleted first row appears to delete the wrong one, or typed text jumps rows.</p>
+      <div class="note"><span class="lbl">The rule</span>A key must be <strong>stable, unique, and derived from the item's identity</strong> (a database id) — never the array index (unless the list is static and never reorders) and never <code class="k">Math.random()</code> (which forces a remount every render).</div>
+    </section>
+
+    <section id="memo">
+      <div class="kicker">05 — Skipping work</div>
+      <h2>memo / useMemo / useCallback</h2>
+      <table class="tbl">
+        <tr><th>Tool</th><th>Memoizes</th><th>Skips when</th></tr>
+        <tr><td>React.memo</td><td>a component's render</td><td>its props are shallow-equal to last time</td></tr>
+        <tr><td>useMemo</td><td>a computed value</td><td>its dependency array is unchanged</td></tr>
+        <tr><td>useCallback</td><td>a function reference</td><td>its dependency array is unchanged</td></tr>
+      </table>
+      <p>They all hinge on <strong>referential equality</strong>. Objects, arrays, and functions created during render get a <em>new identity every render</em>, so passing <code class="k">{}</code>, <code class="k">[]</code>, or an inline arrow as a prop defeats a child's <code class="k">React.memo</code> — the prop is &ldquo;different&rdquo; each time. <code class="k">useMemo</code>/<code class="k">useCallback</code> exist to keep those references stable across renders.</p>
+      <div class="note warn"><span class="lbl">The senior signal — when NOT to memoize</span>Memoization is not free; it costs memory and comparison time and adds complexity. It's premature when: the component is cheap to render; a dependency changes every render anyway (the memo never hits); or you're wrapping everything &ldquo;just in case.&rdquo; Often the better fix is to pass <strong>primitive props</strong> (a string/number/boolean, which compare by value) instead of an object, or to restructure so the expensive child isn't re-rendered at all (move state down, or pass it as <code class="k">children</code>).</div>
+      <p>Note the <strong>React Compiler</strong> — a build-time tool, <strong>stable since v1.0 (Oct 2025)</strong> and now what the React team recommends for new apps: default-on in new Expo projects, offered in the Vite/Next.js templates, with its lint rules in <code class="k">eslint-plugin-react-hooks</code>'s recommended preset, supporting React 17+. It auto-memoizes components and hooks, so new code should lean on it rather than hand-written <code class="k">useMemo</code>/<code class="k">useCallback</code>. Keep manual memoization where you need precise control, don't rip it out of existing code untested — and understanding referential equality still matters.</p>
+    </section>
+
+    <section id="batch">
+      <div class="kicker">06 — Timing &amp; inputs</div>
+      <h2>Batching, StrictMode, controlled inputs</h2>
+      <h3>Automatic batching</h3>
+      <p>React groups multiple state updates that happen in the same tick into a <strong>single re-render</strong>. Since React 18 this is <em>automatic everywhere</em> — not just inside React event handlers, but also in promises, <code class="k">setTimeout</code>, and native event handlers. So three <code class="k">setState</code> calls in one handler cause one render, not three.</p>
+      <h3>StrictMode's double-invoke</h3>
+      <p>In development only, <code class="k">&lt;StrictMode&gt;</code> intentionally double-invokes component render functions and runs an extra mount&rarr;unmount&rarr;remount cycle for effects <em>and (since React 19) ref callbacks</em>, to surface impure renders and missing cleanup. It's a dev-time check — <strong>it does not happen in production</strong>. If double-invoke breaks something, the code has a hidden side effect or a missing cleanup.</p>
+      <h3>Controlled vs uncontrolled</h3>
+      <ul class="body">
+        <li><strong>Controlled:</strong> React owns the value — <code class="k">value={x}</code> + <code class="k">onChange</code>. Single source of truth; needed for validation, formatting, or driving other UI.</li>
+        <li><strong>Uncontrolled:</strong> the DOM owns the value — <code class="k">defaultValue</code> + read via a <code class="k">ref</code>. Less code for simple/forms-that-just-submit.</li>
+      </ul>
+    </section>
+
+    <section id="boundaries">
+      <div class="kicker">07 — Failure and code, deferred</div>
+      <h2>Error boundaries, lazy &amp; Suspense</h2>
+
+      <p>Two features share one shape: a component in the tree declares what to show while its subtree cannot render — because it failed, or because its code or data has not arrived.</p>
+      <h3>Error boundaries</h3>
+      <p>Since React 16, an error thrown during render that nobody catches <strong>unmounts the entire tree</strong> — the user gets a blank page. That is deliberate: a corrupted UI is considered worse than no UI. An error boundary is how you scope that blast radius.</p>
+      <pre>class Boundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }   <span class="cmt">// render the fallback</span>
+  componentDidCatch(error, info) { logToSentry(error, info.componentStack); }
+  render() {
+    return this.state.error
+      ? &lt;Fallback error={this.state.error} onRetry={() =&gt; this.setState({ error: null })} /&gt;
+      : this.props.children;
+  }
+}</pre>
+      <table class="tbl">
+        <tr><th>Caught</th><th>Not caught</th></tr>
+        <tr><td>Errors during render</td><td>Errors in event handlers — use try/catch</td></tr>
+        <tr><td>Errors in lifecycle methods</td><td>Async code: setTimeout, promise callbacks</td></tr>
+        <tr><td>Errors in constructors below it</td><td>Errors thrown in the boundary itself</td></tr>
+        <tr><td>Failures of a lazily-loaded chunk</td><td>Server-rendering errors (handled by the SSR API)</td></tr>
+      </table>
+      <ul class="body">
+        <li><strong>There is no hook for this.</strong> Error boundaries must be class components — or <code class="k">react-error-boundary</code>, which wraps one and adds a reset API and a <code class="k">useErrorBoundary</code> hook for throwing async errors into it deliberately.</li>
+        <li><strong>Place them per independent region</strong>, not only at the root: a failed chart widget should not take out the navigation. A root-level boundary is the backstop, not the strategy.</li>
+        <li><strong>Give the fallback a way out</strong> — a retry that resets the boundary state, or a <code class="k">resetKeys</code> prop, so the user is not stuck.</li>
+        <li>React 19 adds root-level <code class="k">onCaughtError</code> and <code class="k">onUncaughtError</code> options, which is where global reporting belongs.</li>
+      </ul>
+      <h3>React.lazy and Suspense</h3>
+      <pre>const Settings = lazy(() =&gt; import('./Settings'));
+
+&lt;Boundary&gt;
+  &lt;Suspense fallback={&lt;Skeleton /&gt;}&gt;
+    &lt;Settings /&gt;
+  &lt;/Suspense&gt;
+&lt;/Boundary&gt;</pre>
+      <ul class="body">
+        <li><code class="k">lazy</code> takes a function returning a dynamic <code class="k">import()</code> and returns a component that <em>suspends</em> while the chunk downloads. It requires a default export; a named export needs a small wrapper that re-maps it.</li>
+        <li>A <code class="k">&lt;Suspense&gt;</code> boundary somewhere above it is mandatory — without one, React throws.</li>
+        <li><strong>Route level is the default granularity.</strong> Splitting per component tends to produce many small chunks and a request waterfall; split at routes, then at genuinely heavy leaves like an editor or a charting library.</li>
+        <li><strong>Pair it with an error boundary.</strong> A failed chunk load — stale HTML after a deploy, flaky network — throws, and without a boundary it blanks the app. This is the same failure the release guide solves from the deploy side.</li>
+        <li><strong>Preload on intent.</strong> Calling the same import on hover or focus warms the chunk so the click feels instant, because module imports are cached.</li>
+        <li><strong>Suspense is not only for code.</strong> The same boundary handles data with <code class="k">use()</code> or a framework's loader, and on the server it is the unit of streaming.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">The detail that impresses</span>An update wrapped in <code class="k">startTransition</code> will <em>not</em> show the Suspense fallback for content that is already on screen — React keeps the previous UI visible and swaps when ready. That is how you avoid a navigation replacing a full page with a spinner: the fallback is for the first reveal, transitions are for every reveal after it.</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">08 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — does the child re-render?</div>
+        <pre>function Parent(){
+  const [n, setN] = useState(0);
+  return &lt;&gt;&lt;button onClick={() =&gt; setN(n+1)}&gt;{n}&lt;/button&gt;&lt;Child /&gt;&lt;/&gt;;
+}
+function Child(){ return &lt;p&gt;hi&lt;/p&gt;; }  <span class="cmt">// no props</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Yes — Child re-renders on every click</div>
+          <p style="margin:0">Child has no props, but its parent re-renders on each state change, and by default that re-renders all children. Wrap Child in <code class="k">React.memo</code> to bail out (its props never change, so it would then skip).</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — memo that doesn't work</div>
+        <pre>const Child = React.memo(function Child({ opts }){ /* ... */ });
+&lt;Child opts={{ sort: 'asc' }} /&gt;   <span class="cmt">// new object each render</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">memo never skips — the object prop is new every render</div>
+          <p style="margin:0"><code class="k">{{ sort:'asc' }}</code> is a fresh object each render, so the shallow prop comparison always differs. Fix: pass a primitive (<code class="k">sort="asc"</code>), or <code class="k">useMemo</code> the object, or hoist the constant out of the component.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — the key bug</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A to-do list uses <code class='k'>key={index}</code>. Users report that deleting the first item clears the wrong row's checkbox. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">The checkbox state is uncontrolled/local, keyed by position. When the first item is removed, every remaining item shifts up but the index keys stay 0..n, so React reuses each DOM node/state for a <em>different</em> item — the state that belonged to the <em>deleted</em> item (old index 0) is now attached to whatever shifted up into index 0, and every row ends up wearing the checkbox of the row above it. Using a stable id as the key ties state to the item, not the slot.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — why did my effect run twice?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;In dev, my <code class='k'>useEffect</code> that opens a websocket fires twice on mount. Bug?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Not a bug — StrictMode mounts, unmounts, and remounts once in development to verify your effect cleans up. If the second connection leaks, the effect is missing a cleanup that closes the socket. It won't double-run in production, but the fix (return a cleanup) is correct regardless.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — one render or three?</div>
+        <pre>function onClick(){
+  setA(1); setB(2); setC(3);
+}</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">One render</div>
+          <p style="margin:0">React 18 automatically batches updates in the same tick into a single re-render — and since 18 this holds in promises and timeouts too, not only in synchronous event handlers.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">09 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="phases">Phases</button>
+        <button class="fchip" data-f="vdom">Virtual DOM</button>
+        <button class="fchip" data-f="triggers">Triggers</button>
+        <button class="fchip" data-f="recon">Reconciliation</button>
+        <button class="fchip" data-f="memo">Memoization</button>
+        <button class="fchip" data-f="batch">Batching</button>
+        <button class="fchip" data-f="bnd">Errors &amp; Suspense</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · render, reconcile, commit — in that order.</footer>
+
+<script>
+const QA = [["phases", "Phases", "What's the difference between the render and commit phases?", "Render = React calls components to build and diff the element tree; it's pure and, in concurrent mode, interruptible. Commit = React applies the diffed DOM changes and runs refs/effects synchronously."], ["phases", "Phases", "Why must render be side-effect-free?", "Because the render phase can be paused, aborted, or restarted (concurrent rendering). A side effect there could run multiple times or be discarded. Put effects in event handlers or useEffect, which run at/after commit."], ["phases", "Phases", "useEffect vs useLayoutEffect timing?", "useLayoutEffect runs synchronously after commit but before the browser paints (good for DOM measurement to avoid flicker). useEffect runs asynchronously after paint — the default for most effects."], ["bnd", "Errors", "What is an error boundary and what does it catch?", "A component that renders a fallback when a descendant throws during render, in a lifecycle method, or in a constructor. It does not catch errors in event handlers, in asynchronous code such as timeouts and promise callbacks, in server rendering, or thrown by itself."], ["bnd", "Errors", "How do you implement one?", "With a class component: getDerivedStateFromError returns the state that renders the fallback, and componentDidCatch performs the side effect of logging with the component stack. There is no hook equivalent, so hooks codebases use react-error-boundary, which wraps a class and adds a reset API."], ["bnd", "Errors", "What happens if no boundary catches a render error?", "React unmounts the whole tree, leaving a blank page. That is intentional — a corrupted UI is treated as worse than no UI — and it is the reason to place boundaries around independent regions rather than relying on one at the root."], ["bnd", "Errors", "Where should error boundaries go?", "Around each independently failable region — a widget, a route, a panel — so one failure does not remove the whole app, with a root-level boundary as a backstop. Each fallback should offer a retry that resets the boundary so the user is not stuck."], ["bnd", "Errors", "How do you handle errors from event handlers or async code?", "Ordinary try/catch, then put the error into state and render the failure yourself — or deliberately rethrow it during the next render so a boundary can take it, which is what react-error-boundary's showBoundary helper does."], ["bnd", "Suspense", "How does React.lazy work?", "It takes a function returning a dynamic import and returns a component that suspends while the chunk loads. It needs a Suspense boundary above it and a default export from the module; a named export requires a small wrapper that re-maps it."], ["bnd", "Suspense", "At what granularity should you code-split?", "Routes first — that maps to what a user actually navigates between. Then individual heavy leaves such as a rich text editor or a charting library. Splitting every component produces many small chunks and a request waterfall that is slower than not splitting."], ["bnd", "Suspense", "Why pair lazy loading with an error boundary?", "Because a chunk can fail to load — a flaky network, or stale HTML after a deploy pointing at a removed file. That throws during render, and without a boundary it blanks the entire app. The boundary lets you show a retry."], ["bnd", "Suspense", "How do you make a lazily-loaded route feel instant?", "Preload on intent: call the same dynamic import on hover or focus. Module imports are cached, so by the time the click happens the chunk is already there and no fallback is shown."], ["bnd", "Suspense", "How does startTransition interact with Suspense?", "An update marked as a transition does not replace already-visible content with the fallback — React keeps the current UI on screen and swaps when the new content is ready. Fallbacks are for the first reveal; transitions cover every reveal after it."], ["phases", "Phases", "What is the exact ordering inside a commit?", "Old refs are detached and useLayoutEffect cleanups run first, before the DOM changes. React then applies the mutations. Then useLayoutEffect setups run and refs are attached — synchronously and bottom-up, so a child's ref is set before its parent's layout effect. The browser paints. Finally useEffect cleanups run, then its setups."], ["phases", "Phases", "When do you actually need useLayoutEffect?", "When you read from the DOM and write back to it in the same frame — measuring a node to position a tooltip or popover, restoring scroll position, or reading a size before the browser can show the wrong one. Everything else should be useEffect."], ["phases", "Phases", "What are the costs of useLayoutEffect?", "It blocks painting, so slow work there is directly visible as a delay, and it does not run during server rendering, which triggers a React warning. The usual fix is either to move the work to useEffect or to use a shim that falls back to useEffect on the server."], ["vdom", "Virtual DOM", "What is the Virtual DOM?", "A tree of plain JavaScript objects describing what the UI should be. On each render React builds a new tree, diffs it against the previous one, and applies the minimal set of real DOM operations. JSX compiles to the calls that create those objects."], ["vdom", "Virtual DOM", "Is the Virtual DOM faster than direct DOM manipulation?", "No — it is an extra layer on top of it. It is faster than the naive alternative of re-rendering everything or hand-syncing state to the DOM, and it is fast enough because comparing objects is cheap while DOM writes are not. Its real value is the declarative model, not raw speed."], ["vdom", "Virtual DOM", "What is Fiber?", "React's reconciler since version 16. A fiber is a mutable object representing one unit of work, linked to its child, sibling, and parent, so React can walk the tree incrementally rather than through a recursive call stack — which is what makes rendering pausable, resumable, and abortable."], ["vdom", "Virtual DOM", "How does React avoid showing a half-finished render?", "It keeps the current tree that is on screen and builds a separate work-in-progress tree; committing is effectively a pointer swap. An abandoned render therefore costs nothing visible, and the commit phase itself is synchronous and uninterruptible."], ["vdom", "Virtual DOM", "What are lanes?", "React's priority model. Updates are tagged by urgency — a click is urgent, a transition is not — so a high-priority update can interrupt lower-priority work already in progress. useTransition and useDeferredValue are the public surface of this."], ["vdom", "Virtual DOM", "How do signal-based frameworks differ?", "Solid and Svelte compile to fine-grained reactivity: a signal updates exactly the DOM nodes that depend on it, with no component re-run and no diffing. React re-runs components and diffs, trading some update cost for one uniform render path — and React Compiler tries to recover that cost by memoising automatically."], ["triggers", "Triggers", "What causes a component to re-render?", "Its own state changed, its parent re-rendered, or a context it consumes changed. Not 'props changed' directly — props change because the parent re-rendered."], ["triggers", "Triggers", "Does a child re-render if its props didn't change?", "Yes, by default, whenever its parent re-renders — regardless of props. It only skips if wrapped in React.memo (and the props are shallow-equal) or is passed as a stable children element."], ["triggers", "Triggers", "How does React bail out of a state update?", "If the new state value is identical to the current one by Object.is, React skips the re-render for that update (it may still render once to compare, then bail)."], ["recon", "Reconciliation", "What is reconciliation?", "The diffing process React uses to compare the previous and next element trees and compute the minimal set of DOM changes, using an O(n) heuristic instead of a full O(n^3) tree diff."], ["recon", "Reconciliation", "What are React's two diffing assumptions?", "Elements of different type produce different trees (so it rebuilds the subtree), and developer-supplied keys tell it which children are the same across renders."], ["recon", "Reconciliation", "Why do keys matter?", "They give list items a stable identity so React can match old and new elements, reuse instances/DOM, and preserve state correctly instead of by position."], ["recon", "Reconciliation", "Why is index-as-key a bug?", "On reorder or insert/remove at the front, index keys point at different items than before, so React reuses the wrong instance — local state, focus, and uncontrolled input values attach to the position, not the data."], ["recon", "Reconciliation", "What makes a good key?", "Stable, unique, and derived from the item's identity (e.g. a DB id). Not the array index for dynamic lists, and never Math.random() (that remounts every render)."], ["memo", "Memoization", "What does React.memo do?", "Wraps a component so it skips re-rendering when its props are shallow-equal to the previous render. It memoizes the component's output, not any value inside it."], ["memo", "Memoization", "useMemo vs useCallback?", "useMemo memoizes a computed value across renders; useCallback memoizes a function reference. useCallback(fn, deps) is essentially useMemo(() => fn, deps). Both keep references stable for deps/memo."], ["memo", "Memoization", "Why does referential equality matter?", "Objects, arrays, and functions created in render get a new identity each render. Passing them as props breaks React.memo and effect dependency comparisons, causing needless re-renders or effect re-runs."], ["memo", "Memoization", "When is memoization premature?", "When the component is cheap, when a dependency changes every render (so the memo never hits), or when applied blanket 'just in case'. It costs memory + comparison and adds complexity. Prefer primitive props or restructuring."], ["memo", "Memoization", "How do primitive props help?", "Primitives (string/number/boolean) compare by value, so a memoized child sees them as unchanged when they are. Passing sort=\"asc\" instead of a new {sort:'asc'} object keeps React.memo effective without extra useMemo."], ["batch", "Batching", "What is automatic batching?", "React groups multiple state updates in the same tick into one re-render. Since React 18 it applies everywhere — event handlers, promises, setTimeout, native handlers — not just React event handlers."], ["batch", "Batching", "What does StrictMode's double-invoke do?", "In development only, it double-invokes render and mounts→unmounts→remounts effects once to surface impure renders and missing cleanups. It does not run in production."], ["batch", "Batching", "Controlled vs uncontrolled inputs?", "Controlled: React owns the value via value + onChange (single source of truth; needed for validation/formatting). Uncontrolled: the DOM owns it via defaultValue, read through a ref (less code for simple forms)."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

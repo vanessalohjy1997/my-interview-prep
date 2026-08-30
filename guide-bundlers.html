@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bundlers &amp; Build Tools — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#A3E635;  /* build / brand */
+    --rose:#FF7A8A;     /* cost / errors */
+    --amber:#F3BA2F;    /* caution / highlight */
+    --violet:#A78BFA;   /* graph / modules */
+    --cyan:#34D3E6;     /* dev-time */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+  .d-micro{background:var(--cyan)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(163,230,53,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#D9F99D}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(163,230,53,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- concept boxes ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox.chain .st-name{color:var(--violet)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#D9F99D}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Bundlers &amp; <em>Build Tools</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> What a bundler does</a>
+    <a href="#webpack"><span class="n">01</span> Webpack core concepts</a>
+    <a href="#shake"><span class="n">02</span> Tree shaking</a>
+    <a href="#split"><span class="n">03</span> Splitting &amp; caching</a>
+    <a href="#dev"><span class="n">04</span> Dev loop &amp; source maps</a>
+    <a href="#vite"><span class="n">05</span> Vite &amp; native ESM</a>
+    <a href="#landscape"><span class="n">06</span> The landscape</a>
+    <a href="#mf"><span class="n">07</span> Module Federation</a>
+    <a href="#diag"><span class="n">08</span> Shrinking a bundle</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>A bundler is a <span>graph compiler</span>.</h1>
+      <p class="lede">It walks your import graph, transforms each node, decides how to cut the graph into files, and emits something a browser can cache. Every config option you'll be asked about is one of those four jobs.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-chain"></span>Graph</span>
+        <span class="chip"><span class="dot d-ful"></span>Transform</span>
+        <span class="chip"><span class="dot d-pending"></span>Chunking</span>
+        <span class="chip"><span class="dot d-micro"></span>Dev loop</span>
+      </div>
+    </header>
+
+    <section id="intro">
+      <div class="kicker">00 — The mental model</div>
+      <h2>Four jobs, one pipeline</h2>
+      <p>Interviewers rarely want you to recite config. They want to know you understand <strong>what problem each stage solves</strong>, because that's what lets you debug a build you've never seen.</p>
+      <div class="states">
+        <div class="statebox chain">
+          <div class="st-name">1 · Resolve</div>
+          <p>Turn every <code class="k">import</code> specifier into a real file. Bare specifiers (<code class="k">react</code>) aren't URLs — someone has to map them to <code class="k">node_modules</code>, honour <code class="k">exports</code>/<code class="k">main</code>/<code class="k">browser</code>, and add extensions.</p>
+        </div>
+        <div class="statebox ful">
+          <div class="st-name">2 · Transform</div>
+          <p>Per-module: TS→JS, JSX→<code class="k">createElement</code>/<code class="k">jsx</code>, Sass→CSS, modern syntax→target syntax. In webpack these are <strong>loaders</strong>; in Vite/Rollup they're <strong>plugin hooks</strong>.</p>
+        </div>
+        <div class="statebox pending">
+          <div class="st-name">3 · Optimise &amp; chunk</div>
+          <p>Tree-shake dead exports, minify, and cut the graph into chunks so the first paint doesn't download the whole app.</p>
+        </div>
+        <div class="statebox rej">
+          <div class="st-name">4 · Emit</div>
+          <p>Write hashed assets, a manifest / HTML, and source maps. Hashing is what makes long-term HTTP caching safe.</p>
+        </div>
+      </div>
+      <h3>&ldquo;Why bundle at all — browsers support ESM now?&rdquo;</h3>
+      <p>A real answer, not a shrug:</p>
+      <ul class="body">
+        <li><strong>Bare specifiers still don't resolve natively</strong> without an import map, and you'd have to author one for the whole transitive dependency tree.</li>
+        <li><strong>Request waterfalls.</strong> Native ESM discovers imports by parsing each module, so a deep graph serialises round trips. HTTP/2 multiplexing removes connection cost, not latency-per-depth-level.</li>
+        <li><strong>Whole-graph optimisation</strong> — tree shaking, cross-module minification, and constant folding need to see the whole program.</li>
+        <li><strong>Non-JS assets</strong> — CSS, images, and workers need to be discovered, hashed and rewritten.</li>
+        <li><strong>Content hashing</strong> for immutable caching.</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;Dev and prod have different constraints. In dev I want the fastest possible edit-to-pixel loop, so unbundled native ESM wins. In prod I want the fewest bytes over the fewest round trips with cacheable, hashed chunks — so I still bundle.&rdquo;</div>
+    </section>
+
+    <section id="webpack">
+      <div class="kicker">01 — The one you'll be asked about</div>
+      <h2>Webpack: entry, output, loaders, plugins</h2>
+      <pre><span class="cmt">// webpack.config.js — the five things that matter</span>
+module.exports = {
+  <span class="kw">mode</span>: 'production',            <span class="cmt">// sets sane defaults: minify, tree-shake, NODE_ENV</span>
+  <span class="kw">entry</span>: { app: './src/index.tsx' },
+  <span class="kw">output</span>: {
+    path: __dirname + '/dist',
+    filename: '[name].[contenthash].js',   <span class="cmt">// hash = safe immutable caching</span>
+    clean: true,                           <span class="cmt">// webpack 5: replaces CleanWebpackPlugin</span>
+  },
+  <span class="kw">module</span>: { rules: [
+    { test: /\.tsx?$/, use: 'swc-loader', exclude: /node_modules/ },
+    { test: /\.css$/,  use: ['style-loader', 'css-loader'] },
+    { test: /\.svg$/,  type: 'asset/resource' },  <span class="cmt">// webpack 5 asset modules</span>
+  ]},
+  <span class="kw">plugins</span>: [ new HtmlWebpackPlugin({ template: './index.html' }) ],
+  <span class="kw">resolve</span>: { extensions: ['.tsx','.ts','.js'] },
+};</pre>
+      <h3>Loaders vs plugins — the classic question</h3>
+      <ul class="body">
+        <li><strong>A loader transforms one file at a time.</strong> It's a function: source string in, JavaScript (or an asset) out. It has no view of the graph. <code class="k">babel-loader</code>, <code class="k">css-loader</code>, <code class="k">sass-loader</code>.</li>
+        <li><strong>A plugin taps the compiler lifecycle.</strong> Built on <code class="k">tapable</code>, it hooks events like <code class="k">compilation</code>, <code class="k">emit</code>, and <code class="k">done</code>, and can see and mutate the whole build — every module, chunk, and asset. <code class="k">HtmlWebpackPlugin</code>, <code class="k">MiniCssExtractPlugin</code>, <code class="k">DefinePlugin</code>.</li>
+        <li>Rule of thumb: <em>per-file translation → loader; anything cross-cutting or emit-time → plugin.</em></li>
+      </ul>
+      <div class="note gold"><span class="lbl">Gotcha they love</span>Loaders in a <code class="k">use</code> array run <strong>right-to-left / bottom-to-top</strong>. <code class="k">['style-loader','css-loader','sass-loader']</code> means sass-loader runs first (Sass→CSS), then css-loader (CSS→JS module), then style-loader (inject a <code class="k">&lt;style&gt;</code> at runtime). Read them as function composition: <code class="k">style(css(sass(source)))</code>.</div>
+      <h3>What webpack 5 changed</h3>
+      <table class="tbl">
+        <tr><th>Change</th><th>Why it matters</th></tr>
+        <tr><td>Persistent cache</td><td><code class="k">cache:{type:'filesystem'}</code> caches modules to disk across runs — usually the single biggest cold-start win on a legacy webpack build.</td></tr>
+        <tr><td>Asset modules</td><td><code class="k">type:'asset/resource' | 'asset/inline' | 'asset/source' | 'asset'</code> replace file-loader / url-loader / raw-loader. <code class="k">'asset'</code> auto-inlines under 8&nbsp;KB by default.</td></tr>
+        <tr><td>No auto Node polyfills</td><td>webpack 4 silently shimmed <code class="k">crypto</code>, <code class="k">buffer</code>, <code class="k">path</code>… v5 doesn't. You now get an explicit error and must set <code class="k">resolve.fallback</code> — usually the right fix is to stop importing a Node module in browser code.</td></tr>
+        <tr><td>Module Federation</td><td>Runtime code sharing between separately-built apps (see §07).</td></tr>
+        <tr><td>Deterministic IDs</td><td><code class="k">optimization.moduleIds:'deterministic'</code> in production, so unrelated edits don't churn every chunk hash.</td></tr>
+        <tr><td>Real content hashes</td><td><code class="k">[contenthash]</code> is computed after minification, so comment-only edits no longer bust the cache.</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">Migration trap</span>The #1 webpack 4→5 breakage is <code class="k">Module not found: Can't resolve 'crypto'</code> style errors from transitive deps that assumed Node built-ins. Options, best first: drop the dep, swap for a browser-native equivalent (<code class="k">crypto.subtle</code>), or add an explicit <code class="k">resolve.fallback</code> polyfill.</div>
+    </section>
+
+    <section id="shake">
+      <div class="kicker">02 — Removing what you never used</div>
+      <h2>Tree shaking is a contract, not a switch</h2>
+      <p>Tree shaking is <strong>dead-export elimination via static analysis</strong>. It only works if the bundler can prove, without running your code, that an export is unused and that dropping the module is safe. Four things have to line up:</p>
+      <ol class="body">
+        <li><strong>ESM syntax.</strong> <code class="k">import</code>/<code class="k">export</code> are static — bindings are known at parse time. <code class="k">require()</code> is a runtime function call that can take a computed string, so CommonJS is essentially unshakeable. (webpack 5 analyses some simple CJS export patterns, but nothing you'd rely on.)</li>
+        <li><strong>Don't let Babel/TS downlevel modules to CJS.</strong> <code class="k">@babel/preset-env</code> defaults to <code class="k">modules:'auto'</code> and leaves ESM alone under babel-loader — pin <code class="k">{ modules: false }</code> if Babel runs standalone; TypeScript needs <code class="k">"module": "ESNext"</code>. Otherwise you hand the bundler CJS and silently lose shaking.</li>
+        <li><strong>Declare side effects.</strong> <code class="k">"sideEffects": false</code> in <code class="k">package.json</code> tells the bundler &ldquo;if nobody imports a binding from this module, you may delete the module entirely.&rdquo; If some files <em>do</em> have side effects (CSS imports, polyfills, global registration), list them: <code class="k">"sideEffects": ["*.css", "./src/polyfills.js"]</code>.</li>
+        <li><strong>Production mode.</strong> Webpack's <code class="k">usedExports</code> only <em>marks</em> exports as unused; the minifier (Terser/SWC) does the actual deletion.</li>
+      </ol>
+      <pre><span class="cmt">// Why "sideEffects" matters</span>
+<span class="cmt">// analytics.js</span>
+window.__analytics = init();          <span class="err">// side effect at module scope</span>
+export const track = () =&gt; {};
+
+<span class="cmt">// app.js</span>
+import './analytics';                 <span class="cmt">// imports nothing — but MUST still run</span>
+
+<span class="cmt">// With "sideEffects": false, the bundler is allowed to delete this import</span>
+<span class="cmt">// entirely and your analytics silently stop working in prod only.</span></pre>
+      <div class="note warn"><span class="lbl">Barrel files</span><code class="k">index.ts</code> files that <code class="k">export * from</code> everything are the most common real-world cause of &ldquo;tree shaking doesn't work.&rdquo; One import pulls the whole barrel into the graph; the bundler must parse every re-exported module before it can prove anything is unused. It bloats bundles <em>and</em> build time. Import from the concrete path, or ship <code class="k">"sideEffects": false</code> plus deep entry points via the <code class="k">exports</code> map.</div>
+      <h3>Things that defeat it</h3>
+      <ul class="body">
+        <li><code class="k">import _ from 'lodash'</code> — CJS, no shaking. Use <code class="k">lodash-es</code>, or <code class="k">import debounce from 'lodash/debounce'</code>.</li>
+        <li>Class properties / decorators that the minifier can't prove pure. Libraries mark helpers with a <code class="k">/*#__PURE__*/</code> annotation so Terser knows the call is droppable.</li>
+        <li>Dynamic access: <code class="k">icons[name]</code> forces the whole icon module set to be kept.</li>
+        <li>Re-assigning imported namespaces, or anything that touches the module object at runtime.</li>
+      </ul>
+    </section>
+
+    <section id="split">
+      <div class="kicker">03 — Fewer bytes, better hit rate</div>
+      <h2>Code splitting &amp; long-term caching</h2>
+      <p>Three ways a chunk gets created:</p>
+      <ul class="body">
+        <li><strong>Multiple entries</strong> — separate top-level bundles. Rare in an SPA; risks duplicating shared modules unless you dedupe.</li>
+        <li><strong>Dynamic <code class="k">import()</code></strong> — the one that matters. Every <code class="k">import()</code> is a split point; the bundler emits a separate chunk and a runtime loader for it. <code class="k">React.lazy</code> + <code class="k">Suspense</code> is a thin wrapper over this.</li>
+        <li><strong><code class="k">SplitChunksPlugin</code></strong> — automatic extraction of shared/vendor code so it isn't duplicated across chunks.</li>
+      </ul>
+      <pre><span class="cmt">// Route-level splitting — the highest-leverage change in most apps</span>
+const OrderHistory = React.lazy(() =&gt; import(
+  <span class="cmt">/* webpackChunkName: "orders" */</span> './routes/OrderHistory'
+));
+
+<span class="cmt">// Vite/Rollup use the same syntax; the magic-comment is webpack-specific.</span></pre>
+      <h3>Chunking for cache hit rate</h3>
+      <pre>optimization: {
+  <span class="kw">runtimeChunk</span>: 'single',   <span class="cmt">// webpack's module map lives in its own tiny file</span>
+  <span class="kw">splitChunks</span>: {
+    chunks: 'all',          <span class="cmt">// consider sync + async imports (default is 'async')</span>
+    cacheGroups: {
+      framework: { test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+                   name: 'framework', priority: 40, enforce: true },
+      vendor:    { test: /[\\/]node_modules[\\/]/, name: 'vendor', priority: 20 },
+    },
+  },
+}</pre>
+      <p>The reasoning: <strong>separate things that change at different rates.</strong> React changes a few times a year, your vendor set changes monthly, your app code changes daily. Put them in different files and a deploy only invalidates the file that actually changed. <code class="k">runtimeChunk:'single'</code> matters because webpack's runtime contains the chunk→hash map — leave it inside the vendor chunk and every app deploy re-hashes vendor too.</p>
+      <div class="note"><span class="lbl">Serving side</span>Hashed assets should be served <code class="k">Cache-Control: public, max-age=31536000, immutable</code>. The HTML that references them must be <code class="k">no-cache</code> — it's the only mutable pointer into the immutable graph.</div>
+      <div class="note warn"><span class="lbl">Over-splitting is real</span>Hundreds of tiny chunks means hundreds of requests, worse compression (gzip/brotli dictionaries don't span files), and more runtime overhead. <code class="k">splitChunks</code> defaults exist for this reason — chunks below <code class="k">minSize</code> (20&nbsp;KB by default in webpack 5) aren't split out, and <code class="k">maxInitialRequests</code>/<code class="k">maxAsyncRequests</code> cap the fan-out. Prefetch/preload hints (<code class="k">/* webpackPrefetch: true */</code>) recover latency for chunks you know are coming.</div>
+    </section>
+
+    <section id="dev">
+      <div class="kicker">04 — The loop you live in</div>
+      <h2>HMR, dev servers, and source maps</h2>
+      <h3>HMR vs live reload</h3>
+      <ul class="body">
+        <li><strong>Live reload</strong> refreshes the page. State is lost.</li>
+        <li><strong>HMR</strong> is signalled over a WebSocket; the client then fetches the update manifest and patch over HTTP and swaps the module in the running app, re-running only the accept handlers that opted in — component state, scroll position, and open modals survive. React Fast Refresh is the React-specific implementation; it preserves hook state as long as the file exports only function components and you don't change the hook order.</li>
+      </ul>
+      <h3>Source maps: pick per environment</h3>
+      <table class="tbl">
+        <tr><th>devtool</th><th>Use for</th><th>Trade-off</th></tr>
+        <tr><td>eval-cheap-module-source-map</td><td>Dev</td><td>Fast rebuilds — the recommended dev default. Maps to original source lines but not columns.</td></tr>
+        <tr><td>source-map</td><td>Prod (private)</td><td>Full, accurate, separate <code class="k">.map</code> file. Slowest to generate.</td></tr>
+        <tr><td>hidden-source-map</td><td>Prod (error tracking)</td><td>Generates the map but omits the <code class="k">//# sourceMappingURL</code> comment — upload it to Sentry/Datadog, never serve it.</td></tr>
+        <tr><td>nosources-source-map</td><td>Prod (light)</td><td>Stack traces map to file/line, but source content isn't embedded.</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">Security</span>Publicly serving a full <code class="k">source-map</code> for a trading or auth surface hands attackers your original source, comments and internal API shapes. Generate maps, upload them to your error tracker, and don't deploy them to the CDN.</div>
+    </section>
+
+    <section id="vite">
+      <div class="kicker">05 — The modern default</div>
+      <h2>Vite: unbundled dev, bundled prod</h2>
+      <p>Vite's whole insight is that <strong>dev and prod want opposite things</strong>, so it uses two different engines.</p>
+      <div class="states">
+        <div class="statebox ful">
+          <div class="st-name">Dev · native ESM</div>
+          <p>No bundle. The dev server serves each module over HTTP, transforming it on request. Startup time is roughly constant in project size, and an edit invalidates exactly one module.</p>
+        </div>
+        <div class="statebox pending">
+          <div class="st-name">Dev · dep pre-bundling</div>
+          <p><code class="k">node_modules</code> deps are pre-bundled once with <strong>Rolldown</strong>. This converts CJS deps to ESM and collapses a package with 600 internal files into one request.</p>
+        </div>
+        <div class="statebox chain">
+          <div class="st-name">Prod · Rolldown</div>
+          <p>A real bundle with tree shaking, chunking and hashing. Since <strong>Vite 8</strong> (March 2026) this is <strong>Rolldown</strong>, a Rust bundler with a Rollup-compatible API — the default now, not an opt-in.</p>
+        </div>
+      </div>
+      <p>Why HMR feels instant: because there's no bundle to rebuild, an update is &ldquo;re-transform this one file, push an invalidation over the WebSocket, let the client re-import it.&rdquo; Cost is proportional to the changed module and its HMR boundary, not to the app.</p>
+      <pre><span class="cmt">// vite.config.ts</span>
+export default defineConfig({
+  plugins: [react()],
+  <span class="kw">build</span>: { sourcemap: 'hidden', rolldownOptions: { output: { codeSplitting: {...} } } },
+  <span class="kw">optimizeDeps</span>: { include: ['some-cjs-dep'] },  <span class="cmt">// force into pre-bundling</span>
+});
+<span class="cmt">// Vite 8 note: build.rollupOptions is now an alias of build.rolldownOptions,</span>
+<span class="cmt">// and the object form of output.manualChunks is gone — use codeSplitting.</span></pre>
+      <div class="note gold"><span class="lbl">Env var trap worth knowing</span>Only variables prefixed <code class="k">VITE_</code> are exposed on <code class="k">import.meta.env</code> and inlined into the client bundle. That prefix is a safety boundary — it's why you can't accidentally ship <code class="k">DB_PASSWORD</code>. The flip side: anything you <em>do</em> prefix is public. There is no such thing as a client-side secret in any bundler; <code class="k">DefinePlugin</code>/<code class="k">import.meta.env</code> perform literal text substitution into shipped JS.</div>
+      <div class="note warn"><span class="lbl">Dev/prod divergence</span>Because dev is unbundled and prod is Rolldown-bundled, a class of bugs only appears in prod: module execution order, CJS/ESM interop edges, and anything depending on <code class="k">process.env</code>. Run <code class="k">vite build &amp;&amp; vite preview</code> in CI, not just <code class="k">vite dev</code>.</div>
+    </section>
+
+    <section id="landscape">
+      <div class="kicker">06 — Know the trade-offs, not just the names</div>
+      <h2>The 2026 landscape</h2>
+      <table class="tbl">
+        <tr><th>Tool</th><th>Written in</th><th>Best at</th><th>Watch out for</th></tr>
+        <tr><td>webpack</td><td>JS</td><td>Maximal control, huge plugin ecosystem, Module Federation, legacy/monorepo builds</td><td>Slowest; config surface is enormous</td></tr>
+        <tr><td>Vite</td><td>JS (+Rust)</td><td>App dev DX; the default choice for a new SPA</td><td>Unbundled dev vs bundled prod still diverges</td></tr>
+        <tr><td>Rolldown</td><td>Rust</td><td>Vite 8's single bundler for both dep pre-bundling and production; Rollup-compatible plugin API</td><td>Young — the Rollup plugin ecosystem is still catching up</td></tr>
+        <tr><td>Rollup</td><td>JS</td><td><strong>Libraries.</strong> Flat, readable ESM output; best-in-class shaking; multiple output formats</td><td>Not an app dev server; no longer what Vite uses</td></tr>
+        <tr><td>esbuild</td><td>Go</td><td>Raw speed (10–100×); still an excellent standalone transform/bundle step</td><td>Strips types without type-checking; Vite has moved off it to Rolldown/Oxc</td></tr>
+        <tr><td>Oxc</td><td>Rust</td><td>Vite 8's compiler — parse, transform (incl. React Refresh), minify</td><td>Newer than SWC; ecosystem still growing</td></tr>
+        <tr><td>SWC</td><td>Rust</td><td>Drop-in Babel replacement for transform/minify; used by Next.js and <code class="k">@swc/jest</code></td><td>A compiler, not a bundler</td></tr>
+        <tr><td>Rspack</td><td>Rust</td><td>Webpack-compatible config/loaders/plugins at Rust speed — the low-risk escape hatch for a big webpack codebase</td><td>Plugin parity is very good but not total</td></tr>
+        <tr><td>Turbopack</td><td>Rust</td><td>Next.js; incremental, function-level caching. Default for both <code class="k">dev</code> and <code class="k">build</code> since Next.js 16</td><td>Effectively Next-coupled</td></tr>
+        <tr><td>Parcel</td><td>JS + Rust</td><td>Zero-config prototyping</td><td>Less control when you need it</td></tr>
+      </table>
+      <div class="note"><span class="lbl">The senior framing</span>&ldquo;The speed difference isn't cleverness, it's language and parallelism. JS bundlers are single-threaded-ish and pay to serialise ASTs between tools; esbuild (Go) and the Rust generation (SWC, Oxc, Rspack, Turbopack, Rolldown) parallelise across cores and keep one AST in memory across parse, transform and print. That's the 10× — and it's why the whole ecosystem is migrating rather than micro-optimising. Vite 8 is the clearest example: it dropped both Rollup and esbuild for Rolldown and Oxc.&rdquo;</div>
+      <h3>&ldquo;Would you migrate our webpack build?&rdquo;</h3>
+      <p>Good answer: <em>measure first.</em> Split the number into cold start, incremental rebuild, and CI build. Cheap wins before a rewrite: turn on <code class="k">cache:{type:'filesystem'}</code>, swap <code class="k">babel-loader</code> for <code class="k">swc-loader</code>/<code class="k">esbuild-loader</code>, narrow <code class="k">include</code>/<code class="k">exclude</code> so you're not transpiling <code class="k">node_modules</code>, and move type-checking off the critical path (<code class="k">tsc --noEmit</code> in parallel, or <code class="k">ForkTsCheckerWebpackPlugin</code>). If it's still slow, Rspack is the lowest-risk migration because the config shape is the same; Vite is the bigger but cleaner jump.</p>
+    </section>
+
+    <section id="mf">
+      <div class="kicker">07 — The micro-frontend question</div>
+      <h2>Module Federation</h2>
+      <p>Federation lets one build consume a module from <strong>another independently deployed build at runtime</strong>. Not an npm dependency resolved at build time — an HTTP fetch of a remote's manifest when the code is first needed.</p>
+      <pre><span class="cmt">// remote (the app that publishes)</span>
+new ModuleFederationPlugin({
+  name: 'trading',
+  filename: 'remoteEntry.js',
+  exposes: { './OrderBook': './src/OrderBook' },
+  shared: { react: { <span class="kw">singleton</span>: true, requiredVersion: '^18.2.0' },
+            'react-dom': { singleton: true } },
+});
+
+<span class="cmt">// host (the app that consumes)</span>
+new ModuleFederationPlugin({
+  name: 'shell',
+  remotes: { trading: 'trading@https://cdn.example.com/trading/remoteEntry.js' },
+  shared: { react: { singleton: true }, 'react-dom': { singleton: true } },
+});
+
+<span class="cmt">// then, in the host:</span>
+const OrderBook = React.lazy(() =&gt; import('trading/OrderBook'));</pre>
+      <ul class="body">
+        <li><strong>Why teams want it:</strong> independent deploy cadence. A team ships their surface without rebuilding or redeploying the shell.</li>
+        <li><strong><code class="k">singleton: true</code> is not optional for React.</strong> Two React copies in one page means two hook dispatchers and two context registries — hooks throw or context silently reads <code class="k">undefined</code>.</li>
+        <li><strong>Costs to name in the interview:</strong> version skew between independently-deployed remotes; a remote being down or 404ing needs an error boundary and a fallback; cross-remote TypeScript types need generating and publishing; bundle duplication when <code class="k">shared</code> is misconfigured; end-to-end debugging spans several repos.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">Balanced take</span>&ldquo;Federation solves an <em>organisational</em> problem — deploy independence for separate teams — at the cost of real runtime and operational complexity. For a single team, a monorepo with route-level code splitting gets you most of the loading benefit with none of the version-skew risk. I'd reach for it when deploy coupling is the actual bottleneck.&rdquo;</div>
+    </section>
+
+    <section id="diag">
+      <div class="kicker">08 — Attribution, again</div>
+      <h2>&ldquo;The bundle is 3&nbsp;MB. Fix it.&rdquo;</h2>
+      <ol class="body">
+        <li><strong>Look, don't guess.</strong> <code class="k">webpack-bundle-analyzer</code>, <code class="k">rollup-plugin-visualizer</code> for Vite, or <code class="k">source-map-explorer</code> on the built assets (works for any bundler). Read <strong>gzip/brotli</strong> size, not raw — that's what users download.</li>
+        <li><strong>Find the whales.</strong> Typical offenders: <code class="k">moment</code> with all locales (→ <code class="k">date-fns</code>/<code class="k">dayjs</code>, or native <code class="k">Intl</code>), full <code class="k">lodash</code>, an entire icon set, a charting or rich-text library on a route most users never open, a duplicated dependency at two versions.</li>
+        <li><strong>Check for duplicates.</strong> Two copies of the same library at different semver ranges is extremely common. <code class="k">npm ls react</code>, <code class="k">npm dedupe</code>, or <code class="k">resolutions</code>/<code class="k">overrides</code>.</li>
+        <li><strong>Check polyfill cost.</strong> An overly-broad <code class="k">browserslist</code> pulls in a lot of <code class="k">core-js</code>. Tightening targets to what you actually support is often a free 50–100&nbsp;KB.</li>
+        <li><strong>Split by route</strong>, then lazy-load heavy leaf features behind interaction.</li>
+        <li><strong>Lock it in.</strong> A size budget in CI (<code class="k">size-limit</code>, or webpack's <code class="k">performance.hints:'error'</code>) that fails the PR. Otherwise it regrows in a quarter.</li>
+      </ol>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;I'd start from the analyzer output and gzip numbers rather than intuition, fix the largest attributable item, and add a CI budget so the win doesn't decay. Then I'd verify the user-facing metric actually moved — bundle size is a proxy; LCP and INP are the goal.&rdquo;</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the vanished analytics</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A teammate adds <code class='k'>"sideEffects": false</code> to a shared package. Bundle drops 40&nbsp;KB, but the theme stylesheet and analytics init stop working — in production only. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0"><code class="k">"sideEffects": false</code> is a promise that no module in the package does anything at import time. That's false here: <code class="k">import './theme.css'</code> and the analytics module both work purely by executing. With the flag set, the bundler drops those bare imports because nothing binds from them. Dev doesn't reproduce it because tree shaking only runs in production mode. Fix: <code class="k">"sideEffects": ["*.css", "./src/analytics.js"]</code> — an allowlist rather than a blanket false.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — cache busting everything</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Every deploy invalidates the vendor chunk even when no dependency changed. Users re-download 800&nbsp;KB of React weekly. What's wrong?&rdquo;</div>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">The webpack runtime is inside the vendor chunk</div>
+          <p style="margin:0">The runtime holds the module-id → chunk-hash map, so it changes on every build; if it lives in vendor, vendor's <code class="k">[contenthash]</code> changes too. Fix with <code class="k">optimization.runtimeChunk:'single'</code> to extract it, and <code class="k">moduleIds:'deterministic'</code> so ids don't renumber when you add a file. Also confirm you're using <code class="k">[contenthash]</code> and not <code class="k">[hash]</code> — <code class="k">[hash]</code> is per-compilation, so it changes for every asset on every build.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — works in dev, breaks in prod</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A Vite app works locally but throws <code class='k'>X is not a function</code> after <code class='k'>vite build</code>. Where do you look?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Dev serves native ESM; prod goes through Rollup. The usual causes are CJS/ESM interop (a CJS dep whose default export shape differs once bundled — fix via <code class="k">optimizeDeps.include</code> or the interop options), reliance on <code class="k">process.env</code> which only exists after define-substitution, or module <em>execution order</em> differences after chunking. Reproduce with <code class="k">vite build &amp;&amp; vite preview</code>, build with <code class="k">sourcemap</code> on to get a real stack, and add that command to CI so prod-only breakage is caught on the PR rather than in release.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — loader order</div>
+        <pre>{ test: /\.scss$/, use: ['sass-loader', 'css-loader', 'style-loader'] }</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Backwards — the array runs right-to-left</div>
+          <p style="margin:0">As written, style-loader runs first and receives raw Sass, which it can't handle. The correct order is <code class="k">['style-loader','css-loader','sass-loader']</code>: sass compiles to CSS, css-loader resolves <code class="k">@import</code>/<code class="k">url()</code> and turns it into a JS module, style-loader injects it. In production you'd swap style-loader for <code class="k">MiniCssExtractPlugin.loader</code> to emit a real <code class="k">.css</code> file instead of injecting at runtime — otherwise CSS arrives only after JS executes, which hurts FOUC and LCP.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — 8-minute builds</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Our webpack build takes 8 minutes in CI and 40 seconds to rebuild locally. Where do you start?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Separate the two numbers — they have different fixes. Profile first (<code class="k">--profile</code>, <code class="k">speed-measure-webpack-plugin</code>, or the build's own stats) to find which loaders dominate. Local rebuild: enable <code class="k">cache:{type:'filesystem'}</code>, narrow loader <code class="k">include</code> to <code class="k">src/</code>, and pull type-checking out of the transform (SWC/esbuild strips types; run <code class="k">tsc --noEmit</code> in parallel). CI: cache <code class="k">node_modules</code> and the webpack cache directory between runs, and parallelise lint/typecheck/build/test as separate jobs. If transform time still dominates after that, Rspack is a config-compatible swap; only then consider a full migration.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — the leaked secret</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Someone put an API signing key in <code class='k'>VITE_API_SECRET</code> (or via <code class='k'>DefinePlugin</code>) and says it's safe because it's an environment variable. Respond.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">It isn't safe. Build-time env injection is literal text substitution into the JavaScript you ship — the value is in the bundle, readable with view-source. Environment variables are a <em>build configuration</em> mechanism, not a secrecy mechanism. Anything the browser needs is public by definition. The fix is architectural: keep the secret server-side and have the client call your backend, which signs the request. Also rotate the key, because it's in your git-tagged build artefacts and any CDN cache.</p></div>
+      </div>
+    </section>
+
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="core">Core</button>
+        <button class="fchip" data-f="webpack">Webpack</button>
+        <button class="fchip" data-f="shake">Tree shaking</button>
+        <button class="fchip" data-f="split">Splitting</button>
+        <button class="fchip" data-f="vite">Vite/modern</button>
+        <button class="fchip" data-f="mf">Federation</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · resolve, transform, chunk, emit.</footer>
+
+<script>
+const QA = [
+["core","Core","What does a bundler actually do?","Four jobs: (1) resolve — turn import specifiers into real files, honouring node_modules and package.json `exports`; (2) transform — TS/JSX/Sass to browser-ready output, per module; (3) optimise and chunk — tree-shake, minify, split the graph into cacheable files; (4) emit — hashed assets, HTML/manifest and source maps."],
+["core","Core","Why bundle if browsers support ES modules?","Bare specifiers still need resolution or a full import map; deep module graphs cause request waterfalls because imports are discovered by parsing; whole-program optimisations like tree shaking need the full graph; non-JS assets need discovery and hashing; and content hashing is what makes immutable caching safe. Dev can be unbundled — production usually shouldn't be."],
+["core","Core","ESM vs CommonJS — why does the bundler care?","ESM imports/exports are static, so bindings are known at parse time and can be analysed without running code. CommonJS `require()` is a runtime function call with a possibly-computed argument, so exports can't be proven unused. That's why tree shaking only works reliably on ESM."],
+["core","Core","What is a source map and which do you ship?","A mapping from generated positions back to original source. In dev use a cheap, fast one like `eval-cheap-module-source-map`. In production generate a full map but use `hidden-source-map` so no `sourceMappingURL` comment is emitted — upload it to your error tracker instead of serving it publicly."],
+["core","Core","Where do minification and compression each happen?","Minification is a build step (Terser/SWC/esbuild): shorter names, dead code removed, syntax collapsed. Compression is a transfer step (gzip or brotli) applied by the server or CDN. They are complementary — minify first so the compressor has less to work with. Judge bundle size by the compressed number."],
+["core","Core","What does the package.json `exports` field do?","It defines a package's public entry points and can map different conditions (`import`, `require`, `browser`, `types`) to different files. Unlike `main`, it also *encapsulates* — consumers can't deep-import paths you didn't expose. Getting it wrong is a common source of ESM/CJS resolution errors and dual-package hazards where two copies of a module load."],
+["webpack","Webpack","Loader vs plugin?","A loader transforms a single file — source in, JS or asset out — with no view of the graph. A plugin taps the compiler lifecycle via tapable and can see and mutate the whole build: every module, chunk and emitted asset. Per-file translation → loader; anything cross-cutting or emit-time → plugin."],
+["webpack","Webpack","Which direction do loaders in a `use` array run?","Right to left, bottom to top. `['style-loader','css-loader','sass-loader']` runs sass-loader first and style-loader last. Read it as function composition: style(css(sass(src)))."],
+["webpack","Webpack","What did webpack 5 change?","Persistent filesystem caching; asset modules replacing file/url/raw-loader; no automatic Node core polyfills (you must set resolve.fallback or stop importing them); Module Federation; deterministic module ids; real content hashes computed after minification; and `output.clean`."],
+["webpack","Webpack","What is `mode` actually doing?","It sets a bundle of defaults. Production turns on minification, `usedExports` for tree shaking, deterministic ids and chunk optimisation, and defines `process.env.NODE_ENV` as 'production' so libraries strip dev-only code. Development favours fast rebuilds, readable output and better error messages."],
+["webpack","Webpack","What does DefinePlugin do, and what's the risk?","It performs literal text substitution of identifiers at build time — `process.env.NODE_ENV` becomes the string `'production'`, which lets the minifier drop dead branches. The risk is that anything you define is inlined into shipped JavaScript, so it must never be a secret."],
+["webpack","Webpack","Why is `[contenthash]` better than `[hash]`?","`[hash]` — deprecated in webpack 5 in favour of `[fullhash]` — is per-compilation, so every asset's filename changes on every build and all caches bust. `[contenthash]` is derived from that asset's own content, so a file only gets a new name when it actually changed. That's the basis for long-term immutable caching."],
+["webpack","Webpack","How do you speed up a slow webpack build?","Measure first to find the dominant cost. Then: enable filesystem caching; replace babel-loader with swc-loader or esbuild-loader; narrow loader include/exclude so node_modules isn't transpiled; move type-checking off the critical path; cache node_modules and the build cache in CI; parallelise CI jobs. If transform time still dominates, Rspack is a config-compatible swap."],
+["shake","Tree shaking","What are the prerequisites for tree shaking?","ESM syntax throughout (don't let Babel or TS downlevel modules to CJS — `modules:false`, `module:'ESNext'`); production mode so a minifier runs; and accurate `sideEffects` metadata in package.json. Webpack's `usedExports` only marks unused exports — Terser performs the deletion."],
+["shake","Tree shaking","What does `sideEffects: false` promise?","That no module in the package does anything meaningful merely by being imported, so the bundler may delete a module entirely when no binding is used. It's wrong for CSS imports, polyfills, and anything registering globals — those need an allowlist like `[\"*.css\"]` instead of a blanket false."],
+["shake","Tree shaking","Why do barrel files hurt?","An `index.ts` that re-exports everything means importing one symbol pulls the whole barrel into the module graph. The bundler must parse every re-exported module before proving anything is unused, which inflates both bundle size and build time. Import concrete paths, or expose deep entry points via `exports`."],
+["shake","Tree shaking","Why doesn't importing from lodash shake?","The main `lodash` package is CommonJS, so it can't be statically analysed. Use `lodash-es`, deep imports like `lodash/debounce`, or a smaller alternative. The same reasoning applies to any CJS-only dependency."],
+["shake","Tree shaking","What is a `/*#__PURE__*/` annotation?","A hint to the minifier that a function call has no side effects, so if its result is unused the whole call can be dropped. Library authors and compilers emit it around factory calls that a minifier couldn't otherwise prove safe to remove."],
+["split","Splitting","How is a chunk created?","Three ways: separate entry points; a dynamic `import()`, which is an explicit split point and the main tool in an SPA; and SplitChunksPlugin automatically extracting shared or vendor code so it isn't duplicated across chunks."],
+["split","Splitting","How do you chunk for cache hit rate?","Separate code by rate of change. Framework code changes rarely, other vendors monthly, app code daily — put them in different chunks so a deploy only invalidates what changed. Extract the webpack runtime with `runtimeChunk:'single'`, because it contains the chunk-hash map and would otherwise re-hash whatever chunk it lives in."],
+["split","Splitting","Can you over-split?","Yes. Many tiny chunks mean more requests, worse compression (compressors can't share a dictionary across files), and more runtime overhead. That's why splitChunks has minSize and maxInitialRequests/maxAsyncRequests defaults. Use prefetch/preload hints to hide latency for chunks you know are coming."],
+["split","Splitting","preload vs prefetch for chunks?","A preloaded chunk loads in parallel with its parent at medium priority — for something needed in the current navigation. A prefetched chunk downloads at idle/low priority after the parent finishes — for something likely needed next. In webpack these are the `/* webpackPreload: true */` and `/* webpackPrefetch: true */` magic comments on a dynamic import."],
+["split","Splitting","How should hashed assets be cached?","Hashed asset files can be `Cache-Control: public, max-age=31536000, immutable`, because a content change produces a new filename. The HTML referencing them must not be cached that way — it's the mutable pointer, so serve it `no-cache` and let it revalidate."],
+["vite","Vite/modern","How does Vite's dev server work?","It doesn't bundle. It serves native ES modules over HTTP, transforming each on request, so startup is roughly independent of project size and an edit invalidates one module. Dependencies from node_modules are pre-bundled once with Rolldown, which converts CJS to ESM and collapses many small files into one request."],
+["vite","Vite/modern","Why does Vite still bundle for production?","Because unbundled ESM in production means request waterfalls proportional to graph depth, no cross-module optimisation, and no chunk-level control. Production builds go through Rolldown for tree shaking, chunking and hashing — since Vite 8 it's the default Rust bundler, having replaced both Rollup and esbuild."],
+["vite","Vite/modern","What bugs come from Vite's dev/prod split?","Anything that differs between native-ESM dev and a Rolldown-bundled prod: CJS/ESM interop edges, module execution order after chunking, and code depending on values only substituted at build time. Mitigate by running `vite build && vite preview` in CI rather than only testing the dev server."],
+["vite","Vite/modern","Why is esbuild so much faster?","It's written in Go, parallelises across cores, and keeps a single AST in memory across parse, transform and print instead of serialising between separate tools as a Babel-plus-webpack pipeline does. The Rust generation (SWC, Oxc, Rspack, Turbopack, Rolldown) gets its speed the same way."],
+["vite","Vite/modern","Does esbuild type-check TypeScript?","No. It strips types without checking them, which is exactly why it's fast. You still need `tsc --noEmit` in your editor and CI to catch type errors — run it as a parallel job so it doesn't block the build."],
+["vite","Vite/modern","When would you pick Rollup over webpack or Vite?","For publishing a library. Rollup produces flat, readable ESM output, has excellent tree shaking, and makes it straightforward to emit multiple formats (esm/cjs/umd) with dependencies marked external. Webpack and Vite are optimised for applications."],
+["vite","Vite/modern","webpack vs Rspack vs Turbopack in one line each?","webpack: JS, maximum control and ecosystem, slowest. Rspack: Rust, deliberately webpack-compatible config, loaders and plugins — the low-risk speed migration for an existing webpack codebase. Turbopack: Rust, from Vercel, incremental caching, default for both dev and build since Next.js 16, and in practice tied to Next.js."],
+["mf","Federation","What is Module Federation?","A webpack (and now Rspack/Vite-plugin) mechanism where one build loads a module from another independently deployed build at runtime, by fetching that remote's entry manifest. A host declares `remotes`, a remote declares `exposes`, and both declare `shared` dependencies to avoid duplication."],
+["mf","Federation","Why does `singleton: true` matter for React?","Because two React instances in one page means two hook dispatchers and two separate context registries. Hooks throw invalid-hook-call errors, or contexts silently resolve to their defaults. Marking react and react-dom as singletons forces one shared copy at runtime."],
+["mf","Federation","What are the costs of Module Federation?","Version skew between remotes deployed on different schedules; runtime failure if a remote is unavailable, so you need error boundaries and fallbacks; TypeScript types must be generated and published across repo boundaries; duplicated dependencies when `shared` is misconfigured; and debugging that spans several codebases. It buys deploy independence — take it when deploy coupling is the actual bottleneck."],
+["mf","Federation","Alternative to micro-frontends for load performance?","A monorepo with route-level code splitting. You get lazy loading and independent chunk caching without runtime version skew or cross-repo type publishing. Federation's real payoff is organisational — independent deploys for independent teams — not raw performance."]
+];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// backtick-delimited spans become inline code
+const codeify = s => esc(s).replace(/`([^`]+)`/g, (m,inner) => `<code class="k">${inner}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${codeify(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

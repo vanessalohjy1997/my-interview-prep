@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Event Loop — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E141C;
+    --surface:#151E29;
+    --surface-2:#1C2836;
+    --border:#293A4C;
+    --border-soft:#20303f;
+    --text:#E7EEF5;
+    --muted:#8497AA;
+    --faint:#5C6E80;
+    /* semantic colours — each maps to a real concept and is used consistently */
+    --gold:#F3BA2F;   /* the loop / structure / brand */
+    --violet:#A78BFA; /* the call stack */
+    --coral:#FF7A8A;  /* macrotasks */
+    --cyan:#34D3E6;   /* microtasks */
+    --green:#5FD68A;  /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--gold);color:#0E141C}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#0C1219,#0E141C);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--gold);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--gold)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--gold)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-stack{background:var(--violet)}.d-macro{background:var(--coral)}.d-micro{background:var(--cyan)}.d-loop{background:var(--gold)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--gold);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#D2DCE6}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(243,186,47,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#D2DCE6}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#F0D896}
+
+  /* colour-coded key terms */
+  .t-macro{color:var(--coral);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+  .t-stack{color:var(--violet);font-weight:600}
+  .t-loop{color:var(--gold);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--gold);background:linear-gradient(90deg,rgba(243,186,47,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--coral);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--coral)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#0A0F15;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--gold)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- simulator ---------- */
+  .sim{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin:26px 0}
+  .sim-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .sim-head .title{font-family:var(--display);font-weight:600;font-size:15px;margin-right:auto}
+  .sim-tab{font-family:var(--mono);font-size:12px;background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:6px 11px;border-radius:7px;cursor:pointer;transition:.15s}
+  .sim-tab:hover{color:var(--text);border-color:var(--faint)}
+  .sim-tab.on{background:var(--gold);color:#0E141C;border-color:var(--gold);font-weight:700}
+  .sim-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .sim-code{padding:16px 18px;border-right:1px solid var(--border);background:#0A0F15}
+  .sim-code pre{margin:0;border:none;background:none;padding:0;font-size:13px}
+  .sim-code .ln{display:block;padding:1px 8px;border-radius:5px;transition:.15s;color:#C3D0DC;white-space:pre}
+  .sim-code .ln.hot{background:rgba(243,186,47,.16);box-shadow:inset 3px 0 0 var(--gold)}
+  .sim-code .ln .cmt{color:var(--faint)}
+  .sim-state{padding:16px 18px;display:flex;flex-direction:column;gap:13px}
+  .lane{background:#0A0F15;border:1px solid var(--border-soft);border-radius:10px;padding:9px 11px;min-height:56px}
+  .lane .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-bottom:7px}
+  .lane .cap .dot{width:8px;height:8px}
+  .lane.stack .cap{color:var(--violet)} .lane.macro .cap{color:var(--coral)}
+  .lane.micro .cap{color:var(--cyan)} .lane.console .cap{color:var(--green)}
+  .items{display:flex;flex-wrap:wrap;gap:6px}
+  .items.col{flex-direction:column-reverse;align-items:flex-start}
+  .pill{font-family:var(--mono);font-size:11.5px;padding:4px 9px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);animation:pop .2s ease}
+  .lane.stack .pill{border-color:rgba(167,139,250,.4)}
+  .lane.macro .pill{border-color:rgba(255,122,138,.4)}
+  .lane.micro .pill{border-color:rgba(52,211,230,.4)}
+  .lane.console .items.col{flex-direction:column;align-items:flex-start}
+  .lane.console .pill{background:transparent;border:none;color:var(--green);padding:1px 0;font-size:12.5px}
+  .lane.console .pill::before{content:"› ";color:var(--faint)}
+  .empty{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .sim-foot{border-top:1px solid var(--border);padding:12px 16px;background:var(--surface-2)}
+  .note-row{font-size:13.5px;color:var(--muted);min-height:42px;margin-bottom:11px;display:flex;gap:9px}
+  .note-row b{color:var(--gold);font-family:var(--mono);font-size:11px;flex:none;padding-top:2px}
+  .ctrls{display:flex;gap:8px;align-items:center}
+  .ctrls button{font-family:var(--mono);font-size:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);
+    padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s}
+  .ctrls button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  .ctrls button:disabled{opacity:.35;cursor:not-allowed}
+  .ctrls .prog{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .ctrls .play{background:var(--gold);color:#0E141C;border-color:var(--gold);font-weight:700}
+  .ctrls .play:hover{color:#0E141C;filter:brightness(1.08)}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#0A0F15;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border)}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#D2DCE6}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--gold);color:#0E141C;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    .sim-body{grid-template-columns:1fr}
+    .sim-code{border-right:none;border-bottom:1px solid var(--border)}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">The <em>Event Loop</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Why any of this exists</a>
+    <a href="#stack"><span class="n">01</span> The call stack</a>
+    <a href="#loop"><span class="n">02</span> The loop itself</a>
+    <a href="#tasks"><span class="n">03</span> Macro- vs microtasks</a>
+    <a href="#sim"><span class="n">04</span> Simulator</a>
+    <a href="#async"><span class="n">05</span> async / await</a>
+    <a href="#render"><span class="n">06</span> Rendering & rAF</a>
+    <a href="#node"><span class="n">07</span> Node's event loop</a>
+    <a href="#gotchas"><span class="n">08</span> Senior-level gotchas</a>
+    <a href="#interview"><span class="n">09</span> Interview drills</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>How JavaScript does <span>many things at once</span> with one thread.</h1>
+      <p class="lede">The event loop is the answer to a paradox: JavaScript runs on a single thread, yet it never blocks on a network call, a timer, or a click. This course builds the model from the ground up — then makes you predict output until it's reflex.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-stack"></span>Call stack</span>
+        <span class="chip"><span class="dot d-macro"></span>Macrotask</span>
+        <span class="chip"><span class="dot d-micro"></span>Microtask</span>
+        <span class="chip"><span class="dot d-loop"></span>Event loop</span>
+      </div>
+    </header>
+
+    <!-- 00 -->
+    <section id="intro">
+      <div class="kicker">00 — The mental model</div>
+      <h2>Why the event loop has to exist</h2>
+      <p>Start from three facts that are all true at once:</p>
+      <ul class="body">
+        <li>JavaScript has <strong>one call stack</strong>. It can only do one thing at a time.</li>
+        <li>Work like <code class="k">fetch()</code>, <code class="k">setTimeout()</code>, or a user click takes <strong>unknown, possibly long</strong> amounts of time.</li>
+        <li>The page must <strong>stay responsive</strong> the whole time.</li>
+      </ul>
+      <p>If JS blocked the thread waiting for a network response, the entire tab would freeze — no scrolling, no clicks, nothing. So the language leans on its <strong>host environment</strong> (the browser, or Node) to do the waiting <em>off-thread</em>, and uses a scheduling mechanism to run your callback later, when the stack is free. That mechanism is the <span class="t-loop">event loop</span>.</p>
+
+      <h3>What's actually in the room</h3>
+      <p>People say "the JavaScript engine" as if it does everything. It doesn't. There are distinct pieces:</p>
+      <div class="diagram">
+        <table class="tbl" style="margin:0">
+          <tr><th>Piece</th><th>Who owns it</th><th>Job</th></tr>
+          <tr><td>Call stack</td><td>Engine (V8)</td><td>Runs your synchronous code, one frame at a time.</td></tr>
+          <tr><td>Heap</td><td>Engine (V8)</td><td>Where objects live.</td></tr>
+          <tr><td>Web APIs / libuv</td><td>Host (browser / Node)</td><td>Timers, network, DOM events, file I/O — the actual waiting.</td></tr>
+          <tr><td>Task &amp; microtask queues</td><td>Host</td><td>Hold callbacks that are ready to run.</td></tr>
+          <tr><td>Event loop</td><td>Host</td><td>Moves ready callbacks onto the stack when it's empty.</td></tr>
+        </table>
+      </div>
+      <p>The key insight for a senior answer: <strong>the engine (V8) does not contain the event loop or <code class="k">setTimeout</code></strong>. Those are provided by the host. V8 just runs whatever is on the stack. This is why the same JS behaves differently in a browser vs Node — different host, different queues, different timing.</p>
+    </section>
+
+    <!-- 01 -->
+    <section id="stack">
+      <div class="kicker">01 — Synchronous execution</div>
+      <h2>The call stack</h2>
+      <p>The <span class="t-stack">call stack</span> is a LIFO stack of frames. Calling a function <em>pushes</em> a frame; returning <em>pops</em> it. Nothing asynchronous happens while there are frames on the stack — that's the whole point of "run-to-completion": <strong>a task runs uninterrupted until the stack is empty.</strong></p>
+      <pre><span class="cmt">// each call pushes a frame; each return pops one</span>
+function third(){ return 3; }
+function second(){ return third() + 2; }
+function first(){ return second() + 1; }
+first();
+<span class="cmt">// stack grows: first → second → third, then unwinds</span></pre>
+      <p>Two consequences matter for interviews:</p>
+      <ul class="body">
+        <li><strong>Blocking is real.</strong> A <code class="k">while(true){}</code> or a heavy synchronous loop keeps the stack busy, so <em>no</em> queued callback — not a click handler, not a timer — can run. The page is frozen because the loop can't take anything off a queue while the stack is occupied.</li>
+        <li><strong>Stack overflow</strong> is just the stack exceeding its size limit, usually from unbounded recursion. It has nothing to do with the queues.</li>
+      </ul>
+      <div class="note">
+        <span class="lbl">Say this in the room</span>
+        "The event loop can only move a callback onto the stack <em>when the stack is empty</em>. So async isn't about doing two things at once — it's about interleaving work between run-to-completion tasks."
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="loop">
+      <div class="kicker">02 — The algorithm</div>
+      <h2>The loop, as an algorithm</h2>
+      <p>Strip away the jargon and the event loop is a tiny, endless routine. Here it is in the browser, close to how the HTML spec frames it:</p>
+      <pre><span class="kw">while</span> (true) {
+  task = macrotaskQueue.<span class="kw">pop</span>()        <span class="cmt">// take ONE macrotask</span>
+  <span class="kw">run</span>(task)                           <span class="cmt">// run it to completion</span>
+
+  <span class="kw">while</span> (microtaskQueue.length)       <span class="cmt">// drain ALL microtasks</span>
+    <span class="kw">run</span>(microtaskQueue.pop())         <span class="cmt">// (including ones added while draining)</span>
+
+  <span class="kw">if</span> (needsRender)
+    render()                          <span class="cmt">// rAF callbacks, style, layout, paint</span>
+}</pre>
+      <p>Read that loop carefully, because almost every trick question lives inside it:</p>
+      <ol class="body">
+        <li>Take <strong>exactly one</strong> <span class="t-macro">macrotask</span> and run it to completion.</li>
+        <li>Then <strong>drain the entire</strong> <span class="t-micro">microtask</span> queue — not one, <em>all</em> of them, including any that get added while you're draining.</li>
+        <li>Then, if it's time, the browser may render.</li>
+        <li>Repeat.</li>
+      </ol>
+      <div class="note warn">
+        <span class="lbl">The single most tested fact</span>
+        Between two macrotasks, the microtask queue is emptied <em>completely</em>. A macrotask can only run once there are zero microtasks left. This is why a promise scheduled after a <code class="k">setTimeout</code> still runs <strong>first</strong>.
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="tasks">
+      <div class="kicker">03 — Two queues, two priorities</div>
+      <h2>Macrotasks vs microtasks</h2>
+      <p>There are two queues, and the difference in when they drain is the entire game.</p>
+      <table class="tbl">
+        <tr><th>Property</th><th class="t-macro">Macrotask (task)</th><th class="t-micro">Microtask</th></tr>
+        <tr><td>Sources</td><td><code class="k">setTimeout</code>, <code class="k">setInterval</code>, <code class="k">setImmediate</code> (Node), I/O, UI events, <code class="k">MessageChannel</code></td><td><code class="k">.then/.catch/.finally</code>, <code class="k">await</code> continuations, <code class="k">queueMicrotask</code>, <code class="k">MutationObserver</code></td></tr>
+        <tr><td>How many run per loop turn</td><td>One (browser). Node runs every due callback in the phase.</td><td>All of them (queue fully drained)</td></tr>
+        <tr><td>Can it delay rendering?</td><td>Not indefinitely — render comes next, but a long one delays the frame</td><td>Yes — render waits until the queue is empty</td></tr>
+        <tr><td>Priority</td><td>Lower</td><td>Higher (always drained before the next macrotask)</td></tr>
+      </table>
+      <p>The mental shortcut: <strong>a microtask is "finish this before doing anything else"; a macrotask is "get to it on the next turn."</strong> Promises resolve via microtasks precisely so a chain of <code class="k">.then</code>s completes as one coherent unit before the browser does timers or repaints.</p>
+
+      <div class="filelabel">The canonical warm-up</div>
+      <pre>console.log('1');
+setTimeout(() =&gt; console.log('2'), 0);
+Promise.resolve().then(() =&gt; console.log('3'));
+console.log('4');
+<span class="out">// 1  4  3  2</span></pre>
+      <p><code class="k">1</code> and <code class="k">4</code> are synchronous. When the stack empties, the loop drains microtasks — so <code class="k">3</code> (the promise) beats <code class="k">2</code> (the timer), even though the timer was scheduled first and set to <code class="k">0</code>ms. Watch it happen in the simulator below.</p>
+    </section>
+
+    <!-- 04 -->
+    <section id="sim">
+      <div class="kicker">04 — Watch it move</div>
+      <h2>The event loop, stepped</h2>
+      <p>Pick an example and step through. Watch frames enter and leave the <span class="t-stack">call stack</span>, callbacks land in the <span class="t-macro">macro</span> and <span class="t-micro">micro</span> queues, and output print in order. The note explains each transition.</p>
+
+      <div class="sim" id="simulator">
+        <div class="sim-head">
+          <span class="title">Event loop simulator</span>
+          <button class="sim-tab on" data-ex="0">Timer vs Promise</button>
+          <button class="sim-tab" data-ex="1">async / await</button>
+          <button class="sim-tab" data-ex="2">Nested queues</button>
+        </div>
+        <div class="sim-body">
+          <div class="sim-code"><pre id="simCode"></pre></div>
+          <div class="sim-state">
+            <div class="lane stack"><div class="cap"><span class="dot d-stack"></span>Call stack</div><div class="items col" id="laneStack"></div></div>
+            <div class="lane micro"><div class="cap"><span class="dot d-micro"></span>Microtask queue</div><div class="items" id="laneMicro"></div></div>
+            <div class="lane macro"><div class="cap"><span class="dot d-macro"></span>Macrotask queue</div><div class="items" id="laneMacro"></div></div>
+            <div class="lane console"><div class="cap"><span class="dot" style="background:var(--green)"></span>Console</div><div class="items col" id="laneConsole"></div></div>
+          </div>
+        </div>
+        <div class="sim-foot">
+          <div class="note-row"><b id="stepTag">STEP 0</b><span id="simNote"></span></div>
+          <div class="ctrls">
+            <button id="btnPrev">‹ Back</button>
+            <button id="btnNext" class="play">Step ›</button>
+            <button id="btnReset">Reset</button>
+            <button id="btnAuto">Auto-play</button>
+            <span class="prog" id="simProg"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="async">
+      <div class="kicker">05 — The part people fake</div>
+      <h2>async / await is just promises + microtasks</h2>
+      <p>Nothing new happens with <code class="k">async/await</code> — it's syntax over promises. The trick is knowing exactly where it <em>yields</em>. The rule:</p>
+      <div class="note">
+        <span class="lbl">The await rule</span>
+        Code runs synchronously up to the first <code class="k">await</code>. At <code class="k">await</code>, the function <strong>pauses and returns control to its caller</strong>. Everything <em>after</em> the <code class="k">await</code> is scheduled as a <span class="t-micro">microtask</span> that runs once the awaited value settles.
+      </div>
+      <p>So this:</p>
+      <pre><span class="kw">async</span> function f(){
+  console.log('a');
+  <span class="kw">await</span> something;
+  console.log('b');   <span class="cmt">// ← this line is a microtask continuation</span>
+}</pre>
+      <p>is roughly equivalent to:</p>
+      <pre>function f(){
+  console.log('a');
+  <span class="kw">return</span> Promise.resolve(something).then(() =&gt; {
+    console.log('b');
+  });
+}</pre>
+      <p>That's why in the <strong>async / await</strong> simulator example, <code class="k">console.log('C')</code> (after the await) doesn't run inline — it waits in the microtask queue while the rest of the synchronous script finishes. A senior interviewer will often push here: "So how many microtask ticks does one <code class="k">await</code> cost?" Modern engines: <strong>one tick per <code class="k">await</code></strong> on a native resolved promise (an older spec made it three; that was optimised away).</p>
+      <div class="note warn">
+        <span class="lbl">Common trap</span>
+        <code class="k">await</code> on a non-promise value (e.g. <code class="k">await 5</code>) still yields to the microtask queue. <code class="k">await</code> is <em>never</em> a no-op, even when the value is already available.
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="render">
+      <div class="kicker">06 — Where the pixels happen</div>
+      <h2>Rendering & requestAnimationFrame</h2>
+      <p>The browser wants to paint at the display's refresh rate (usually ~60fps → every ~16.7ms). But it can only render <strong>between macrotasks, after microtasks are drained</strong>. So the real cycle is closer to:</p>
+      <pre>one macrotask
+  → drain all microtasks
+  → <span class="kw">requestAnimationFrame</span> callbacks   <span class="cmt">// run just before paint</span>
+  → style → layout → paint
+→ back to the next macrotask</pre>
+      <p>Practical implications you can name:</p>
+      <ul class="body">
+        <li><code class="k">requestAnimationFrame</code> callbacks fire <strong>right before the browser paints</strong>, which is why it's the correct place for visual/animation updates — not <code class="k">setTimeout</code>.</li>
+        <li>A flood of <strong>microtasks can starve rendering</strong>. If a promise chain keeps queuing more microtasks, the loop never reaches the render step, and the UI locks up even though you "used promises."</li>
+        <li>A long <strong>macrotask</strong> (heavy synchronous work in one handler) blocks the very next paint — this is what "jank" usually is. Break work into chunks across tasks, or move it to a Web Worker.</li>
+      </ul>
+    </section>
+
+    <!-- 07 -->
+    <section id="node">
+      <div class="kicker">07 — Same idea, different host</div>
+      <h2>Node.js: phases, nextTick, setImmediate</h2>
+      <p>Node uses libuv and runs the loop in <strong>phases</strong>, each with its own macrotask queue. Simplified order per iteration:</p>
+      <ol class="body">
+        <li><strong>timers</strong> — <code class="k">setTimeout</code> / <code class="k">setInterval</code> callbacks whose time is due.</li>
+        <li><strong>pending callbacks</strong> — certain deferred system callbacks.</li>
+        <li><strong>poll</strong> — retrieve new I/O events; run I/O callbacks.</li>
+        <li><strong>check</strong> — <code class="k">setImmediate</code> callbacks.</li>
+        <li><strong>close callbacks</strong> — e.g. <code class="k">socket.on('close')</code>.</li>
+      </ol>
+      <p>The part that trips people up: <strong>microtasks run <em>between</em> phases and between each callback</strong>, and Node has an extra, even-higher-priority queue:</p>
+      <table class="tbl">
+        <tr><th>Queue</th><th>Priority</th><th>Drained when</th></tr>
+        <tr><td><code class="k">process.nextTick</code></td><td>Highest</td><td>After the current operation, before the promise microtask queue</td></tr>
+        <tr><td>Promise microtasks</td><td>High</td><td>After nextTick drains, before moving to the next phase</td></tr>
+        <tr><td>Phase macrotasks</td><td>Normal</td><td>In their phase</td></tr>
+      </table>
+      <p>So in Node the priority is <code class="k">process.nextTick</code> → promises → then the next phase's tasks.</p>
+      <div class="note warn">
+        <span class="lbl">Classic Node question</span>
+        <code class="k">setTimeout(fn, 0)</code> vs <code class="k">setImmediate(fn)</code> at the top level is <em>non-deterministic</em> in order (depends on how fast the loop reaches the timers phase). But <strong>inside an I/O callback</strong>, <code class="k">setImmediate</code> always fires first — because after the poll phase, the <em>check</em> phase (setImmediate) comes before the loop wraps back to timers.
+      </div>
+      <div class="note">
+        <span class="lbl">Say this</span>
+        "Recursive <code class="k">process.nextTick</code> can starve the event loop entirely — it keeps draining before Node ever advances to I/O. It's why <code class="k">setImmediate</code> is usually the safer 'run this soon' choice in Node."
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="gotchas">
+      <div class="kicker">08 — The senior signal</div>
+      <h2>Gotchas that separate levels</h2>
+
+      <h3>1. setTimeout(fn, 0) is not 0ms</h3>
+      <p>The delay is a <em>minimum</em>, not a guarantee — the callback only runs after the stack is empty and all microtasks are drained. Browsers also clamp nested timers to a minimum (~4ms after 5 levels of nesting), and background tabs throttle timers hard.</p>
+
+      <h3>2. Microtask starvation</h3>
+      <pre><span class="cmt">// this freezes the page — the microtask queue never empties</span>
+function loop(){ Promise.resolve().then(loop); }
+loop();</pre>
+      <p>Because the loop always fully drains microtasks before rendering or running a macrotask, an ever-growing microtask queue means the browser <em>never</em> paints. Contrast with <code class="k">setTimeout(loop, 0)</code>, which yields between turns and keeps the page alive (if choppy).</p>
+
+      <h3>3. Order within a promise chain</h3>
+      <pre>Promise.resolve()
+  .then(() =&gt; console.log('a'))
+  .then(() =&gt; console.log('b'));
+Promise.resolve()
+  .then(() =&gt; console.log('c'))
+  .then(() =&gt; console.log('d'));
+<span class="out">// a  c  b  d</span></pre>
+      <p>Each <code class="k">.then</code> only schedules the <em>next</em> link once the current one runs. So the two chains interleave — the first <code class="k">.then</code> of each runs (a, c), then the second of each (b, d). This "one tick per link" behaviour is a favourite.</p>
+
+      <h3>4. The loop can't interrupt a task</h3>
+      <p>A click that arrives mid-task doesn't preempt anything. Its handler is queued as a macrotask and waits its turn. There's no interruption — only interleaving between tasks.</p>
+    </section>
+
+    <!-- 09 -->
+    <section id="interview">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Interview drills</h2>
+      <p>Predict the output <em>before</em> revealing. Say your reasoning out loud — that's what the interviewer scores, not just the answer. To watch any of these run one step at a time, open <code class="k">guide-eventloop-playground.html</code> and paste it in.</p>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — mixing all four</div>
+        <pre>console.log('start');
+setTimeout(() =&gt; console.log('timeout'), 0);
+Promise.resolve().then(() =&gt; console.log('promise'));
+queueMicrotask(() =&gt; console.log('microtask'));
+console.log('end');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">start · end · promise · microtask · timeout</div>
+          <p style="margin:0"><code class="k">start</code>/<code class="k">end</code> are synchronous. Then both microtasks drain in FIFO order (<code class="k">promise</code> was queued before <code class="k">microtask</code>). Only after the microtask queue is empty does the single macrotask (<code class="k">timeout</code>) run.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — async ordering</div>
+        <pre>console.log('A');
+async function foo(){
+  console.log('B');
+  await Promise.resolve();
+  console.log('C');
+}
+foo();
+console.log('D');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">A · B · D · C</div>
+          <p style="margin:0"><code class="k">A</code> prints. <code class="k">foo()</code> runs synchronously to the <code class="k">await</code>, printing <code class="k">B</code>; at <code class="k">await</code> it suspends and returns control. <code class="k">D</code> prints (still synchronous). The stack empties → the microtask continuation runs → <code class="k">C</code>.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — await vs a later <code class="k">.then</code></div>
+        <pre>console.log('A');
+async function foo(){
+  console.log('B');
+  await null;
+  console.log('C');
+}
+foo();
+Promise.resolve().then(() =&gt; console.log('D'));
+console.log('E');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">A · B · E · C · D</div>
+          <p style="margin:0"><code class="k">foo()</code> runs synchronously through <code class="k">B</code>. At the <code class="k">await</code> it suspends and queues its continuation — <em>before</em> the <code class="k">.then(D)</code> on the next line is even registered. <code class="k">E</code> is still synchronous, so it prints next. Then the queue drains in FIFO order: <code class="k">C</code>, then <code class="k">D</code>. Note <code class="k">await null</code> yields as well — <code class="k">await</code> is never free, even on a value that is already available.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — microtask scheduled inside a macrotask</div>
+        <pre>console.log('start');
+setTimeout(() =&gt; {
+  console.log('timeout');
+  Promise.resolve().then(() =&gt; console.log('inner promise'));
+}, 0);
+Promise.resolve().then(() =&gt; console.log('outer promise'));
+console.log('end');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">start · end · outer promise · timeout · inner promise</div>
+          <p style="margin:0"><code class="k">start</code>/<code class="k">end</code> sync. Drain microtasks → <code class="k">outer promise</code>. Now take the one macrotask → <code class="k">timeout</code>, which <em>queues a new microtask</em>. Before the loop takes another macrotask, it drains microtasks again → <code class="k">inner promise</code>. The key point: microtasks queued inside a macrotask run before the next macrotask.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — do timer delays sort?</div>
+        <pre>setTimeout(() =&gt; console.log('100ms'), 100);
+setTimeout(() =&gt; console.log('0ms · first'), 0);
+setTimeout(() =&gt; console.log('0ms · second'), 0);
+setTimeout(() =&gt; console.log('50ms'), 50);
+console.log('sync');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">sync · 0ms · first · 0ms · second · 50ms · 100ms</div>
+          <p style="margin:0">The macrotask queue is not one FIFO line across different delays — the host queues each callback when <em>its own</em> timer elapses, so they arrive in delay order. Equal delays keep registration order. And every delay is a <strong>minimum</strong>, never a guarantee: a busy stack or a full microtask queue pushes all of them back.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — <code class="k">await</code> on a timer</div>
+        <pre>const sleep = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
+
+async function main(){
+  console.log('fetching…');
+  await sleep(200);
+  console.log('got it');
+}
+main();
+Promise.resolve().then(() =&gt; console.log('microtask wins'));
+console.log('sync tail');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">fetching… · sync tail · microtask wins · got it</div>
+          <p style="margin:0"><code class="k">sleep(200)</code> registers a macrotask and hands back a <em>pending</em> promise, so <code class="k">main</code> suspends straight away. The synchronous tail finishes, the microtask queue drains (<code class="k">microtask wins</code>), and only then does the loop take the timer — which resolves the promise and schedules <code class="k">main</code>'s continuation as yet another microtask. Two queue hops, in the order the algorithm dictates.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 — the conceptual one</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">"If both are async, why does a Promise callback run before a setTimeout callback?"</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Because they live in different queues with different draining rules. Promise callbacks are <span class="t-micro">microtasks</span>; the loop drains the <em>entire</em> microtask queue after each macrotask and before rendering. <code class="k">setTimeout</code> callbacks are <span class="t-macro">macrotasks</span>; only one runs per loop turn, and only after microtasks are empty. So even a <code class="k">0</code>ms timer waits behind every pending microtask. It's not about timing — it's about queue priority within the loop's algorithm.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 8 — spot the freeze</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">"A colleague replaced <code class='k'>setTimeout(poll, 0)</code> with <code class='k'>Promise.resolve().then(poll)</code> to make polling 'faster,' and now the UI hangs. Why?"</div>
+        <pre>let n = 0;
+function spin(){ n++; queueMicrotask(spin); }   <span class="cmt">// same shape as .then(poll)</span>
+queueMicrotask(spin);
+setTimeout(() =&gt; console.log('this timer never runs'), 0);</pre>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Recursive microtasks never let the queue empty, so the loop never reaches the render step or any macrotask — the page can't paint or handle input, and the <code class="k">setTimeout</code> above never gets its turn no matter how long you wait. <code class="k">setTimeout</code> yields between loop turns, allowing rendering and events in between. The fix is to yield with a macrotask (or better, stop polling and use an event/observer).</p>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:34px">
+        <span class="lbl">How to sound senior on this topic</span>
+        Don't just recite "microtasks first." Explain <em>the loop's algorithm</em> (one macrotask → drain all microtasks → maybe render), name <em>where things come from</em> (host vs engine), and reach for <em>consequences</em> (starvation, jank, rendering timing). That framing is what gets you the level.
+      </div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · step through it, then explain it out loud.</footer>
+
+<script>
+/* ---------------- simulator data ---------------- */
+const EX = [
+  {
+    code: [
+      "console.log('script start');",
+      "setTimeout(() => console.log('setTimeout'), 0);",
+      "Promise.resolve().then(() => console.log('promise'));",
+      "console.log('script end');"
+    ],
+    steps: [
+      {line:null, stack:["main()"], micro:[], macro:[], con:[], note:"The whole script is itself a macrotask. main() sits at the base of the call stack."},
+      {line:0, stack:["main()","console.log"], micro:[], macro:[], con:[], note:"Line 1 runs synchronously — console.log is pushed onto the stack."},
+      {line:0, stack:["main()"], micro:[], macro:[], con:["script start"], note:"'script start' printed; console.log pops off."},
+      {line:1, stack:["main()","setTimeout"], micro:[], macro:[], con:["script start"], note:"setTimeout is called. It hands its callback to the host to queue when the 0ms timer elapses."},
+      {line:1, stack:["main()"], micro:[], macro:["cb: setTimeout"], con:["script start"], note:"setTimeout returns immediately. Its callback now waits in the macrotask queue."},
+      {line:2, stack:["main()","Promise.then"], micro:[], macro:["cb: setTimeout"], con:["script start"], note:"The promise is already resolved, so .then registers its callback as a microtask."},
+      {line:2, stack:["main()"], micro:["cb: promise"], macro:["cb: setTimeout"], con:["script start"], note:"The .then callback is queued as a microtask — a separate, higher-priority queue."},
+      {line:3, stack:["main()","console.log"], micro:["cb: promise"], macro:["cb: setTimeout"], con:["script start"], note:"console.log('script end') runs synchronously."},
+      {line:3, stack:["main()"], micro:["cb: promise"], macro:["cb: setTimeout"], con:["script start","script end"], note:"'script end' printed."},
+      {line:null, stack:[], micro:["cb: promise"], macro:["cb: setTimeout"], con:["script start","script end"], note:"main() finishes — the stack is EMPTY. The loop now checks the microtask queue FIRST."},
+      {line:null, stack:["cb: promise"], micro:[], macro:["cb: setTimeout"], con:["script start","script end"], note:"The microtask is moved onto the stack and runs."},
+      {line:null, stack:[], micro:[], macro:["cb: setTimeout"], con:["script start","script end","promise"], note:"'promise' printed. Microtask queue is empty — only NOW may a macrotask run."},
+      {line:null, stack:["cb: setTimeout"], micro:[], macro:[], con:["script start","script end","promise"], note:"One macrotask is taken: the setTimeout callback runs."},
+      {line:null, stack:[], micro:[], macro:[], con:["script start","script end","promise","setTimeout"], note:"'setTimeout' printed. All queues empty. Final order: start · end · promise · setTimeout."}
+    ]
+  },
+  {
+    code: [
+      "console.log('A');",
+      "async function foo(){",
+      "  console.log('B');",
+      "  await bar();",
+      "  console.log('C');",
+      "}",
+      "function bar(){ console.log('D'); }",
+      "foo();",
+      "Promise.resolve().then(() => console.log('E'));",
+      "console.log('F');"
+    ],
+    steps: [
+      {line:null, stack:["main()"], micro:[], macro:[], con:[], note:"foo and bar are hoisted. Execution begins."},
+      {line:0, stack:["main()"], micro:[], macro:[], con:["A"], note:"console.log('A') runs synchronously."},
+      {line:7, stack:["main()","foo()"], micro:[], macro:[], con:["A"], note:"foo() is called and pushed onto the stack."},
+      {line:2, stack:["main()","foo()"], micro:[], macro:[], con:["A","B"], note:"Inside foo: console.log('B'). Still fully synchronous."},
+      {line:3, stack:["main()","foo()","bar()"], micro:[], macro:[], con:["A","B"], note:"await bar() — bar() is evaluated first and pushed."},
+      {line:6, stack:["main()","foo()"], micro:[], macro:[], con:["A","B","D"], note:"bar() prints 'D' and returns undefined."},
+      {line:3, stack:["main()"], micro:["resume foo → C"], macro:[], con:["A","B","D"], note:"await schedules the REST of foo as a microtask, then suspends foo and returns control to the caller. foo pops off."},
+      {line:8, stack:["main()"], micro:["resume foo → C","cb: E"], macro:[], con:["A","B","D"], note:"Promise.resolve().then(E) queues another microtask — AFTER foo's continuation (FIFO)."},
+      {line:9, stack:["main()"], micro:["resume foo → C","cb: E"], macro:[], con:["A","B","D","F"], note:"console.log('F') runs synchronously."},
+      {line:null, stack:[], micro:["resume foo → C","cb: E"], macro:[], con:["A","B","D","F"], note:"Sync code done, stack empty. Drain microtasks in order."},
+      {line:4, stack:["resume foo"], micro:["cb: E"], macro:[], con:["A","B","D","F","C"], note:"foo resumes after the await: console.log('C')."},
+      {line:null, stack:["cb: E"], micro:[], macro:[], con:["A","B","D","F","C","E"], note:"Then the E callback runs. Final order: A · B · D · F · C · E."}
+    ]
+  },
+  {
+    code: [
+      "console.log('start');",
+      "setTimeout(() => {",
+      "  console.log('timeout1');",
+      "  Promise.resolve().then(",
+      "    () => console.log('micro in macro'));",
+      "}, 0);",
+      "Promise.resolve().then(() => {",
+      "  console.log('promise1');",
+      "  setTimeout(() => console.log('timeout2'), 0);",
+      "});",
+      "console.log('end');"
+    ],
+    steps: [
+      {line:null, stack:["main()"], micro:[], macro:[], con:[], note:"Script starts as the first macrotask."},
+      {line:0, stack:["main()"], micro:[], macro:[], con:["start"], note:"console.log('start')."},
+      {line:1, stack:["main()"], micro:[], macro:["cb: T1"], con:["start"], note:"setTimeout registers T1 in the macrotask queue."},
+      {line:6, stack:["main()"], micro:["cb: P1"], macro:["cb: T1"], con:["start"], note:"Promise .then registers P1 in the microtask queue."},
+      {line:10, stack:["main()"], micro:["cb: P1"], macro:["cb: T1"], con:["start","end"], note:"console.log('end')."},
+      {line:null, stack:[], micro:["cb: P1"], macro:["cb: T1"], con:["start","end"], note:"Stack empty → drain microtasks. Run P1."},
+      {line:null, stack:[], micro:[], macro:["cb: T1","cb: T2"], con:["start","end","promise1"], note:"P1 prints 'promise1' and schedules T2 (a new macrotask). Microtask queue now empty."},
+      {line:null, stack:[], micro:["cb: inner"], macro:["cb: T2"], con:["start","end","promise1","timeout1"], note:"Take one macrotask: T1 prints 'timeout1' and queues a microtask."},
+      {line:null, stack:[], micro:[], macro:["cb: T2"], con:["start","end","promise1","timeout1","micro in macro"], note:"Before the next macrotask, drain microtasks → 'micro in macro'. THIS is the senior insight."},
+      {line:null, stack:[], micro:[], macro:[], con:["start","end","promise1","timeout1","micro in macro","timeout2"], note:"Take the last macrotask: T2 prints 'timeout2'. Done."}
+    ]
+  }
+];
+
+/* ---------------- simulator engine ---------------- */
+let exIdx = 0, stepIdx = 0, timer = null;
+const $ = id => document.getElementById(id);
+
+function renderCode(){
+  const ex = EX[exIdx];
+  const hot = ex.steps[stepIdx].line;
+  $('simCode').innerHTML = '';
+  ex.code.forEach((line,i)=>{
+    const span = document.createElement('span');
+    span.className = 'ln' + (i===hot ? ' hot':'');
+    span.textContent = line;
+    $('simCode').appendChild(span);
+  });
+}
+function fill(laneId, arr, empty){
+  const el = $(laneId); el.innerHTML='';
+  if(!arr.length){ const e=document.createElement('span'); e.className='empty'; e.textContent=empty; el.appendChild(e); return; }
+  arr.forEach(t=>{ const p=document.createElement('span'); p.className='pill'; p.textContent=t; el.appendChild(p); });
+}
+function renderStep(){
+  const st = EX[exIdx].steps[stepIdx];
+  fill('laneStack', st.stack, 'empty');
+  fill('laneMicro', st.micro, 'empty');
+  fill('laneMacro', st.macro, 'empty');
+  fill('laneConsole', st.con, 'no output yet');
+  $('simNote').textContent = st.note;
+  $('stepTag').textContent = 'STEP ' + stepIdx;
+  $('simProg').textContent = (stepIdx+1) + ' / ' + EX[exIdx].steps.length;
+  $('btnPrev').disabled = stepIdx===0;
+  $('btnNext').disabled = stepIdx===EX[exIdx].steps.length-1;
+  renderCode();
+}
+function loadEx(i){
+  exIdx=i; stepIdx=0; stopAuto();
+  document.querySelectorAll('.sim-tab').forEach(b=>b.classList.toggle('on', +b.dataset.ex===i));
+  renderStep();
+}
+function next(){ if(stepIdx<EX[exIdx].steps.length-1){stepIdx++; renderStep();} else stopAuto(); }
+function prev(){ if(stepIdx>0){stepIdx--; renderStep();} }
+function reset(){ stepIdx=0; stopAuto(); renderStep(); }
+function stopAuto(){ if(timer){clearInterval(timer);timer=null; $('btnAuto').textContent='Auto-play';} }
+function toggleAuto(){
+  if(timer){stopAuto();return;}
+  if(stepIdx===EX[exIdx].steps.length-1) stepIdx=0;
+  $('btnAuto').textContent='Pause';
+  timer=setInterval(next, 1400);
+}
+document.querySelectorAll('.sim-tab').forEach(b=>b.addEventListener('click',()=>loadEx(+b.dataset.ex)));
+$('btnNext').addEventListener('click',()=>{stopAuto();next();});
+$('btnPrev').addEventListener('click',()=>{stopAuto();prev();});
+$('btnReset').addEventListener('click',reset);
+$('btnAuto').addEventListener('click',toggleAuto);
+loadEx(0);
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=$('side'), backdrop=$('backdrop');
+$('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

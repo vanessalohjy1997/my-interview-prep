@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frontend Testing — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#22D3EE;  /* passing / brand */
+    --rose:#FF7A8A;     /* failing / flaky */
+    --amber:#F3BA2F;    /* caution / highlight */
+    --violet:#A78BFA;   /* integration layer */
+    --cyan:#7DD3FC;     /* e2e */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+  .d-micro{background:var(--cyan)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(34,211,238,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#A5E9F5}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(34,211,238,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- concept boxes ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox.chain .st-name{color:var(--violet)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#A5E9F5}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Frontend <em>Testing</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> What each layer buys</a>
+    <a href="#runners"><span class="n">01</span> Jest vs Vitest</a>
+    <a href="#doubles"><span class="n">02</span> Mocks, spies, fake timers</a>
+    <a href="#rtl"><span class="n">03</span> Testing Library</a>
+    <a href="#msw"><span class="n">04</span> Network with MSW</a>
+    <a href="#e2e"><span class="n">05</span> Playwright vs Cypress</a>
+    <a href="#visual"><span class="n">06</span> Visual regression</a>
+    <a href="#flake"><span class="n">07</span> Flakiness</a>
+    <a href="#ci"><span class="n">08</span> Coverage &amp; CI strategy</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Test <span>behaviour</span>, not implementation.</h1>
+      <p class="lede">Every test trades confidence against speed and maintenance cost. The senior signal is knowing which layer to spend on for a given risk — and being able to say why a test suite is green and still worthless.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Unit</span>
+        <span class="chip"><span class="dot d-chain"></span>Integration</span>
+        <span class="chip"><span class="dot d-micro"></span>E2E</span>
+        <span class="chip"><span class="dot d-rej"></span>Flake</span>
+      </div>
+    </header>
+
+    <section id="intro">
+      <div class="kicker">00 — The mindset</div>
+      <h2>What each layer actually buys you</h2>
+      <p>The classic <strong>test pyramid</strong> says: lots of unit tests, fewer integration, very few E2E. Kent C. Dodds' <strong>testing trophy</strong> reshapes it for frontend work: static analysis at the base, then unit, then a <em>fat integration layer</em>, then a thin E2E cap. The reasoning is that most frontend bugs live in the seams — component + state + network — not inside a single pure function.</p>
+      <div class="states">
+        <div class="statebox pending">
+          <div class="st-name">Static</div>
+          <p>TypeScript + ESLint. Catches a whole class of bug for zero runtime cost. The cheapest test you will ever write is a type.</p>
+        </div>
+        <div class="statebox ful">
+          <div class="st-name">Unit</div>
+          <p>Pure logic: formatters, reducers, selectors, validation, date/number/currency maths. Milliseconds, zero flake, precise failure messages.</p>
+        </div>
+        <div class="statebox chain">
+          <div class="st-name">Integration</div>
+          <p>A component tree with real state and routing, network stubbed <em>at the boundary</em>. Best confidence-per-second in a frontend codebase — spend most of your budget here.</p>
+        </div>
+        <div class="statebox rej">
+          <div class="st-name">E2E</div>
+          <p>Real browser, real (or seeded) backend. The only layer that proves the whole system works. Slow, flaky-prone, expensive — reserve for critical paths.</p>
+        </div>
+      </div>
+      <h3>The one principle behind all of it</h3>
+      <div class="note"><span class="lbl">Testing Library's guiding principle</span>&ldquo;The more your tests resemble the way your software is used, the more confidence they can give you.&rdquo; Practically: assert on what a user can perceive and do — visible text, roles, labels, navigation — not on component state, prop names, CSS class names, or internal function calls.</div>
+      <p>The corollary is what makes it a <em>senior</em> answer: <strong>a test coupled to implementation fails on refactors that didn't break anything, and passes through rewrites that did.</strong> It's negative value twice over. If you can restructure a component without touching its tests, and its tests still catch a real regression, you tested the right thing.</p>
+      <div class="note gold"><span class="lbl">Say this</span>&ldquo;I choose the layer by what could actually break and how expensive that break is. Money movement and auth get E2E coverage. Feature logic gets integration tests with the network stubbed at the HTTP boundary. Pure computation gets unit tests. I'd rather have 30 tests I trust than 3,000 that I re-write every refactor.&rdquo;</div>
+    </section>
+
+    <section id="runners">
+      <div class="kicker">01 — The runner</div>
+      <h2>Jest vs Vitest</h2>
+      <p>They're deliberately API-compatible — <code class="k">describe</code>, <code class="k">it</code>/<code class="k">test</code>, <code class="k">expect</code>, lifecycle hooks, snapshots. The differences are architectural.</p>
+      <table class="tbl">
+        <tr><th></th><th>Jest</th><th>Vitest</th></tr>
+        <tr><td>Origin</td><td>Meta; the long-standing default, huge ecosystem</td><td>Vite-native; the default for new Vite projects</td></tr>
+        <tr><td>Transform</td><td>Own pipeline (babel-jest, ts-jest, or <code class="k">@swc/jest</code>) — configured separately from your build</td><td>Reuses your <code class="k">vite.config</code> — plugins, aliases and env resolve identically to the app</td></tr>
+        <tr><td>ESM</td><td>Historically awkward; needs <code class="k">--experimental-vm-modules</code> for native ESM</td><td>ESM- and TypeScript-first by design</td></tr>
+        <tr><td>Mock API</td><td><code class="k">jest.fn()</code>, <code class="k">jest.mock()</code>, <code class="k">jest.spyOn()</code></td><td><code class="k">vi.fn()</code>, <code class="k">vi.mock()</code>, <code class="k">vi.spyOn()</code> — same shapes</td></tr>
+        <tr><td>Watch mode</td><td>Fast, mature</td><td>Faster; HMR-style re-runs of only affected tests</td></tr>
+        <tr><td>DOM</td><td>jsdom (or happy-dom)</td><td>jsdom / happy-dom, plus a real-browser mode (stable since v4) driven by Playwright or WebdriverIO</td></tr>
+      </table>
+      <div class="note"><span class="lbl">The real reason to prefer Vitest on a Vite app</span>Config divergence. With Jest you maintain a second transform pipeline that has to be kept in sync with your build's aliases, JSX runtime, TS settings and env handling — a permanent source of &ldquo;works in the app, fails in tests.&rdquo; Vitest eliminates that class of problem by construction. On a webpack/Next codebase, Jest is still perfectly reasonable — the switch is not automatically worth the migration cost.</div>
+      <h3>jsdom is not a browser</h3>
+      <p>Worth naming explicitly, because interviewers probe it. jsdom implements the DOM API in Node, but it has <strong>no layout or rendering engine</strong>. So:</p>
+      <ul class="body">
+        <li><code class="k">getBoundingClientRect()</code> returns zeros. Anything measuring geometry, scroll position, or intersection needs stubbing.</li>
+        <li><code class="k">IntersectionObserver</code>, <code class="k">ResizeObserver</code> and <code class="k">matchMedia</code> aren't implemented by default — polyfill or mock them in setup.</li>
+        <li>CSS is parsed but not cascaded/laid out, so <em>true</em> visibility, overlap and responsive behaviour can't be asserted. That's what visual regression and E2E are for.</li>
+      </ul>
+      <h3>Matchers people get wrong</h3>
+      <pre>expect(a).<span class="kw">toBe</span>(b);          <span class="cmt">// Object.is — reference/primitive identity</span>
+expect(a).<span class="kw">toEqual</span>(b);       <span class="cmt">// recursive value equality; IGNORES undefined props</span>
+expect(a).<span class="kw">toStrictEqual</span>(b); <span class="cmt">// also checks undefined props, class instances, sparse arrays</span>
+
+expect({a:1, b:undefined}).toEqual({a:1});       <span class="out">// ✓ passes</span>
+expect({a:1, b:undefined}).toStrictEqual({a:1}); <span class="err">// ✗ fails</span></pre>
+      <div class="note warn"><span class="lbl">Snapshot tests</span>Useful for stable serialisable output (a formatted string, an API response shape). Actively harmful as a component-level default: large snapshots are unreviewable, so the reflex becomes <code class="k">-u</code> and every regression gets rubber-stamped in. Prefer targeted assertions, or inline snapshots that stay small enough to actually read in a diff.</div>
+    </section>
+
+    <section id="doubles">
+      <div class="kicker">02 — Controlling the world</div>
+      <h2>Test doubles &amp; fake timers</h2>
+      <ul class="body">
+        <li><strong>Stub</strong> — returns canned values. No assertions on it.</li>
+        <li><strong>Spy</strong> — wraps a real function to record calls while (optionally) still calling through. <code class="k">vi.spyOn(obj,'m')</code>.</li>
+        <li><strong>Mock</strong> — a replacement whose interactions you assert on (<code class="k">toHaveBeenCalledWith</code>).</li>
+        <li><strong>Fake</strong> — a working lightweight implementation (an in-memory store standing in for a real one).</li>
+      </ul>
+      <div class="note warn"><span class="lbl">Over-mocking is the classic anti-pattern</span>Mock a module and you've frozen its interface into your test. Rename an export or change a signature and the mock happily keeps returning the old shape — the test passes while production breaks. Every mock is a place where your test can be wrong about reality. Mock at <strong>architectural boundaries</strong> (the network, time, randomness, storage) and use the real thing everywhere inside.</div>
+      <h3>Fake timers</h3>
+      <pre><span class="cmt">// Deterministic time — no sleeping, no flake</span>
+beforeEach(() =&gt; { vi.useFakeTimers({ now: new Date('2026-01-01T00:00:00Z') }); });
+afterEach(()  =&gt; { vi.useRealTimers(); });
+
+it('debounces the search', <span class="kw">async</span> () =&gt; {
+  const spy = vi.fn();
+  const debounced = debounce(spy, 300);
+  debounced(); debounced(); debounced();
+
+  <span class="kw">await</span> vi.advanceTimersByTimeAsync(299);
+  expect(spy).not.toHaveBeenCalled();
+  <span class="kw">await</span> vi.advanceTimersByTimeAsync(1);
+  expect(spy).toHaveBeenCalledTimes(1);   <span class="out">// ✓ deterministic, instant</span>
+});</pre>
+      <div class="note gold"><span class="lbl">Two traps</span><strong>(1)</strong> Fake timers plus <code class="k">userEvent</code> deadlock unless you tell user-event to use them: <code class="k">userEvent.setup({ advanceTimers: vi.advanceTimersByTime })</code>. user-event inserts real delays between key/pointer events, and with the clock frozen those never resolve. <strong>(2)</strong> Use the <code class="k">*Async</code> advance variants when promises are involved, so microtasks get a chance to flush between ticks.</div>
+      <p><strong>Freeze anything non-deterministic</strong>, not just timers: <code class="k">Date.now</code>, <code class="k">Math.random</code>, <code class="k">crypto.randomUUID</code>, locale and timezone (<code class="k">TZ=UTC</code> in CI — otherwise a date test passes in Singapore and fails in London), and any ID generator. A test that depends on when or where it runs is a flake waiting to happen.</p>
+    </section>
+
+    <section id="rtl">
+      <div class="kicker">03 — Components as users see them</div>
+      <h2>React Testing Library</h2>
+      <h3>Query priority — memorise this order</h3>
+      <p>RTL deliberately makes the accessible queries easiest and <code class="k">getByTestId</code> the last resort, because a query that finds an element the way a screen reader does <em>is</em> an accessibility assertion.</p>
+      <table class="tbl">
+        <tr><th>Tier</th><th>Query</th><th>Use for</th></tr>
+        <tr><td>1</td><td><code class="k">getByRole</code></td><td>Almost everything. <code class="k">getByRole('button',{name:'Submit'})</code> — the accessible name matters.</td></tr>
+        <tr><td>1</td><td><code class="k">getByLabelText</code></td><td>Form fields.</td></tr>
+        <tr><td>1</td><td><code class="k">getByPlaceholderText</code></td><td>Only when there's no label (which is itself a bug).</td></tr>
+        <tr><td>1</td><td><code class="k">getByText</code></td><td>Non-interactive content.</td></tr>
+        <tr><td>1</td><td><code class="k">getByDisplayValue</code></td><td>The current value of a filled input.</td></tr>
+        <tr><td>2</td><td><code class="k">getByAltText</code> / <code class="k">getByTitle</code></td><td>Images and elements with title attributes.</td></tr>
+        <tr><td>3</td><td><code class="k">getByTestId</code></td><td>Escape hatch — dynamic text, canvas, or nothing user-visible to target.</td></tr>
+      </table>
+      <h3>get vs query vs find — the question that separates candidates</h3>
+      <table class="tbl">
+        <tr><th>Prefix</th><th>Not found</th><th>Async?</th><th>Use for</th></tr>
+        <tr><td>getBy…</td><td>Throws immediately</td><td>No</td><td>It should already be there</td></tr>
+        <tr><td>queryBy…</td><td>Returns <code class="k">null</code></td><td>No</td><td><strong>Asserting absence</strong> — the only correct choice for <code class="k">not.toBeInTheDocument()</code></td></tr>
+        <tr><td>findBy…</td><td>Rejects after timeout</td><td>Yes</td><td>It will appear (after a fetch, transition, or lazy load)</td></tr>
+      </table>
+      <p>Each has an <code class="k">…AllBy</code> variant returning an array (and <code class="k">queryAllBy</code> returns <code class="k">[]</code> rather than throwing). <code class="k">findBy</code> is literally <code class="k">getBy</code> wrapped in <code class="k">waitFor</code>, retrying until the element appears or the timeout (1000&nbsp;ms by default) elapses.</p>
+      <h3>userEvent over fireEvent</h3>
+      <pre><span class="cmt">// fireEvent: dispatches ONE synthetic event. Not what a user does.</span>
+fireEvent.change(input, { target: { value: 'BTC' } });
+
+<span class="cmt">// userEvent: the full interaction sequence a real user produces —</span>
+<span class="cmt">// pointerdown, focus, keydown/keypress/keyup per character, input, change.</span>
+<span class="cmt">// Catches disabled elements, pointer-events:none, and missing focus handling.</span>
+const user = userEvent.<span class="kw">setup</span>();          <span class="cmt">// v14+: call before render</span>
+<span class="kw">await</span> user.type(screen.getByLabelText('Symbol'), 'BTC');
+<span class="kw">await</span> user.click(screen.getByRole('button', { name: 'Search' }));
+
+expect(<span class="kw">await</span> screen.findByRole('table')).toBeInTheDocument();</pre>
+      <h3>A complete, idiomatic test</h3>
+      <pre>it('shows an error when the order is rejected', <span class="kw">async</span> () =&gt; {
+  server.use(http.post('/api/orders', () =&gt;
+    HttpResponse.json({ message: 'Insufficient balance' }, { status: 400 })));
+
+  const user = userEvent.setup();
+  render(&lt;OrderForm /&gt;);
+
+  <span class="kw">await</span> user.type(screen.getByLabelText(/amount/i), '10');
+  <span class="kw">await</span> user.click(screen.getByRole('button', { name: /place order/i }));
+
+  <span class="cmt">// findBy* waits for the async result — no arbitrary sleep, no waitFor boilerplate</span>
+  expect(<span class="kw">await</span> screen.findByRole('alert')).toHaveTextContent('Insufficient balance');
+  expect(screen.getByRole('button', { name: /place order/i })).toBeEnabled();
+});</pre>
+      <div class="note warn"><span class="lbl">Smells that fail an interview</span><code class="k">container.querySelector('.btn-primary')</code> (couples to CSS); asserting on component state or a spy on an internal handler; <code class="k">await new Promise(r =&gt; setTimeout(r, 500))</code> instead of <code class="k">findBy</code>; wrapping everything in manual <code class="k">act()</code>; testing that a child component &ldquo;was rendered with props X&rdquo; by mocking the child.</div>
+      <h3>What is <code class="k">act()</code> and why the warning?</h3>
+      <p><code class="k">act()</code> tells React &ldquo;I'm done making updates — flush effects and re-renders now, before I assert.&rdquo; RTL already wraps <code class="k">render</code>, <code class="k">fireEvent</code> and <code class="k">userEvent</code> in it, so you rarely call it directly. The &ldquo;<em>not wrapped in act(…)</em>&rdquo; warning almost always means <strong>a state update happened after your test finished awaiting</strong> — usually an un-awaited promise resolving, or a timer firing after the component should have settled. The fix is to await the resulting UI change with <code class="k">findBy</code>/<code class="k">waitFor</code>, not to sprinkle <code class="k">act()</code> until the warning stops.</p>
+      <p>For custom hooks, <code class="k">renderHook</code> (shipped from <code class="k">@testing-library/react</code> itself) is fine — but prefer testing the hook through a component that uses it when the hook's value is really about UI behaviour.</p>
+    </section>
+
+    <section id="msw">
+      <div class="kicker">04 — Stub at the boundary</div>
+      <h2>Mock Service Worker</h2>
+      <p>MSW intercepts requests at the <strong>network layer</strong> — a Service Worker in the browser, request interceptors in Node. Your app calls real <code class="k">fetch</code>/<code class="k">axios</code>; MSW answers.</p>
+      <pre><span class="cmt">// handlers.ts — MSW v2 API</span>
+import { http, HttpResponse } from 'msw';
+
+export const handlers = [
+  http.get('/api/orders', () =&gt; HttpResponse.json([{ id: 1, symbol: 'BTCUSDT' }])),
+  http.post('/api/orders', <span class="kw">async</span> ({ request }) =&gt; {
+    const body = <span class="kw">await</span> request.json();
+    <span class="kw">if</span> (body.amount &gt; 100) <span class="kw">return</span> HttpResponse.json({ message: 'Too large' }, { status: 400 });
+    <span class="kw">return</span> HttpResponse.json({ id: 2, ...body }, { status: 201 });
+  }),
+];
+
+<span class="cmt">// setup.ts</span>
+import { setupServer } from 'msw/node';   <span class="cmt">// note: msw/node, not msw</span>
+
+const server = setupServer(...handlers);
+beforeAll(() =&gt; server.listen({ <span class="kw">onUnhandledRequest</span>: 'error' }));  <span class="cmt">// catch typos + real leaks</span>
+afterEach(() =&gt; server.resetHandlers());   <span class="cmt">// per-test overrides don't leak</span>
+afterAll(()  =&gt; server.close());</pre>
+      <p>Why it beats <code class="k">vi.mock('./api')</code> or stubbing <code class="k">global.fetch</code>:</p>
+      <ul class="body">
+        <li><strong>It survives refactors.</strong> Swap axios for fetch, or React Query for SWR, and the tests don't change — the contract under test is HTTP, which is the thing that's actually shared with the backend.</li>
+        <li><strong>Real code paths run.</strong> Your serialisation, headers, auth interceptors, error mapping and retry logic all execute, instead of being skipped by a module mock.</li>
+        <li><strong>One set of handlers, three consumers</strong> — unit/integration tests, Storybook, and local development against a not-yet-built API.</li>
+        <li><strong>Error states are trivial</strong> to exercise: <code class="k">server.use()</code> in a single test to return 500, a 400 with a body, or a delayed response.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">The honest caveat</span>MSW makes your mocks <em>consistent</em>, not <em>correct</em>. If the backend changes a field name, your handlers still return the old shape and everything stays green. Close that gap with schema-derived handlers (OpenAPI/Zod), contract testing (Pact), or a thin E2E layer that hits a real seeded environment. Naming this trade-off unprompted is a strong senior signal.</div>
+    </section>
+
+    <section id="e2e">
+      <div class="kicker">05 — The real browser</div>
+      <h2>Playwright vs Cypress</h2>
+      <p>The architectural difference drives every other difference: <strong>Cypress runs your test code inside the browser</strong>, in the same event loop as your app. <strong>Playwright drives the browser out-of-process</strong> over a debugging protocol.</p>
+      <table class="tbl">
+        <tr><th></th><th>Playwright</th><th>Cypress</th></tr>
+        <tr><td>Architecture</td><td>Out-of-process, protocol-driven</td><td>Test code runs in-browser alongside the app</td></tr>
+        <tr><td>Browsers</td><td>Chromium, Firefox, WebKit (real Safari engine)</td><td>Chromium family, Firefox, WebKit (experimental)</td></tr>
+        <tr><td>Multi-tab / multi-origin</td><td>Native — contexts, pages, popups, downloads</td><td>Constrained by design; cross-origin needs <code class="k">cy.origin()</code></td></tr>
+        <tr><td>Waiting</td><td>Auto-waiting for actionability + retrying web-first assertions</td><td>Automatic command retry + retrying assertions</td></tr>
+        <tr><td>Parallelism</td><td>Built-in workers &amp; <code class="k">--shard</code>, free</td><td>Requires Cypress Cloud + <code class="k">--record</code>; free tier is volume-capped, smart orchestration is paid</td></tr>
+        <tr><td>Debugging</td><td>Trace viewer: DOM snapshots, network, console, screenshot filmstrip per step</td><td>Time-travel in an excellent interactive runner</td></tr>
+        <tr><td>Languages</td><td>TS/JS, Python, Java, .NET</td><td>JS/TS</td></tr>
+      </table>
+      <p>Cypress's in-browser model gives a genuinely great interactive debugging experience and direct access to app internals. Playwright's out-of-process model is why it handles multiple tabs, multiple origins, downloads, and true cross-browser testing more naturally, and why free parallelism is straightforward. <strong>For a new project in 2026, Playwright is the default recommendation</strong> — but &ldquo;we already have 400 stable Cypress tests&rdquo; is a perfectly good reason not to migrate.</p>
+      <h3>Auto-waiting is the whole point</h3>
+      <pre><span class="cmt">// A Playwright locator is a lazy query, re-resolved on every action.</span>
+<span class="cmt">// Before clicking, it waits for the element to be visible, stable,</span>
+<span class="cmt">// enabled, and able to receive events.</span>
+<span class="kw">await</span> page.getByRole('button', { name: 'Place order' }).click();
+
+<span class="cmt">// Web-first assertions RETRY until they pass or time out —</span>
+<span class="cmt">// this is what replaces sleeps.</span>
+<span class="kw">await</span> expect(page.getByRole('alert')).toHaveText('Order filled');
+
+<span class="err">// WRONG — resolves once, immediately, and will flake:</span>
+expect(<span class="kw">await</span> page.getByRole('alert').textContent()).toBe('Order filled');</pre>
+      <div class="note"><span class="lbl">Note the <code class="k">await</code> position</span><code class="k">await expect(locator).toHaveText(…)</code> retries. <code class="k">expect(await locator.textContent())</code> snapshots a value once. Same characters, completely different reliability — and a very common interview follow-up.</div>
+      <h3>Things that make an E2E suite survivable</h3>
+      <ul class="body">
+        <li><strong>Auth once.</strong> Log in in a setup project, save <code class="k">storageState</code>, and have every test start authenticated. Logging in through the UI in 200 tests is the single biggest waste of E2E wall-clock.</li>
+        <li><strong>Isolation via browser contexts.</strong> Each test gets a fresh context — separate cookies, storage, cache — which is cheap compared with a new browser process.</li>
+        <li><strong>Seed data per test</strong>, ideally via API rather than UI, with a unique identifier so parallel workers can't collide.</li>
+        <li><strong>Trace on retry.</strong> <code class="k">trace: 'on-first-retry'</code> gives you a full recording of the failure — DOM snapshots, network, console — without paying the cost on green runs. It is the difference between debugging a CI failure in five minutes and never reproducing it.</li>
+        <li><strong>Shard in CI</strong> (<code class="k">--shard=1/4</code>) and merge the reports.</li>
+        <li><strong>Decide what E2E is for</strong>: critical revenue and auth paths. Everything else belongs one layer down.</li>
+      </ul>
+    </section>
+
+    <section id="visual">
+      <div class="kicker">06 — Regressions you can't assert on</div>
+      <h2>Visual regression testing</h2>
+      <p>Functional tests can't catch a broken layout, a wrong token, overlapping text, or a component that renders off-screen. Visual regression fills that gap by rendering, screenshotting, and diffing against an approved baseline.</p>
+      <pre><span class="cmt">// Playwright — built in</span>
+<span class="kw">await</span> expect(page).toHaveScreenshot('order-form.png', {
+  <span class="kw">animations</span>: 'disabled',              <span class="cmt">// freeze CSS animations/transitions</span>
+  <span class="kw">mask</span>: [page.getByTestId('timestamp')], <span class="cmt">// paint over volatile regions</span>
+  <span class="kw">maxDiffPixelRatio</span>: 0.01,             <span class="cmt">// tolerance for AA noise</span>
+});
+<span class="cmt">// Update baselines deliberately: npx playwright test --update-snapshots</span></pre>
+      <h3>The hard part is determinism, not diffing</h3>
+      <ul class="body">
+        <li><strong>Pin the rendering environment.</strong> Font rasterisation and antialiasing differ between macOS, Windows and Linux, so a baseline generated on a laptop will never match CI. Generate and compare inside the same container image (Playwright publishes matched Docker images).</li>
+        <li><strong>Kill motion and time.</strong> Disable animations, freeze the clock, stop carousels and spinners, and wait for fonts (<code class="k">document.fonts.ready</code>) and images to finish loading.</li>
+        <li><strong>Kill variable data.</strong> Stub the network with fixed fixtures; mask avatars, relative timestamps, live prices, and anything randomised.</li>
+        <li><strong>Tolerance is a trade.</strong> Too tight and antialiasing noise fails every run; too loose and you miss a one-pixel-shifted button. Tune per surface rather than globally.</li>
+      </ul>
+      <h3>The tooling landscape</h3>
+      <table class="tbl">
+        <tr><th>Tool</th><th>Model</th><th>Notes</th></tr>
+        <tr><td>Playwright</td><td>Self-hosted pixel diff</td><td>Free, baselines live in git. You own the infra and the review UX.</td></tr>
+        <tr><td>Chromatic</td><td>Cloud, Storybook-native</td><td>Snapshots every story; review/approve UI; opt-in TurboSnap re-snapshots only the stories a change affects.</td></tr>
+        <tr><td>Percy</td><td>Cloud, framework-agnostic</td><td>Hooks into an existing E2E suite; renders across widths/browsers.</td></tr>
+        <tr><td>Applitools</td><td>Cloud, &ldquo;visual AI&rdquo;</td><td>Perceptual rather than pixel diffing to cut antialiasing false positives.</td></tr>
+      </table>
+      <div class="note gold"><span class="lbl">Where it pays off most</span>Design systems. Each component is small, isolated and deterministic, so signal is high and noise is low — and one token change can silently affect a hundred consumers. Full-page visual tests on data-heavy app screens are where teams usually drown in false positives and start rubber-stamping approvals, which is worse than having no visual tests at all.</div>
+      <p><strong>Storybook</strong> is the natural host: stories are already isolated, deterministic renders. Add <code class="k">play</code> functions to drive interactions, run them in CI with the Vitest addon (which supersedes the older Playwright-based test runner), and layer visual snapshots on top — one artefact serving as documentation, interaction test, and visual baseline.</p>
+      <h3>Adjacent &ldquo;full regression&rdquo; layers worth naming</h3>
+      <ul class="body">
+        <li><strong>Accessibility regression</strong> — <code class="k">axe-core</code> via <code class="k">jest-axe</code> in component tests or <code class="k">@axe-core/playwright</code> in E2E. Automated checks catch somewhere between the classic 20–30% estimate and Deque's own published 57% figure; they don't replace manual keyboard and screen-reader passes.</li>
+        <li><strong>Performance regression</strong> — Lighthouse CI with budgets on LCP/CLS/bundle size, failing the PR on regression.</li>
+        <li><strong>Contract regression</strong> — Pact or schema-derived mocks so the frontend's assumptions about the API stay verified against the provider.</li>
+      </ul>
+    </section>
+
+    <section id="flake">
+      <div class="kicker">07 — The suite killer</div>
+      <h2>Flakiness</h2>
+      <p>A flaky test is worse than no test: it trains the team to re-run CI instead of reading failures, and eventually a real regression gets re-run away. Treat flake as a P1 bug in the suite, not as background noise.</p>
+      <table class="tbl">
+        <tr><th>Cause</th><th>Fix</th></tr>
+        <tr><td>Hard-coded sleeps</td><td>Retrying assertions (<code class="k">findBy</code>, <code class="k">await expect(locator)</code>). A sleep is a bet on the slowest CI machine you'll ever have.</td></tr>
+        <tr><td>Animations / transitions</td><td>Disable motion in the test environment; wait for the settled state, not a duration.</td></tr>
+        <tr><td>Real clock &amp; timezone</td><td>Freeze time, pin <code class="k">TZ=UTC</code>, avoid tests that break at month boundaries or DST.</td></tr>
+        <tr><td>Shared state between tests</td><td>Reset stores, caches, MSW handlers and the DOM per test. Never let ordering matter — run in random order to prove it.</td></tr>
+        <tr><td>Shared backend data</td><td>Unique seeded fixtures per test/worker so parallel runs can't collide on the same record.</td></tr>
+        <tr><td>Real network</td><td>Stub it, and set <code class="k">onUnhandledRequest:'error'</code> so an unstubbed call fails loudly instead of hitting the internet.</td></tr>
+        <tr><td>CI resource contention</td><td>A slow machine exposes latent races. Cap workers, and raise timeouts only after you've ruled out a real race.</td></tr>
+        <tr><td>An actual app race</td><td>Sometimes the test is right and the app is racy. Investigate before &ldquo;fixing&rdquo; the test — this is the failure mode worth catching.</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">On retries</span>Retries are a <em>reporting</em> tool, not a fix. Enable them so a flake doesn't block a deploy, but record every retry, surface a flake-rate dashboard, and quarantine repeat offenders into a non-blocking job with an owner and a deadline. Silent retries turn a flaky suite into a suite nobody trusts.</div>
+    </section>
+
+    <section id="ci">
+      <div class="kicker">08 — Making it pay for itself</div>
+      <h2>Coverage &amp; CI strategy</h2>
+      <h3>Coverage: a map, not a score</h3>
+      <ul class="body">
+        <li>Line/statement coverage says a line <em>executed</em>, not that anything was <em>asserted</em>. You can hit 100% with zero <code class="k">expect</code> calls.</li>
+        <li><strong>Branch coverage</strong> is the more informative number — it tells you which conditional paths never ran.</li>
+        <li>A blanket global threshold pushes people to write tests for trivial getters and to add <code class="k">/* istanbul ignore next */</code>. <strong>Diff coverage</strong> on changed lines is a far better gate.</li>
+        <li>Instrumentation: Istanbul (transform-based, runtime-agnostic) vs V8/native (Vitest's default — faster, no transform, and as accurate as Istanbul since v3.2's AST-based remapping).</li>
+        <li>Use coverage to <em>find</em> untested error paths and branches — that's where bugs live — not to hit a number.</li>
+      </ul>
+      <h3>A pipeline that stays fast</h3>
+      <pre><span class="kw">on every commit</span>  typecheck + lint + unit/integration   <span class="cmt">// seconds–2 min, blocking</span>
+<span class="kw">on every PR</span>      E2E smoke (critical paths, sharded) <span class="cmt">// ~5–10 min, blocking</span>
+                 visual diff on changed components   <span class="cmt">// review + approve</span>
+<span class="kw">on merge/nightly</span> full E2E matrix, cross-browser,
+                 a11y sweep, Lighthouse budgets     <span class="cmt">// non-blocking, alerts</span></pre>
+      <p>Levers when it gets slow: shard E2E across workers; run only tests affected by the diff for the fast lane; cache dependencies and browser binaries; run typecheck/lint/unit as parallel jobs rather than sequential steps; and keep the blocking set small enough that people don't start bypassing it.</p>
+      <h3>What to test — and what not to</h3>
+      <div class="states">
+        <div class="statebox ful">
+          <div class="st-name">Worth testing</div>
+          <p>Business rules and edge cases. Error and empty states. Anything that has broken before (write the regression test with the fix). Money, auth, permissions. Accessibility affordances. Public contracts of shared components.</p>
+        </div>
+        <div class="statebox rej">
+          <div class="st-name">Not worth testing</div>
+          <p>That React renders props. Third-party library internals. Static markup with no logic. Implementation details — state shape, private handlers, class names. Anything TypeScript already proves.</p>
+        </div>
+      </div>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;I don't chase a coverage number — I gate on diff coverage and spend the budget where failure is expensive. Every production bug gets a regression test as part of the fix, which means the suite grows toward where things actually break rather than where it's easy to write tests.&rdquo;</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the wrong query</div>
+        <pre>expect(screen.getByText('Deleted')).not.toBeInTheDocument();</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Can never pass — getBy throws before the assertion runs</div>
+          <p style="margin:0"><code class="k">getBy*</code> throws when nothing matches, so if the element is absent the test errors out rather than passing. Use <code class="k">queryBy*</code>, which returns <code class="k">null</code>: <code class="k">expect(screen.queryByText('Deleted')).not.toBeInTheDocument()</code>. And if the element disappears asynchronously, wait for it: <code class="k">await waitForElementToBeRemoved(() =&gt; screen.queryByText('Deleted'))</code>.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — green suite, broken product</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We have 92% coverage and shipped a checkout bug that took payments and never created the order. How is that possible?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Coverage measures execution, not assertion, and certainly not integration. The likely picture: heavily unit-tested pieces that all pass in isolation, with the failure living in the seam between them — or mocks that froze an interface the backend has since changed, so tests assert against a fiction. High line coverage with mocked collaborators can approach zero real confidence. Fixes: move the budget to integration tests with the network stubbed at the HTTP boundary rather than modules mocked; add one E2E test for the payment path end-to-end; add a regression test for this specific bug; and gate on diff coverage plus branch coverage rather than a global line percentage.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — the timer deadlock</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A test using <code class='k'>vi.useFakeTimers()</code> plus <code class='k'>userEvent.type()</code> hangs until the test times out. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">user-event inserts real delays between the events it dispatches (per keystroke, per pointer step). With the clock faked, those delays never elapse, so the promise never resolves. Wire user-event to the fake clock: <code class="k">userEvent.setup({ advanceTimers: vi.advanceTimersByTime })</code>. Related: when promises are involved, advance with the async variants (<code class="k">advanceTimersByTimeAsync</code>) so queued microtasks flush between ticks.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — the flaky assertion</div>
+        <pre>expect(await page.locator('.toast').textContent()).toBe('Saved');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">The await is in the wrong place — no retry</div>
+          <p style="margin:0">This resolves the text content exactly once, the moment the line runs, so it fails whenever the toast hasn't rendered yet. Playwright's web-first assertions retry until they pass or time out: <code class="k">await expect(page.getByRole('status')).toHaveText('Saved')</code>. Note the second improvement too — a role-based locator instead of a CSS class, so a styling refactor doesn't break the test.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — the noisy visual suite</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Our visual regression job fails on ~30% of PRs with diffs nobody can see. The team now approves every diff without looking. What do you do?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Rubber-stamped approvals mean the suite has negative value, so treat determinism as the bug. Diagnose the source of noise: are baselines generated on developer machines rather than in the CI container (font antialiasing differs per OS)? Are animations, spinners, timestamps, avatars or live prices unfrozen? Are fonts and images awaited before capture? Fix those, mask genuinely volatile regions, and set a tolerance per surface rather than globally. Then narrow scope — component-level snapshots from Storybook are far more stable than full-page shots of data-heavy screens. If it can't be made deterministic, delete it; a check nobody reads is worse than no check.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — mock or not?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;You're testing an <code class='k'>OrderTable</code> that fetches via React Query and renders rows. What do you mock?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Mock the <strong>network</strong> and nothing else. MSW returns fixture JSON for <code class="k">GET /api/orders</code>; React Query, the fetch wrapper, error mapping and the component all run for real. Then assert what a user sees: loading state, rows with the right values, the empty state, and the error state (via <code class="k">server.use()</code> returning a 500). Don't mock React Query, the fetch client, or child components — each of those replaces real behaviour with an assumption, and turns a refactor into a test rewrite. Remember to give each test a fresh QueryClient with retries off, or cached data and retry backoff will leak between tests and cause flake.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 — designing the suite</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;You join a team with no tests and a 40-minute manual QA pass before each release. Where do you start?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Start from risk, not from coverage. First, enumerate the handful of flows where a failure is unacceptable — login, placing an order, withdrawal — and write E2E tests for exactly those, so the release gate stops depending on a human remembering. In parallel, turn on TypeScript strictness and lint, which retire a whole class of bug for free. Then require a regression test with every bug fix, so coverage grows toward real failure sites. Add integration tests for new features as they're built, with the network stubbed at the HTTP boundary. Explicitly do <em>not</em> attempt a retroactive coverage push on legacy code — it's the highest-effort, lowest-signal work available. Track the metric that matters: how much of that 40-minute manual pass has been automated away.</p></div>
+      </div>
+    </section>
+
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="strategy">Strategy</button>
+        <button class="fchip" data-f="unit">Unit</button>
+        <button class="fchip" data-f="rtl">RTL</button>
+        <button class="fchip" data-f="net">Network</button>
+        <button class="fchip" data-f="e2e">E2E</button>
+        <button class="fchip" data-f="visual">Visual</button>
+        <button class="fchip" data-f="flake">Flake/CI</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · test behaviour, mock at boundaries, kill flake.</footer>
+
+<script>
+const QA = [
+["strategy","Strategy","Test pyramid vs testing trophy?","The pyramid says many unit tests, fewer integration, very few E2E. The trophy reshapes it for frontend: static analysis (TS/ESLint) at the base, then unit, then a fat integration layer, then a thin E2E cap. The reasoning is that most frontend bugs live in the seams between component, state and network rather than inside a pure function."],
+["strategy","Strategy","What is the guiding principle of Testing Library?","'The more your tests resemble the way your software is used, the more confidence they can give you.' In practice: assert on what a user can perceive and do — visible text, roles, labels — not on state, props, class names or internal calls."],
+["strategy","Strategy","Why are implementation-detail tests harmful?","They fail on refactors that broke nothing and can pass through rewrites that broke something — wrong in both directions. They also make refactoring expensive, so the tests actively discourage improving the code. A good check: if you can restructure the component without touching its tests, and they'd still catch a real regression, you tested the right thing."],
+["strategy","Strategy","What should you not test?","That React renders props; third-party library internals; static markup with no logic; anything TypeScript already guarantees; and implementation details like state shape or private handlers. Every test has a maintenance cost, so it has to earn its place."],
+["strategy","Strategy","How do you decide what layer a test belongs at?","By the cost of the failure and the confidence needed. Pure computation → unit. Feature behaviour across component, state and network → integration, which is where most of the budget should go. Whole-system critical paths like auth and money movement → a small number of E2E tests."],
+["strategy","Strategy","A team asks for 100% coverage. Response?","Coverage measures execution, not assertion — you can reach 100% with no expects and with mocks that don't match reality. I'd gate on diff coverage of changed lines plus branch coverage, and use the report to find untested error paths rather than as a target. A blanket global threshold mostly produces tests for trivial getters and ignore comments."],
+["unit","Unit","Jest vs Vitest — how do you choose?","APIs are near-identical. Vitest reuses your Vite config, so plugins, aliases and env resolve exactly as in the app, and it's ESM/TS-first — that removes a permanent source of 'works in the app, fails in tests'. Jest is mature and fine on webpack/Next codebases. On a Vite app I'd default to Vitest; on an existing Jest suite the migration usually isn't worth it by itself."],
+["unit","Unit","toBe vs toEqual vs toStrictEqual?","`toBe` is Object.is — identity for references, value for primitives. `toEqual` is recursive structural equality and ignores properties whose value is undefined. `toStrictEqual` additionally checks undefined properties, class instance types and array sparseness."],
+["unit","Unit","What is jsdom and what are its limits?","A DOM implementation in Node used as the test environment. It has no layout or rendering engine, so getBoundingClientRect returns zeros, IntersectionObserver/ResizeObserver/matchMedia need polyfilling, and true visibility or responsive behaviour can't be asserted. Those need a real browser — E2E or visual regression."],
+["unit","Unit","Stub vs spy vs mock vs fake?","A stub returns canned values. A spy records calls, optionally calling through. A mock is a replacement whose interactions you assert on. A fake is a working lightweight implementation, like an in-memory store. In practice Jest/Vitest blur them into one `fn()` API, but the intent still matters for what you assert."],
+["unit","Unit","What's wrong with mocking a lot?","Every mock freezes an interface into the test. If the real module's signature or shape changes, the mock keeps returning the old thing and the test passes while production breaks. Mocks also skip the real code paths you wanted covered. Mock at architectural boundaries — network, time, randomness, storage — and use real implementations inside."],
+["unit","Unit","How do you test a debounce or a polling interval?","Fake timers. Install them in beforeEach, restore in afterEach, then advance the clock explicitly and assert. That makes the test instant and deterministic instead of sleeping. If user-event is involved, pass `advanceTimers` to `userEvent.setup()` or the interaction will hang against a frozen clock."],
+["unit","Unit","What else must you freeze for determinism?","Date/clock, timezone (set TZ=UTC in CI), Math.random, UUID generation, and locale. Otherwise tests pass in one region and fail in another, or break at month and DST boundaries."],
+["unit","Unit","When are snapshot tests appropriate?","For small, stable, serialisable output — a formatted string or a normalised API response. Large component snapshots are unreviewable, so the team reflexively updates them and real regressions get approved in. Prefer targeted assertions, or inline snapshots small enough to read in a diff."],
+["rtl","RTL","What's the RTL query priority order?","Role, label text, placeholder text, text, display value (all accessible to everyone), then alt text and title (semantic), then test id as a last resort. Preferring getByRole means the test also verifies the element is exposed correctly to assistive technology."],
+["rtl","RTL","getBy vs queryBy vs findBy?","getBy throws if not found and is synchronous — use when it should already be there. queryBy returns null — the only correct choice for asserting absence. findBy returns a promise that retries until the element appears or it times out (1s by default) — use for anything async. Each has an AllBy variant returning an array."],
+["rtl","RTL","userEvent vs fireEvent?","fireEvent dispatches a single synthetic event. userEvent simulates the full sequence a real user produces — pointer events, focus, keydown/keyup per character, input, change — so it catches disabled elements, pointer-events:none and missing focus handling. From v14 the API is async and you call `userEvent.setup()` before rendering."],
+["rtl","RTL","What does act() do and why the warning?","act() tells React to flush pending updates and effects before you assert. RTL wraps render and user interactions in it already. The warning almost always means a state update landed after your test stopped awaiting — an un-awaited promise or a stray timer. Fix it by awaiting the resulting UI with findBy/waitFor, not by wrapping things in act()."],
+["rtl","RTL","How do you test something that appears after a fetch?","Stub the request at the network layer, then await the UI: `expect(await screen.findByRole('table')).toBeInTheDocument()`. findBy retries until it appears. Never use a fixed setTimeout — it's slow when the machine is fast and flaky when it's slow."],
+["rtl","RTL","How do you test a custom hook?","Prefer testing it through a component that uses it, since that's how it's consumed. When the hook is genuinely standalone logic, `renderHook` from @testing-library/react gives you a result object and lets you trigger updates inside act()."],
+["rtl","RTL","When is getByTestId acceptable?","When there's genuinely nothing user-visible or accessible to target — canvas content, a chart container, or text that's fully dynamic. It's an escape hatch, not a default, because a test id has no relationship to what users or assistive tech perceive."],
+["net","Network","What is MSW and why prefer it?","Mock Service Worker intercepts at the network layer — a Service Worker in the browser, request interceptors in Node — so your app makes real fetch/axios calls. Tests survive swapping the data layer, real serialisation and error-mapping code still runs, and the same handlers serve tests, Storybook and local dev."],
+["net","Network","Why not just mock the api module or global fetch?","Because you couple the test to the module's shape, skip the code you wanted covered (interceptors, serialisation, error mapping), and have to rewrite tests whenever the data layer changes. The HTTP contract is the stable boundary — mock there."],
+["net","Network","What is `onUnhandledRequest: 'error'` for?","It makes any request without a matching handler fail the test loudly instead of silently passing through to the real network. It catches URL typos, forgotten handlers and accidental live calls from CI."],
+["net","Network","What's the weakness of MSW?","It makes your mocks consistent, not correct. If the backend renames a field, handlers keep returning the old shape and everything stays green. Close the gap with schema-derived handlers from OpenAPI/Zod, contract testing like Pact, or a thin E2E layer against a real seeded environment."],
+["net","Network","How do you reset handlers between tests?","`server.listen()` in beforeAll, `server.resetHandlers()` in afterEach so per-test overrides added with `server.use()` don't leak, and `server.close()` in afterAll."],
+["e2e","E2E","Playwright vs Cypress — the architectural difference?","Cypress runs test code inside the browser, in the same event loop as the app; Playwright drives the browser out-of-process over a debugging protocol. That's why Playwright handles multiple tabs, multiple origins, downloads and true cross-browser (including WebKit) more naturally, and ships parallelism as a built-in `--shard` flag, while Cypress couples it to Cypress Cloud with `--record` and prices it by test volume. Cypress's payoff is a superb in-browser interactive debugging experience."],
+["e2e","E2E","What is auto-waiting?","Before acting, Playwright waits for the element to be visible, stable, enabled and able to receive events; locators are re-resolved on each use. Web-first assertions retry until they pass or time out. Together these remove the need for sleeps, which is the main source of E2E flake."],
+["e2e","E2E","Why is `expect(await locator.textContent()).toBe(x)` wrong?","It resolves the value once, immediately, with no retry, so it fails whenever the UI hasn't updated yet. Use `await expect(locator).toHaveText(x)` — the assertion itself retries. The position of the await is the entire difference."],
+["e2e","E2E","How do you keep an E2E suite fast?","Authenticate once in a setup project and reuse storageState instead of logging in through the UI in every test; seed data via API rather than clicking; isolate with browser contexts rather than fresh browsers; shard across CI workers; and keep the blocking PR run to critical-path smoke tests, with the full matrix on merge or nightly."],
+["e2e","E2E","How do you debug a CI-only E2E failure?","Playwright traces. Set `trace: 'on-first-retry'` so failures record DOM snapshots, network, console and a screenshot filmstrip without slowing green runs, then open trace.zip in the trace viewer and step through. Also check for genuine environment differences — timezone, seeded data, machine speed exposing a real race."],
+["e2e","E2E","Should E2E tests stub the network?","Mostly no — the point is to exercise the real system. Stub narrowly for third parties you don't control, hard-to-trigger error states, and non-deterministic feeds. If you stub most of it, you've written a slow integration test."],
+["visual","Visual","What is visual regression testing for?","Catching what functional assertions can't express: broken layout, wrong design tokens, overlapping or clipped text, off-screen elements. It renders, screenshots and diffs against an approved baseline."],
+["visual","Visual","Why do visual tests get flaky, and how do you fix it?","Non-determinism, not diffing. Font antialiasing differs across operating systems, so baselines must be generated in the same container as CI. Then disable animations, freeze the clock, wait for fonts and images, stub the network with fixed fixtures, and mask volatile regions like timestamps and avatars. Tune the pixel tolerance per surface."],
+["visual","Visual","Where does visual testing pay off most?","Design systems and isolated components, where renders are small and deterministic so signal is high — and where a single token change can silently affect many consumers. Full-page shots of data-heavy screens are where teams drown in false positives and start approving diffs blindly."],
+["visual","Visual","Name the tooling options.","Playwright's built-in toHaveScreenshot for self-hosted pixel diffing with baselines in git; Chromatic for Storybook-native cloud review, with opt-in TurboSnap to re-snapshot only affected stories; Percy for framework-agnostic cloud snapshots inside an existing E2E suite; Applitools for perceptual 'visual AI' diffing that reduces antialiasing false positives."],
+["visual","Visual","How does Storybook fit into testing?","Stories are already isolated, deterministic renders, so they double as visual baselines. `play` functions add interaction tests, the Vitest addon runs them in CI (superseding the older Playwright-based test runner), and tools like Chromatic snapshot each story — one artefact serving as documentation, interaction test and visual baseline."],
+["visual","Visual","How do you test accessibility?","Automated axe-core checks via jest-axe in component tests or @axe-core/playwright in E2E catch contrast, missing names, ARIA misuse and structure issues — estimates of how much that covers range from the classic 20–30% to Deque's own 57% study. They don't replace manual keyboard traversal and screen-reader passes. Preferring getByRole in RTL also bakes a11y checking into ordinary tests."],
+["flake","Flake/CI","Why is a flaky test worse than no test?","It trains the team to re-run CI instead of reading failures, so eventually a real regression gets re-run away. It also slows every merge and erodes trust in the whole suite. Treat flake as a P1 bug in the suite."],
+["flake","Flake/CI","Common causes of flaky frontend tests?","Hard-coded sleeps; animations and transitions; real clock, timezone or random values; state leaking between tests; shared backend records colliding under parallelism; unstubbed network; CI machines slow enough to expose a latent race — and sometimes a genuine race in the app, which is the one worth finding."],
+["flake","Flake/CI","Are retries a fix for flake?","No — they're a reporting tool. Enable them so one flake doesn't block a deploy, but record every retry, track flake rate, and quarantine repeat offenders into a non-blocking job with an owner and a deadline. Silent retries just hide the decay."],
+["flake","Flake/CI","How do you structure a CI test pipeline?","Fast blocking lane on every commit: typecheck, lint, unit and integration. On PRs: sharded E2E smoke over critical paths, plus visual diffs on changed components. On merge or nightly: the full cross-browser matrix, a11y sweep and performance budgets, non-blocking with alerts. Keep the blocking set small enough that nobody wants to bypass it."],
+["flake","Flake/CI","Istanbul vs V8 coverage?","Istanbul instruments code via a transform — detailed and runtime-agnostic, so it also works off V8 (Firefox, Bun), but slower and it changes the code under test. V8 uses the engine's native coverage — much faster with no transform, and since Vitest 3.2's AST-based remapping it produces reports equivalent to Istanbul. V8 is Vitest's default provider."],
+["flake","Flake/CI","How do you get a legacy codebase under test?","Start from risk rather than coverage. Write E2E tests for the handful of flows where failure is unacceptable, so the release gate isn't a human checklist. Turn on TypeScript strictness and lint for free wins. Require a regression test with every bug fix so coverage grows toward real failure sites, and add integration tests for new work. Don't run a retroactive coverage campaign on legacy code — highest effort, lowest signal."]
+];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// backtick-delimited spans become inline code
+const codeify = s => esc(s).replace(/`([^`]+)`/g, (m,inner) => `<code class="k">${inner}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${codeify(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

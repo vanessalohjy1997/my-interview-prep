@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Release, Flags &amp; A/B Testing — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#F59E0B;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(245,158,11,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#FAD391}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(245,158,11,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#FAD391}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Release &amp; <em>Experiments</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Deploy vs release</a>
+    <a href="#deploy"><span class="n">01</span> Shipping the assets</a>
+    <a href="#strategies"><span class="n">02</span> Release strategies</a>
+    <a href="#flags"><span class="n">03</span> Feature flags</a>
+    <a href="#ab"><span class="n">04</span> A/B testing</a>
+    <a href="#implement"><span class="n">05</span> Implementing a test</a>
+    <a href="#measure"><span class="n">06</span> Measuring it</a>
+    <a href="#safety"><span class="n">07</span> Release safety</a>
+    <a href="#pitfalls"><span class="n">08</span> Pitfalls</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Deploying is not <span>releasing.</span></h1>
+      <p class="lede">Code goes out continuously; exposure is a decision you can reverse in seconds. Flags, canaries and progressive rollout are how you control blast radius — and A/B testing is how you find out whether the change was actually an improvement.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Deploy</span>
+        <span class="chip"><span class="dot d-pending"></span>Flags</span>
+        <span class="chip"><span class="dot d-chain"></span>Experiments</span>
+        <span class="chip"><span class="dot d-rej"></span>Rollback</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The distinction the whole topic rests on</div>
+      <h2>Deploy is not release</h2>
+
+      <p><strong>Deploying</strong> is putting code on a server. <strong>Releasing</strong> is exposing behaviour to users. Conflating them is what makes shipping scary: if every deploy is a release, then every deploy is a decision, and decisions get batched into big risky ones.</p>
+      <p>Separating them — deploy the code dark, release it with a flag — is the idea that everything else in this guide follows from. It is also the answer that distinguishes a senior candidate: they talk about <em>controlling exposure</em>, not about a deployment pipeline.</p>
+      <div class="states">
+        <div class="statebox"><div class="st-name">Deploy</div><p>The build is live on the CDN. Nobody's experience has changed.</p></div>
+        <div class="statebox pending"><div class="st-name">Release</div><p>A flag turns the behaviour on — for 1% of users, then 10%, then everyone.</p></div>
+        <div class="statebox ful"><div class="st-name">Experiment</div><p>Two variants run concurrently and are measured against a hypothesis.</p></div>
+        <div class="statebox rej"><div class="st-name">Rollback</div><p>Flip the flag off. Seconds, not a redeploy.</p></div>
+      </div>
+      <div class="note gold"><span class="lbl">The opening line</span>&ldquo;I separate deploy from release. Code goes out continuously behind flags; exposure is a product decision I can reverse in seconds without a pipeline run.&rdquo;</div>
+    </section>
+    <section id="deploy">
+      <div class="kicker">01 — The frontend-specific mechanics</div>
+      <h2>Shipping the assets</h2>
+
+      <p>A frontend deploy is mostly a caching problem. The pattern that works is <strong>immutable, content-hashed assets plus a never-cached entry document</strong>.</p>
+      <table class="tbl">
+        <tr><th>Resource</th><th>Cache-Control</th><th>Why</th></tr>
+        <tr><td>/static/main.4f3a9c.js</td><td><code class="k">public, max-age=31536000, immutable</code></td><td>The URL changes when the content does, so it can be cached for a year. <code class="k">max-age</code> does the work; <code class="k">immutable</code> only suppresses revalidation on an explicit user reload, and Chromium never implemented it.</td></tr>
+        <tr><td>/index.html</td><td><code class="k">no-cache</code></td><td>It is the pointer to the current asset URLs. Revalidate every time or users pin themselves to an old build.</td></tr>
+        <tr><td>/sw.js</td><td><code class="k">no-cache</code></td><td>Same reason, with worse consequences — see the service worker guide.</td></tr>
+      </table>
+      <ul class="body">
+        <li><strong>Deploys must be atomic.</strong> Upload all new assets <em>before</em> switching the HTML that references them. Doing it the other way round means a window where the document asks for files that do not exist yet.</li>
+        <li><strong>Keep the previous build's assets.</strong> A user who loaded the page before the deploy will request a lazy chunk from the old build afterwards. If it is gone, they get a <code class="k">ChunkLoadError</code> and a blank screen. Retain at least one or two previous builds, and catch chunk-load failures in the app to prompt a reload.</li>
+        <li><strong>Invalidate the CDN for the entry document only</strong> — the hashed assets never need it.</li>
+        <li><strong>Version the build visibly.</strong> Embed the commit SHA in the bundle and report it with every error and analytics event; otherwise you cannot tell which build a bug came from.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">Rollback is not symmetric on the frontend</span>You can re-point the CDN to the previous build in seconds, but users who already loaded the new HTML keep it until it revalidates, and anyone mid-session may hold references to assets from either build. This is exactly why flag-based rollback beats redeploy-based rollback: flipping a flag changes behaviour without changing which files the browser is holding.</div>
+    </section>
+    <section id="strategies">
+      <div class="kicker">02 — Ways to limit the blast radius</div>
+      <h2>Release strategies</h2>
+
+      <table class="tbl">
+        <tr><th>Strategy</th><th>How it works</th><th>Trade-off</th></tr>
+        <tr><td>Big bang</td><td>Everyone gets the new version at once</td><td>Simple; the blast radius is 100% of users, and you find out from Twitter</td></tr>
+        <tr><td>Canary</td><td>A small slice of traffic gets the new version while you watch metrics</td><td>Real signal from real users; needs routing and per-version monitoring</td></tr>
+        <tr><td>Blue-green</td><td>Two complete environments; flip traffic from one to the other</td><td>Instant rollback by flipping back; you pay for two environments and must handle shared state</td></tr>
+        <tr><td>Progressive rollout</td><td>Flag percentage stepped up 1% &rarr; 5% &rarr; 25% &rarr; 100%, gated on metrics</td><td>The default for frontend work; requires flag infrastructure and honest guardrails</td></tr>
+        <tr><td>Ring / dogfood</td><td>Internal users, then beta cohort, then everyone</td><td>Catches obvious breakage cheaply; internal users are not representative</td></tr>
+      </table>
+      <p><strong>Roll back or roll forward?</strong> Roll back when the impact is user-visible and the cause is not yet understood — restore known-good first, diagnose after. Roll forward when the fix is small, understood, and rolling back would itself be disruptive (a database migration, for instance). Having a rehearsed answer for both, and a stated preference for rollback under uncertainty, is what interviewers are listening for.</p>
+    </section>
+    <section id="flags">
+      <div class="kicker">03 — The control plane for exposure</div>
+      <h2>Feature flags</h2>
+
+      <p>Flags are not all the same thing, and treating them as one is how you end up with hundreds of them. The useful taxonomy:</p>
+      <table class="tbl">
+        <tr><th>Type</th><th>Purpose</th><th>Lifetime</th></tr>
+        <tr><td>Release toggle</td><td>Hide unfinished work so it can be merged and deployed dark</td><td>Days to weeks — remove after rollout</td></tr>
+        <tr><td>Experiment toggle</td><td>Assign users to variants for an A/B test</td><td>The length of the experiment</td></tr>
+        <tr><td>Ops toggle</td><td>Kill switch — disable an expensive or fragile feature under load</td><td>Long-lived, deliberately</td></tr>
+        <tr><td>Permission toggle</td><td>Entitlements — beta cohorts, paid tiers, internal tools</td><td>Permanent; really product configuration</td></tr>
+      </table>
+      <h3>Where the flag is evaluated matters most</h3>
+      <ul class="body">
+        <li><strong>Server-side / at the edge</strong> — the HTML arrives already reflecting the decision. No flicker, no extra request, and the variant is invisible to users inspecting the bundle. This is the right default for anything above the fold.</li>
+        <li><strong>Client-side SDK</strong> — flexible and easy, but the app renders before the flags arrive, so you either flash the wrong variant or block rendering. Also ships the existence of every variant to the browser.</li>
+        <li><strong>Build-time</strong> — dead-code eliminated, zero runtime cost, but you cannot change it without a deploy, which forfeits the whole point.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">Flags must fail safe</span>If the flag service is unreachable, what does your code do? The answer must be a deliberate default — normally &ldquo;off&rdquo;, meaning the existing behaviour — bootstrapped from a cached or server-rendered value. An app that renders nothing because a flag SDK timed out has turned an availability problem into an outage.</div>
+      <h3>Flag debt is real debt</h3>
+      <p>Every flag is a branch in production and a multiplier on the states you must test. Give release flags an owner and an expiry date, fail the build when one is past it, and delete the flag <em>and the dead branch</em> as part of the rollout — not as a follow-up ticket that never happens.</p>
+    </section>
+    <section id="ab">
+      <div class="kicker">04 — A hypothesis, a unit, and a metric</div>
+      <h2>A/B testing fundamentals</h2>
+
+      <p>An A/B test is a randomised controlled experiment. The vocabulary is what gets probed:</p>
+      <ul class="body">
+        <li><strong>Hypothesis</strong> — a directional, falsifiable statement. &ldquo;Moving the CTA above the fold will increase signups&rdquo;, not &ldquo;let us try a new design&rdquo;.</li>
+        <li><strong>Randomisation unit</strong> — usually the <em>user</em>, not the session or the pageview. Randomising per pageview lets one person see both variants, which destroys the comparison and any funnel metric.</li>
+        <li><strong>Assignment must be sticky and deterministic.</strong> The standard approach is a hash of user ID plus experiment ID, bucketed into 100 slots — so the same user always lands in the same variant, on any device where they are identified, with no lookup.</li>
+        <li><strong>Control vs variant</strong> — the control is the current experience, and it must run <em>concurrently</em>. Comparing this week to last week is not an experiment; it is a seasonality measurement.</li>
+        <li><strong>Primary metric</strong> — one metric, chosen before launch. <strong>Guardrail metrics</strong> — things that must not get worse: error rate, latency, Core Web Vitals, revenue, support contacts.</li>
+        <li><strong>MDE and sample size</strong> — the minimum detectable effect is the smallest change you want to be able to detect <em>at a stated significance level and power</em> (conventionally &alpha; = 0.05 and 80% power). It determines how much traffic you need, and the requirement grows roughly with the square of how small an effect you want to detect: halving the MDE roughly quadruples the sample.</li>
+        <li><strong>Significance</strong> — a p-value below your threshold means the observed difference is unlikely under the null hypothesis. It does not tell you the effect is large, nor that it will persist.</li>
+      </ul>
+      <pre><span class="cmt">// deterministic, sticky bucketing</span>
+<span class="kw">function</span> variantFor(userId, experimentId, split = 50) {
+  <span class="kw">const</span> bucket = hash32(`${experimentId}:${userId}`) % 100;
+  <span class="kw">return</span> bucket &lt; split ? 'control' : 'treatment';
+}</pre>
+      <div class="note warn"><span class="lbl">Peeking</span>Checking results daily and stopping as soon as you see significance dramatically inflates the false-positive rate — with enough looks, almost any test crosses the line eventually. Either fix the horizon in advance from your sample-size calculation, or use a method designed for continuous monitoring (sequential testing, always-valid confidence intervals, or a bandit).</div>
+    </section>
+    <section id="implement">
+      <div class="kicker">05 — Where the frontend engineering actually lives</div>
+      <h2>Implementing a test</h2>
+
+      <h3>The flicker problem</h3>
+      <p>Assign on the client and the sequence is: render control &rarr; fetch assignment &rarr; re-render treatment. The user sees a <strong>flash of the original content</strong>, and if the variants differ in size you have also caused layout shift. Three ways out, in order of preference:</p>
+      <ol class="body">
+        <li><strong>Decide on the server or at the edge.</strong> Read or set the assignment cookie, render the right variant into the HTML. No flicker, no CLS, no extra round trip.</li>
+        <li><strong>Bootstrap the assignment</strong> into the initial HTML even if the SDK runs client-side, so the first render is already correct.</li>
+        <li><strong>Anti-flicker snippet</strong> — a blocking script that hides the body until assignment resolves. It works, and it directly damages LCP. Treat it as a last resort with a hard timeout, not a default.</li>
+      </ol>
+      <h3>Experiments and caching fight each other</h3>
+      <p>A CDN that caches one HTML response for everyone cannot serve two variants. Your options: make the assignment part of the <strong>cache key</strong> (vary on the bucket cookie — this doubles the number of cached objects and so roughly doubles origin fetches, which is negligible on a high-traffic page and painful on a long-tail one), run assignment <strong>at the edge</strong> so the origin stays cacheable, or keep the experiment entirely below the fold and hydrate it client-side. Getting this wrong produces the worst outcome — a cached variant served to everyone, so both arms are contaminated and the test measures nothing.</p>
+      <h3>Fire an exposure event</h3>
+      <pre><span class="cmt">// log the assignment where the user could actually SEE it</span>
+useEffect(() =&gt; {
+  track('experiment_exposure', { experiment: 'cta_position', variant, userId });
+}, [variant]);</pre>
+      <p>Analysis must be based on users who were <strong>exposed</strong>, not on everyone who was assigned. If the variant only appears on the checkout page, including users who never reached checkout dilutes the effect toward zero and can hide a real win. Equally, fire the event on render — not on interaction, which would only ever log people who engaged.</p>
+      <div class="note warn"><span class="lbl">The senior caveat on exposure filtering</span>This only holds if the exposure condition is <em>independent of the variant</em>. If the treatment itself changes who gets exposed — say it changes how many users reach checkout at all — then filtering on exposure is a <strong>post-treatment filter</strong>, which breaks randomisation and reintroduces selection bias. The fix is counterfactual or triggered analysis: restrict to users who would have triggered in <em>either</em> arm, using pre-treatment attributes.</div>
+    </section>
+    <section id="measure">
+      <div class="kicker">06 — What you look at, and for how long</div>
+      <h2>Measuring it</h2>
+
+      <ul class="body">
+        <li><strong>Run for at least one full business cycle</strong> — a week, usually — so weekday and weekend behaviour are both represented in both arms.</li>
+        <li><strong>Watch for novelty and primacy effects.</strong> Regular users react to change itself: a new button gets clicked because it is new. If the effect decays over the run, the lift was novelty. Conversely, power users may be temporarily slower with a changed interface.</li>
+        <li><strong>Check sample ratio mismatch first.</strong> If you split 50/50 and observe 52/48 with large traffic, something is broken — a bot filter, a redirect, an SDK failing in one arm — and no result from that test is trustworthy. SRM is the first thing a good analyst checks and a great thing to mention unprompted.</li>
+        <li><strong>Segment cautiously.</strong> Slicing until something is significant is p-hacking with extra steps. Pre-register the segments you care about.</li>
+        <li><strong>Guardrails are not optional.</strong> A variant that lifts conversion 2% while adding 400&nbsp;ms to LCP and doubling the JS error rate is not a win.</li>
+        <li><strong>Keep a holdout.</strong> A small group excluded from new releases lets you measure the cumulative effect of everything shipped over a quarter, which is often surprisingly different from the sum of the individual wins. Time-box and rotate it — a permanent holdout accumulates a badly degraded experience and stops being representative of anyone.</li>
+      </ul>
+      <div class="note"><span class="lbl">Shipping the result</span>When a test wins, the work is not done: remove the losing branch and the flag, and re-baseline your metrics. A codebase where every past experiment is still branching is unmaintainable and quietly slows every future test.</div>
+    </section>
+    <section id="safety">
+      <div class="kicker">07 — Knowing before your users tell you</div>
+      <h2>Release safety</h2>
+
+      <ul class="body">
+        <li><strong>Client-side error monitoring</strong> — Sentry or equivalent, with the release SHA attached and <strong>source maps uploaded privately</strong> so stack traces are readable without exposing your source publicly.</li>
+        <li><strong>Real-user monitoring</strong> — Core Web Vitals and custom timings from the field, segmented by release, so a regression shows up as a step change at the deploy boundary.</li>
+        <li><strong>Automatic gates.</strong> A progressive rollout should pause or revert itself when error rate or latency crosses a threshold. A rollout that requires a human watching a dashboard is a rollout that ships regressions overnight.</li>
+        <li><strong>Smoke tests after deploy</strong> — a handful of end-to-end checks against production on the critical path. They catch environment problems unit tests structurally cannot.</li>
+        <li><strong>A kill switch for anything expensive or external</strong> — a third-party widget, a new recommendation service, an animation you are unsure about.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">The line that lands</span>&ldquo;My rollback plan is a flag flip, my detection is field metrics segmented by release, and my rollout is automated to stop itself. The goal is that a bad change costs minutes and a fraction of a percent of users, not a war room.&rdquo;</div>
+    </section>
+    <section id="pitfalls">
+      <div class="kicker">08 — Where these programmes go wrong</div>
+      <h2>Pitfalls</h2>
+
+      <table class="tbl">
+        <tr><th>Pitfall</th><th>What goes wrong</th></tr>
+        <tr><td>Peeking and early stopping</td><td>Repeated significance checks inflate false positives; the &ldquo;win&rdquo; does not replicate</td></tr>
+        <tr><td>Sample ratio mismatch</td><td>The split is not what you configured, so the arms are not comparable at all</td></tr>
+        <tr><td>Randomising by session</td><td>The same person sees both variants; funnel metrics become meaningless</td></tr>
+        <tr><td>Cached variants</td><td>A CDN serves one arm to everybody, or mixes arms per request</td></tr>
+        <tr><td>Overlapping experiments</td><td>Two tests changing the same surface interact; neither result is interpretable unless you designed for it</td></tr>
+        <tr><td>Flicker</td><td>Client-side assignment flashes the control, which biases the very metric you are measuring</td></tr>
+        <tr><td>Flag debt</td><td>Stale flags multiply code paths, break under combinations nobody tested, and eventually cause an incident of their own</td></tr>
+        <tr><td>Bots in the data</td><td>Crawler traffic inflates counts; if bot filtering is asymmetric or bots reach only one arm, it produces a genuine SRM whose cause is your data pipeline, not your assignment code</td></tr>
+      </table>
+    </section>
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — how do you release a risky redesign?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A checkout redesign. Walk me through getting it to 100% of users.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Separate deploy from release. Merge behind a release flag defaulted off and deploy continuously so the code is never a big-bang merge. Evaluate the flag server-side so there is no flicker on a conversion-critical page. Enable for internal users, then 1%, watching guardrails — JS error rate, LCP and INP, checkout completion — with the rollout gated to pause automatically on regression. Step to 5, 25, 50, 100 over days, keeping a control arm long enough to measure the conversion effect rather than assuming it. Then delete the flag and the old branch.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — the flash</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Our A/B tool makes the page visibly flash the old layout before the variant appears. Fix it.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">That is client-side assignment: the page renders control, the SDK resolves, and the app re-renders. Move the decision earlier. Best is server-side or edge assignment — read or set the bucket cookie and render the correct variant into the HTML. If the SDK must stay client-side, bootstrap the resolved assignment into the initial HTML so the first render is already right. The anti-flicker snippet that hides the body is a last resort: it converts a visual glitch into an LCP regression, and it damages the very metric the experiment is measuring.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — is this result real?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A test shows +8% signups, p = 0.04, after 3 days. Ship it?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Not yet. Check, in order: <strong>SRM</strong> — is the observed split the configured one? <strong>Duration</strong> — three days is under a business cycle, so weekday and weekend mixes differ between arms. <strong>Peeking</strong> — was this the first look, or the fourth? Repeated checks inflate false positives, so p = 0.04 on day three means much less than it appears. <strong>Power</strong> — was the sample size planned from an MDE, and is +8% plausible or suspiciously large for the change? <strong>Guardrails</strong> — did latency, errors, or downstream conversion move? <strong>Novelty</strong> — is the effect decaying day over day? A single p-value is the least informative number in that list.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — spot the design flaw</div>
+        <pre>const variant = Math.random() &lt; 0.5 ? 'A' : 'B';
+renderCheckout(variant);
+track('conversion', { variant });</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Randomised per pageview, not per user; no sticky assignment</div>
+          <p style="margin:0">Assignment is random <strong>per page load</strong>, so the same user sees different variants across pages and even across reloads — funnel metrics are meaningless and the arms are contaminated. It is also not persisted, so nothing can be reconciled later, and there is no exposure event distinct from conversion. Fix: bucket deterministically from a stable identifier, <code class='k'>hash(experimentId + userId) % 100</code>, persist it in a cookie for anonymous users, and log an exposure event when the variant is actually rendered.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — the CDN and the experiment</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Our HTML is cached at the edge for 10 minutes. Marketing wants an above-the-fold headline test. What do you tell them?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">As it stands the test cannot work: one cached response is served to everyone, so both arms see the same headline and the experiment measures nothing. Three options. <strong>1)</strong> Assign at the edge — a worker reads or sets the bucket cookie and serves the matching cached variant, keeping the origin cacheable. <strong>2)</strong> Add the bucket cookie to the cache key — correct, but it doubles the number of cached objects and therefore roughly doubles origin fetches (barely noticeable at high traffic, costly on long-tail pages). <strong>3)</strong> Move the test below the fold and hydrate it client-side, which avoids the caching problem at the cost of flicker risk. For an above-the-fold headline, edge assignment is the right answer.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="deploy">Deploy</button>
+        <button class="fchip" data-f="rel">Release</button>
+        <button class="fchip" data-f="flags">Flags</button>
+        <button class="fchip" data-f="ab">A/B</button>
+        <button class="fchip" data-f="measure">Measurement</button>
+        <button class="fchip" data-f="safety">Safety</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · control exposure, not just the pipeline</footer>
+
+<script>
+const QA = [["deploy", "Deploy", "What is the difference between deploying and releasing?", "Deploying puts code on a server; releasing exposes behaviour to users. Separating them — deploy dark, release with a flag — means merges are small and continuous while exposure stays a reversible product decision."], ["deploy", "Deploy", "How should you cache frontend build assets?", "Content-hashed assets get public, max-age=31536000, immutable, because a change produces a new URL — max-age does the real work, while immutable only suppresses revalidation on an explicit reload and was never implemented in Chromium. The entry HTML gets no-cache so it always revalidates, otherwise users pin themselves to an old build and never see the new asset URLs."], ["deploy", "Deploy", "Why do users see ChunkLoadError after a deploy?", "They loaded the page before the deploy and then requested a lazily-loaded chunk that the new build replaced or removed. Keep the previous build's assets available for a release or two, and catch chunk-load failures in the app to offer a reload."], ["deploy", "Deploy", "What makes a frontend deploy atomic?", "Uploading every new asset before switching the entry document that references them, so there is never a window where the HTML points at files that do not exist. Then invalidate the CDN for the document only; hashed assets never need invalidation."], ["deploy", "Deploy", "Why is frontend rollback not symmetric with deploy?", "You can re-point the CDN instantly, but users already holding the new HTML keep it until it revalidates, and sessions in flight may reference assets from either build. That asymmetry is why flag-based rollback, which changes behaviour without changing files, is preferred."], ["rel", "Release", "What is a canary release?", "Routing a small slice of traffic to the new version while watching metrics, so a defect affects a bounded number of users before you either widen the rollout or revert. It gives real production signal that staging cannot."], ["rel", "Release", "Blue-green versus canary?", "Blue-green runs two complete environments and flips all traffic between them, giving an instant rollback but no gradual exposure. Canary shifts a percentage of traffic incrementally, giving graduated risk at the cost of running two versions concurrently and needing per-version monitoring."], ["rel", "Release", "When do you roll back rather than roll forward?", "Roll back whenever the impact is user-visible and the cause is not yet understood — restore known-good, then diagnose. Roll forward when the fix is small and well understood, or when reverting would itself be disruptive, such as after a migration."], ["rel", "Release", "What is progressive delivery?", "Feature flags plus staged percentage rollouts plus automated monitoring: exposure increases 1, 5, 25, 100 percent while guardrail metrics gate each step, and the rollout pauses or reverts itself on regression rather than relying on someone watching a dashboard."], ["flags", "Flags", "What kinds of feature flags are there?", "Release toggles to hide unfinished work, experiment toggles for A/B assignment, ops toggles as kill switches for expensive or fragile features, and permission toggles for entitlements. They differ mainly in intended lifetime, which is what should drive when you delete them."], ["flags", "Flags", "Where should a flag be evaluated?", "Server-side or at the edge for anything above the fold, so the HTML arrives already correct — no flicker, no extra round trip, and variants are not exposed in the bundle. Client-side evaluation is easier but renders before flags resolve. Build-time flags cost nothing at runtime but cannot be changed without a deploy."], ["flags", "Flags", "What should happen when the flag service is unavailable?", "The code falls back to a deliberate default — normally off, meaning existing behaviour — ideally bootstrapped from a cached or server-rendered value. Blocking render on a flag SDK turns a dependency's availability problem into your outage."], ["flags", "Flags", "What is flag debt and how do you manage it?", "Every live flag is a branch in production and a multiplier on the state space you must test. Give release flags an owner and an expiry, fail the build when one is overdue, and delete both the flag and the dead branch as the final step of a rollout."], ["ab", "A/B", "What is the randomisation unit and why does it matter?", "The entity you randomly assign — normally the user, identified by an account ID or a persistent cookie. Randomising per session or per pageview lets one person see both variants, which contaminates the arms and makes any funnel metric meaningless."], ["ab", "A/B", "How do you assign users to variants?", "Deterministically: hash a stable identifier together with the experiment ID and bucket the result into 100 slots. The same user always lands in the same variant with no server lookup, and different experiments bucket independently because the experiment ID is in the hash."], ["ab", "A/B", "What is MDE and how does it relate to sample size?", "The minimum detectable effect is the smallest change you want to be able to detect at a stated significance level and power — conventionally alpha of 0.05 and 80% power. Required sample size scales roughly with the inverse square of it, so halving the effect you want to detect roughly quadruples the traffic you need. You compute it before launching, not after."], ["ab", "A/B", "What does statistical significance actually tell you?", "That the observed difference is unlikely to have arisen if there were no real effect, at your chosen threshold. It says nothing about the size of the effect, whether it matters commercially, or whether it will persist after novelty wears off."], ["ab", "A/B", "What is peeking and why is it a problem?", "Repeatedly checking results and stopping as soon as significance appears. Each look is another chance to cross the threshold by luck, so the real false-positive rate is far above your nominal one. Fix the horizon in advance, or use sequential testing designed for continuous monitoring."], ["ab", "A/B", "What is sample ratio mismatch?", "The observed traffic split differs from the configured one — 52/48 on a 50/50 test with large volume. It means assignment or logging is broken, often through a redirect, a bot filter, or an SDK failing in one arm, and it invalidates the whole result. It is the first thing to check."], ["ab", "A/B", "What are guardrail metrics?", "Metrics that must not degrade even if the primary metric improves: error rate, latency, Core Web Vitals, revenue, support contacts. A 2% conversion lift that adds 400 ms to LCP and doubles JS errors is not a win."], ["ab", "A/B", "Why does client-side assignment cause flicker?", "The page renders the control, the SDK resolves the assignment, and the app re-renders as the variant. The user sees the original content flash, and if the variants differ in height you have added layout shift — which biases the metric you are trying to measure."], ["ab", "A/B", "How do experiments interact with CDN caching?", "A cached HTML response is shared, so it cannot carry per-user variants. Either assign at the edge and serve the matching cached variant, add the bucket cookie to the cache key — which doubles the number of cached objects and so roughly doubles origin fetches — or keep the experiment below the fold and hydrate it client-side."], ["ab", "A/B", "What is an exposure event and why does it matter?", "A log entry fired when a user actually sees the variant. Analysis should be restricted to exposed users — including everyone assigned but never exposed dilutes the effect toward zero. Fire it on render, not on interaction. The caveat that separates a senior answer: this is only valid if exposure is independent of the variant. If the treatment changes who gets exposed, filtering on exposure is a post-treatment filter that reintroduces selection bias, and you need counterfactual triggering instead."], ["measure", "Measurement", "How long should an experiment run?", "At minimum one full business cycle, usually a week, so both arms contain the same mix of weekdays and weekends — and long enough to reach the sample size your MDE calculation demanded. Stopping when significance first appears is peeking."], ["measure", "Measurement", "What is a novelty effect?", "Existing users responding to change itself rather than to the change being better — a new element attracts clicks because it is new. The tell is an effect that decays over the run. The mirror image, primacy, is power users temporarily performing worse with an unfamiliar interface."], ["measure", "Measurement", "Why is slicing results by segment risky?", "Every additional segment is another chance to find significance by luck, so post-hoc slicing until something looks good is p-hacking. Pre-register the segments you genuinely expect to differ and treat anything else as hypothesis generation."], ["measure", "Measurement", "What is a holdout group?", "A cohort excluded from new releases, used to measure the cumulative effect of everything shipped over a quarter. It often reveals that the sum of individually significant wins does not add up in aggregate. Time-box and rotate it, since a permanently held-back group drifts into an unrepresentative, badly degraded experience."], ["safety", "Safety", "How do you detect a bad release quickly?", "Field monitoring segmented by release: client error rate with the build SHA attached, Core Web Vitals and custom timings from real users, and business metrics on the critical path. A regression then appears as a step change at the deploy boundary rather than as scattered reports."], ["safety", "Safety", "How should source maps be handled in production?", "Generate them, upload them to your error tracker so stack traces are readable, and do not serve them publicly from your CDN. That gives you debuggable traces without publishing your source."], ["safety", "Safety", "What belongs in a post-deploy smoke test?", "A handful of end-to-end checks against production covering the critical path — the page loads, auth works, the primary conversion flow completes. They catch configuration and environment failures that unit tests structurally cannot see."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP Protocol — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#8F88FF;  /* brand / the protocol */
+    --rose:#FF7A8A;     /* 5xx / errors */
+    --amber:#F3BA2F;    /* 3xx / caution */
+    --violet:#A78BFA;   /* 1xx / handshake */
+    --cyan:#34D3E6;     /* transport / streams */
+    --green:#5FD68A;    /* 2xx / success */
+    --orange:#F0895A;   /* 4xx / client error */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-s2{background:var(--green)}.d-s3{background:var(--amber)}.d-s4{background:var(--orange)}.d-s5{background:var(--rose)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(143,136,255,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#C9C4FF}
+
+  /* colour-coded key terms */
+  .t-yes,.tbl td.t-yes{color:var(--green);font-weight:600}
+  .t-no,.tbl td.t-no{color:var(--rose);font-weight:600}
+  .t-warn,.tbl td.t-warn{color:var(--amber);font-weight:600}
+  .t-key{color:var(--emerald);font-weight:600}
+
+  /* ---------- status-code badges ---------- */
+  .sc{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.02em;
+    padding:2px 8px;border-radius:6px;color:#08110F;white-space:nowrap}
+  .sc.s1{background:var(--violet)}.sc.s2{background:var(--green)}
+  .sc.s3{background:var(--amber)}.sc.s4{background:var(--orange)}.sc.s5{background:var(--rose)}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(143,136,255,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .states.codes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .states.codes .statebox{min-width:0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.s1 .st-name{color:var(--violet)}
+  .statebox.s2 .st-name{color:var(--green)}
+  .statebox.s3 .st-name{color:var(--amber)}
+  .statebox.s4 .st-name{color:var(--orange)}
+  .statebox.s5 .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#C9C4FF}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">HTTP <em>Protocol</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Fundamentals</a>
+    <a href="#status"><span class="n">01</span> Status codes</a>
+    <a href="#headers"><span class="n">02</span> Headers &amp; negotiation</a>
+    <a href="#caching"><span class="n">03</span> Caching</a>
+    <a href="#cors"><span class="n">04</span> CORS</a>
+    <a href="#security"><span class="n">05</span> Cookies &amp; security</a>
+    <a href="#dns"><span class="n">06</span> DNS &amp; connection</a>
+    <a href="#tls"><span class="n">07</span> HTTPS / TLS</a>
+    <a href="#versions"><span class="n">08</span> Versions &amp; performance</a>
+    <a href="#realtime"><span class="n">09</span> Real-time transports</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>The server forgets you <span>between every request.</span></h1>
+      <p class="lede">HTTP is stateless by design, so every guarantee you rely on — who you are, what may be cached, which origin may read the response, whether a retry is safe — is negotiated in headers on each round trip. Nine topics, then 47 questions to drill.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-s2"></span>2xx Success</span>
+        <span class="chip"><span class="dot d-s3"></span>3xx Redirect</span>
+        <span class="chip"><span class="dot d-s4"></span>4xx Client error</span>
+        <span class="chip"><span class="dot d-s5"></span>5xx Server error</span>
+      </div>
+    </header>
+
+    <section id="intro">
+      <div class="kicker">00 — Request, response, method</div>
+      <h2>HTTP fundamentals</h2>
+      <p><strong>What it is:</strong> an application-layer, request&ndash;response protocol. It runs over TCP for HTTP/1.x and HTTP/2, and over QUIC/UDP for HTTP/3. It is <strong>stateless</strong> — the server keeps no memory between requests, so continuity (login, cart) is layered on via cookies, tokens, or server-side sessions.</p>
+
+      <h3>Request &amp; response shape</h3>
+      <ul class="body">
+        <li><strong>Request line</strong> — method + path + version: <code class="k">GET /orders?status=open HTTP/1.1</code></li>
+        <li><strong>Status line</strong> — version + code + reason: <code class="k">HTTP/1.1 200 OK</code></li>
+        <li>Both then carry <strong>headers</strong>, a blank line, and an optional <strong>body</strong>.</li>
+      </ul>
+
+      <h3>Methods, safety &amp; idempotency</h3>
+      <table class="tbl">
+        <tr><th>Method</th><th>Purpose</th><th>Safe</th><th>Idempotent</th></tr>
+        <tr><td>GET</td><td>Retrieve a resource</td><td class="t-yes">Yes</td><td class="t-yes">Yes</td></tr>
+        <tr><td>HEAD</td><td>Like GET, headers only</td><td class="t-yes">Yes</td><td class="t-yes">Yes</td></tr>
+        <tr><td>POST</td><td>Create / submit / trigger</td><td class="t-no">No</td><td class="t-no">No</td></tr>
+        <tr><td>PUT</td><td>Replace a resource entirely</td><td class="t-no">No</td><td class="t-yes">Yes</td></tr>
+        <tr><td>PATCH</td><td>Partially update a resource</td><td class="t-no">No</td><td class="t-warn">Not guaranteed</td></tr>
+        <tr><td>DELETE</td><td>Remove a resource</td><td class="t-no">No</td><td class="t-yes">Yes</td></tr>
+      </table>
+      <ul class="body">
+        <li><strong>Safe</strong> = no server-state change (read-only). <strong>Idempotent</strong> = N calls have the same effect as one.</li>
+        <li><strong>Why it matters:</strong> a client or proxy can safely <em>retry</em> an idempotent request after a failure. Retrying a <code class="k">POST</code> may double-submit (double charge) — payment flows use idempotency keys.</li>
+        <li><strong>PUT vs PATCH:</strong> PUT sends the whole representation (idempotent); PATCH is partial, idempotent only if the operation is (<code class="k">set</code> vs <code class="k">increment</code>).</li>
+      </ul>
+    </section>
+
+    <section id="status">
+      <div class="kicker">01 — Five classes, a handful that matter</div>
+      <h2>Status codes</h2>
+      <div class="states codes">
+        <div class="statebox s1">
+          <div class="st-name"><span class="sc s1">1xx</span> Informational</div>
+          <p><code class="k">100 Continue</code>, <code class="k">101 Switching Protocols</code> (the WebSocket upgrade).</p>
+        </div>
+        <div class="statebox s2">
+          <div class="st-name"><span class="sc s2">2xx</span> Success</div>
+          <p><code class="k">200 OK</code>, <code class="k">201 Created</code>, <code class="k">204 No Content</code>, <code class="k">206 Partial Content</code>.</p>
+        </div>
+        <div class="statebox s3">
+          <div class="st-name"><span class="sc s3">3xx</span> Redirection</div>
+          <p><code class="k">301</code>/<code class="k">302</code>, <code class="k">304 Not Modified</code>, <code class="k">307</code>/<code class="k">308</code>.</p>
+        </div>
+        <div class="statebox s4">
+          <div class="st-name"><span class="sc s4">4xx</span> Client error</div>
+          <p><code class="k">400</code>, <code class="k">401</code>, <code class="k">403</code>, <code class="k">404</code>, <code class="k">409</code>, <code class="k">422</code>, <code class="k">429</code>.</p>
+        </div>
+        <div class="statebox s5">
+          <div class="st-name"><span class="sc s5">5xx</span> Server error</div>
+          <p><code class="k">500</code>, <code class="k">502</code>, <code class="k">503</code>, <code class="k">504</code>.</p>
+        </div>
+      </div>
+
+      <h3>The distinctions that get asked</h3>
+      <ul class="body">
+        <li><code class="k">301</code> permanent vs <code class="k">302</code> temporary — both historically let clients switch to GET; <code class="k">307</code>/<code class="k">308</code> <strong>preserve method and body</strong>.</li>
+        <li><code class="k">304 Not Modified</code> — the cached copy is still valid, reuse it. No body is re-sent.</li>
+        <li><code class="k">401</code> — <strong>not authenticated</strong> (misnamed) vs <code class="k">403</code> — authenticated but <strong>not allowed</strong>.</li>
+        <li><code class="k">409 Conflict</code> (conflicts with current state) vs <code class="k">422 Unprocessable</code> (valid syntax, fails validation).</li>
+        <li><code class="k">429 Too Many Requests</code> — rate limited; check <code class="k">Retry-After</code>.</li>
+        <li><code class="k">502 Bad Gateway</code> (bad upstream response), <code class="k">503 Service Unavailable</code> (overloaded), <code class="k">504 Gateway Timeout</code> (slow upstream).</li>
+      </ul>
+    </section>
+
+    <section id="headers">
+      <div class="kicker">02 — Asking for the right representation</div>
+      <h2>Headers &amp; content negotiation</h2>
+      <ul class="body">
+        <li><strong>Negotiation:</strong> the client declares preferences via <code class="k">Accept</code>, <code class="k">Accept-Language</code>, <code class="k">Accept-Encoding</code>; the server returns the best representation and signals what varied via <code class="k">Vary</code>. The <code class="k">q</code> value (0&ndash;1) is a priority weight.</li>
+        <li><strong>Vary</strong> tells caches which request headers affect the response, so entries are keyed correctly.</li>
+        <li><strong>Compression</strong> (<code class="k">Content-Encoding</code>): <code class="k">gzip</code> is the universal baseline; <code class="k">br</code> (Brotli) is smaller for text over HTTPS. Already-compressed media doesn&rsquo;t benefit.</li>
+      </ul>
+    </section>
+
+    <section id="caching">
+      <div class="kicker">03 — Freshness &amp; revalidation</div>
+      <h2>Caching</h2>
+      <h3>Cache-Control</h3>
+      <ul class="body">
+        <li><code class="k">max-age=N</code> — fresh for N seconds. <code class="k">no-cache</code> — may store but must revalidate first. <code class="k">no-store</code> — never cache.</li>
+        <li><code class="k">private</code> (browser only) vs <code class="k">public</code> (shared caches/CDN). <code class="k">immutable</code> — don&rsquo;t revalidate while fresh. <code class="k">stale-while-revalidate</code> — serve stale now, refresh in the background.</li>
+      </ul>
+      <h3>Revalidation</h3>
+      <ul class="body">
+        <li><strong>ETag / If-None-Match</strong> (content fingerprint, precise) and <strong>Last-Modified / If-Modified-Since</strong> (timestamp) &rarr; <code class="k">304</code> when unchanged, no body re-sent.</li>
+      </ul>
+      <div class="note">
+        <span class="lbl">The flow</span>
+        Fresh (within <code class="k">max-age</code>) &rarr; serve from cache, no network. Stale &rarr; conditional request &rarr; <span class="sc s3">304</span> reuse or <span class="sc s2">200</span> replace. <strong>Cache-bust</strong> static assets with content-hashed filenames served <code class="k">immutable</code>.
+      </div>
+    </section>
+
+    <section id="cors">
+      <div class="kicker">04 — A browser boundary, not a server one</div>
+      <h2>CORS &amp; the same-origin policy</h2>
+      <ul class="body">
+        <li><strong>Same-origin policy:</strong> origin = scheme + host + port; the browser blocks JS from <em>reading</em> cross-origin responses.</li>
+        <li><strong>Simple</strong> request (GET/POST/HEAD, safe-listed headers, basic content types) &rarr; no preflight. <strong>Anything else</strong> (PUT/DELETE/PATCH, custom headers, <code class="k">application/json</code>) triggers an automatic <code class="k">OPTIONS</code> preflight.</li>
+        <li>Server answers with <code class="k">Access-Control-Allow-Origin</code>/<code class="k">-Methods</code>/<code class="k">-Headers</code>; <code class="k">Access-Control-Max-Age</code> caches the preflight.</li>
+        <li><strong>Credentials:</strong> with cookies you <em>cannot</em> use <code class="k">Allow-Origin: *</code> — echo the specific origin and set <code class="k">Allow-Credentials: true</code>.</li>
+      </ul>
+      <div class="note gold">
+        <span class="lbl">Debugging</span>
+        A CORS error is the browser enforcing the server&rsquo;s missing permissions — the fix lives on the <strong>server</strong>, not in client code.
+      </div>
+    </section>
+
+    <section id="security">
+      <div class="kicker">05 — Who you are, and who can act as you</div>
+      <h2>Cookies, auth &amp; security</h2>
+      <ul class="body">
+        <li><strong><code class="k">Set-Cookie</code> attributes:</strong> <code class="k">HttpOnly</code> (no JS access), <code class="k">Secure</code> (HTTPS only), <code class="k">SameSite</code> (Strict/Lax/None; None needs Secure), plus <code class="k">Domain</code>, <code class="k">Path</code>, <code class="k">Max-Age</code>.</li>
+        <li><strong>Token storage:</strong> an HttpOnly cookie is safe from XSS reads but sent automatically &rarr; CSRF risk; <code class="k">localStorage</code> avoids CSRF but any XSS can read it.</li>
+        <li><strong>CSRF</strong> — a malicious site triggers an authenticated request via auto-sent cookies. Mitigate with <code class="k">SameSite</code>, CSRF tokens, Origin/Referer checks.</li>
+        <li><strong>XSS</strong> — injected script runs in your origin. Mitigate with escaping, a CSP, and HttpOnly cookies.</li>
+        <li><strong>Schemes:</strong> <code class="k">Authorization: Bearer &lt;token&gt;</code> (JWT/OAuth, stateless) vs cookie/session (server holds state).</li>
+      </ul>
+    </section>
+
+    <section id="dns">
+      <div class="kicker">06 — Before a single byte is requested</div>
+      <h2>DNS &amp; connection setup</h2>
+
+      <p>&ldquo;What happens when you type a URL and press Enter?&rdquo; is the most-asked systems question in frontend interviews, and the part candidates skip is everything that happens <em>before</em> the request exists. Name resolution and connection setup routinely cost more than the response itself on a first visit.</p>
+      <h3>The resolution chain</h3>
+      <ol class="body">
+        <li>The browser checks its own <strong>DNS cache</strong>, then hands off to the OS resolver, which consults the <code class="k">hosts</code> file before its own cache.</li>
+        <li>On a miss it asks a <strong>recursive resolver</strong> — your ISP's, or a public one like 1.1.1.1.</li>
+        <li>The resolver, if it has nothing cached, walks the hierarchy: a <strong>root</strong> server points it at the <strong>TLD</strong> servers for <code class="k">.com</code>, which point at the domain's <strong>authoritative</strong> nameservers, which return the record.</li>
+        <li>Every layer caches the answer for its <strong>TTL</strong>.</li>
+      </ol>
+      <p>Then the browser opens a <strong>TCP</strong> connection (one round trip for the handshake), negotiates <strong>TLS</strong> (one more round trip with TLS 1.3, or zero on resumption), and only then sends the request line and headers. On a cold connection to a new origin you have spent three or more round trips before the server has seen a single byte of your request.</p>
+      <h3>Record types worth knowing</h3>
+      <table class="tbl">
+        <tr><td>A / AAAA</td><td>Hostname to an IPv4 / IPv6 address — the actual answer.</td></tr>
+        <tr><td>CNAME</td><td>An alias to another name. Cannot exist at the zone apex alongside other records, which is why <code class="k">example.com</code> pointing at a CDN needs an ALIAS/ANAME or a provider-specific flattening.</td></tr>
+        <tr><td>NS / SOA</td><td>Delegation and zone metadata.</td></tr>
+        <tr><td>TXT</td><td>Verification and policy — domain ownership, SPF, DMARC.</td></tr>
+      </table>
+      <div class="note"><span class="lbl">&ldquo;DNS propagation&rdquo; is a misnomer</span>Nothing propagates. Resolvers simply keep serving the old answer until the TTL you previously published expires. That is why you lower the TTL to 60 seconds a day <em>before</em> a migration — afterwards is too late, because the long TTL is already cached everywhere.</div>
+      <h3>What a frontend engineer actually controls</h3>
+      <pre>&lt;link rel="dns-prefetch" href="https://api.example.com"&gt;
+&lt;link rel="preconnect" href="https://api.example.com" crossorigin&gt;
+&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</pre>
+      <ul class="body">
+        <li><code class="k">dns-prefetch</code> resolves the name early — cheap, and a useful fallback hint.</li>
+        <li><code class="k">preconnect</code> does DNS <em>plus</em> TCP <em>plus</em> TLS, so the connection is warm when the request is made. It costs a connection you may not use, so limit it to the three or four origins on the critical path.</li>
+        <li><strong>Match the mode.</strong> Fonts — and any cross-origin <code class="k">fetch</code> not sent with credentials — are anonymous-mode requests, so their preconnect needs <code class="k">crossorigin</code>. Without it the browser only performs the DNS lookup, and your preconnect quietly degrades to a <code class="k">dns-prefetch</code>.</li>
+        <li><strong>Fewer origins is the bigger win.</strong> Every additional third-party domain is another resolution and another handshake. Self-hosting fonts removes a whole chain; consolidating asset domains lets HTTP/2 reuse one connection.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">The connection-reuse detail</span>Under HTTP/1.1 the browser opened roughly six connections per origin, so sharding assets across domains was a real optimisation. Under HTTP/2 one multiplexed connection carries everything, and sharding is now actively harmful — it forces extra DNS lookups and handshakes for no benefit. HTTP/2 will even <em>coalesce</em> requests for different hostnames onto one connection when they resolve to the same IP and the certificate covers both.</div>
+    </section>
+
+    <section id="tls">
+      <div class="kicker">07 — Confidentiality, integrity, identity</div>
+      <h2>HTTPS / TLS</h2>
+      <ul class="body">
+        <li><strong>HTTPS = HTTP over TLS</strong>: confidentiality, integrity, and authentication (CA-signed certificate).</li>
+        <li><strong>Handshake:</strong> agree a cipher &rarr; server presents its certificate &rarr; exchange keys &rarr; derive a shared symmetric session key.</li>
+        <li><strong>TLS 1.3</strong> is faster (fewer round trips, 0-RTT resumption). <strong>HSTS</strong> forces HTTPS and blocks downgrade attacks.</li>
+      </ul>
+    </section>
+
+    <section id="versions">
+      <div class="kicker">08 — What each version fixed</div>
+      <h2>HTTP versions &amp; performance</h2>
+
+      <h3>1.x problems</h3>
+      <p>Needed multiple TCP connections for concurrency; no header compression; no prioritisation; <strong>head-of-line (HOL) blocking</strong> — one response at a time per connection. Forced workarounds: concatenation, sprites, domain sharding.</p>
+
+      <h3>SPDY &rarr; HTTP/2</h3>
+      <p>SPDY (Google, 2009) cut page load time up to <strong>55%</strong> and became the basis for HTTP/2 (<strong>RFC 7540</strong>, May 2015; HPACK = RFC 7541).</p>
+
+      <h3>HTTP/2</h3>
+      <ul class="body">
+        <li><strong>Binary framing:</strong> semantics unchanged; the wire format becomes binary <em>frames</em>. A <em>stream</em> carries messages; frames from many streams interleave over <strong>one TCP connection</strong> and reassemble by stream ID.</li>
+        <li><strong>Multiplexing</strong> removes app-layer HOL blocking. <strong>Prioritisation</strong> — RFC 7540&rsquo;s weight/dependency tree is <em>deprecated</em> by RFC 9113; the current scheme is RFC 9218 Extensible Priorities (the <code class="k">Priority</code> header). <strong>HPACK</strong> compresses headers with Huffman coding + static/dynamic tables. Credit-based <strong>flow control</strong> (default window 65,535 B).</li>
+        <li><strong>Server push</strong> — largely deprecated; use preload / <code class="k">103 Early Hints</code>.</li>
+      </ul>
+
+      <h3>HTTP/3 (QUIC over UDP)</h3>
+      <ul class="body">
+        <li>Independent streams &rarr; a lost packet blocks only its own stream (fixes <strong>TCP-level</strong> HOL blocking). Combined transport+TLS handshake with <strong>0-RTT</strong>; encrypted by default; survives network switches (WiFi &harr; cellular) via connection IDs.</li>
+      </ul>
+
+      <table class="tbl">
+        <tr><th>Aspect</th><th>HTTP/1.1</th><th>HTTP/2</th><th>HTTP/3</th></tr>
+        <tr><td>Transport</td><td>TCP</td><td>TCP</td><td>QUIC (UDP)</td></tr>
+        <tr><td>Multiplexing</td><td class="t-no">No</td><td class="t-yes">Yes</td><td class="t-yes">Yes</td></tr>
+        <tr><td>Header compression</td><td>None</td><td>HPACK</td><td>QPACK</td></tr>
+        <tr><td>HOL blocking</td><td>App-level</td><td>TCP-level remains</td><td>Cross-stream: gone</td></tr>
+        <tr><td>Setup</td><td>TCP + TLS</td><td>TCP + TLS</td><td>Combined; 0-RTT</td></tr>
+      </table>
+
+      <div class="note warn">
+        <span class="lbl">Two nuance flags</span>
+        HTTP/2 flow control is loosely called &ldquo;hop-by-hop&rdquo; — strictly it is per-connection between adjacent endpoints. Server push appears in older material but is deprecated in favour of <code class="k">103 Early Hints</code> / preload.
+      </div>
+    </section>
+
+    <section id="realtime">
+      <div class="kicker">09 — Pushing data the other way</div>
+      <h2>Real-time transports</h2>
+      <ul class="body">
+        <li><strong>Short polling</strong> — fixed-interval requests (wasteful, laggy). <strong>Long polling</strong> — server holds the request until data is ready, then the client re-requests.</li>
+        <li><strong>SSE</strong> — one-way server&rarr;client stream over HTTP (<code class="k">text/event-stream</code>), <code class="k">EventSource</code>, auto-reconnect, text only.</li>
+        <li><strong>WebSockets</strong> — full-duplex; starts as an HTTP <code class="k">Upgrade</code> &rarr; <span class="sc s1">101</span> Switching Protocols, then binary/text frames. Best for live order books and trading updates.</li>
+        <li><strong>Rule of thumb:</strong> SSE for one-way feeds; WebSockets for low-latency bidirectional traffic.</li>
+      </ul>
+    </section>
+
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="fundamentals">Fundamentals</button>
+        <button class="fchip" data-f="status">Status codes</button>
+        <button class="fchip" data-f="headers">Headers</button>
+        <button class="fchip" data-f="caching">Caching</button>
+        <button class="fchip" data-f="cors">CORS</button>
+        <button class="fchip" data-f="security">Security</button>
+        <button class="fchip" data-f="dns">DNS</button>
+        <button class="fchip" data-f="tls">TLS</button>
+        <button class="fchip" data-f="versions">Versions</button>
+        <button class="fchip" data-f="realtime">Real-time</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · stateless by default — everything else is a header</footer>
+
+<script>
+const QA = [["fundamentals", "Fund", "What does “stateless” mean for HTTP, and how is continuity achieved?", "The server retains no memory between requests — each is independent. State (login, cart) is layered on via cookies, tokens, or server-side sessions."], ["fundamentals", "Fund", "Safe vs idempotent — define both and give examples.", "Safe = no server-state change (read-only): GET, HEAD, OPTIONS. Idempotent = N calls equal one call: GET, HEAD, PUT, DELETE, OPTIONS. POST is neither; PATCH is generally not idempotent."], ["fundamentals", "Fund", "Why is retrying a PUT safe but retrying a POST risky?", "PUT sets a resource to a known state, so repeats converge to the same result. POST is non-idempotent — a retry can create a duplicate (double order/charge). Payment APIs use idempotency keys to make POST safe to retry."], ["fundamentals", "Fund", "PUT vs PATCH.", "PUT replaces the whole resource (send the full representation; idempotent). PATCH applies a partial change; idempotent only if the operation is (set balance=100 yes; increment no)."], ["fundamentals", "Fund", "GET vs POST for sending data.", "GET puts params in the URL — cacheable, bookmarkable, safe/idempotent, length-limited, no semantic body. POST carries a body, isn't cached by default, and is used for creation/side effects."], ["fundamentals", "Fund", "What's the difference between a request line and a status line?", "Request line = method + path + version. Status line = version + status code + reason phrase."], ["status", "Status", "401 vs 403.", "401 = not authenticated (missing/invalid credentials). 403 = authenticated but not permitted for this resource."], ["status", "Status", "301 vs 302 vs 307 vs 308.", "301 permanent, 302 temporary — both historically let clients switch to GET. 307 (temporary) and 308 (permanent) preserve the method and body."], ["status", "Status", "What is a 304 and what triggers it?", "Not Modified. Returned to a conditional request (If-None-Match / If-Modified-Since) when the cached copy is still valid; the body is not re-sent."], ["status", "Status", "409 vs 422.", "409 Conflict: the request conflicts with current resource state (version conflict, duplicate). 422 Unprocessable Content (formerly 'Unprocessable Entity'): well-formed but fails semantic validation."], ["status", "Status", "What does 429 mean and how should a client react?", "Too Many Requests (rate limited). Respect Retry-After and back off — relevant when hitting exchange/DEX APIs."], ["status", "Status", "502 vs 503 vs 504.", "502 Bad Gateway (upstream returned an invalid response), 503 Service Unavailable (overloaded/maintenance), 504 Gateway Timeout (upstream too slow)."], ["status", "Status", "200 vs 201 vs 204.", "200 OK with body; 201 Created (new resource, often a Location header); 204 No Content (success, empty body)."], ["headers", "Head", "What is content negotiation?", "The client states preferences via Accept / Accept-Language / Accept-Encoding; the server returns the best representation and signals what varied via Vary."], ["headers", "Head", "What does the Vary header do?", "Tells caches which request headers affect the response, so cache entries are keyed correctly (e.g. Vary: Accept-Encoding)."], ["headers", "Head", "gzip vs Brotli.", "Both compress text payloads. Brotli usually yields smaller static text over HTTPS; gzip is the universal baseline. Server sets Content-Encoding; client offers support via Accept-Encoding."], ["caching", "Cache", "no-cache vs no-store.", "no-cache: may be stored but must revalidate before reuse. no-store: never stored at all (sensitive data)."], ["caching", "Cache", "private vs public.", "private: only the end-user's browser may cache. public: shared caches / CDNs may cache too."], ["caching", "Cache", "ETag vs Last-Modified.", "ETag is an opaque content fingerprint (precise), validated with If-None-Match. Last-Modified is a timestamp (second-granularity), validated with If-Modified-Since."], ["caching", "Cache", "Walk through what the browser does with a cached response on the next request.", "Check freshness (max-age). Fresh → serve from cache, no network. Stale → send a conditional request → server replies 304 (reuse cached body) or 200 (new content)."], ["caching", "Cache", "How do you cache-bust static assets?", "Content-hashed filenames (app.a1b2c3.js) cached immutable with a long max-age. A content change produces a new filename, so there's never a stale asset."], ["caching", "Cache", "What does stale-while-revalidate do?", "Serves the stale response instantly while fetching a fresh copy in the background, so the next request gets fresh content without the user waiting."], ["cors", "CORS", "What is the same-origin policy?", "A browser security boundary that blocks JavaScript from reading responses from a different origin (scheme + host + port)."], ["cors", "CORS", "What triggers a CORS preflight?", "Non-simple requests: methods beyond GET/POST/HEAD, custom headers, or a Content-Type like application/json. The browser sends an OPTIONS preflight first."], ["cors", "CORS", "You get a CORS error in the console — whose job is it to fix?", "The server's. It must return the correct Access-Control-Allow-* headers. The frontend can't disable CORS from client code."], ["cors", "CORS", "Can you use a wildcard origin with credentials?", "No. With credentials (cookies), the server must echo the specific origin and set Access-Control-Allow-Credentials: true — * is rejected."], ["cors", "CORS", "What does Access-Control-Max-Age do?", "Caches the preflight result for a period so repeated cross-origin calls skip the OPTIONS round trip."], ["security", "Sec", "Explain HttpOnly, Secure, and SameSite.", "HttpOnly: inaccessible to JS. Secure: only sent over HTTPS. SameSite: controls cross-site sending - Strict, Lax (the default in Chrome/Edge; Firefox and Safari do not default to Lax, they partition/block third-party cookies instead), or None (needs Secure)."], ["security", "Sec", "Store an auth token in a cookie or localStorage? (common design Q)", "HttpOnly cookie: safe from XSS reads and sent automatically, but exposed to CSRF (mitigate with SameSite / CSRF tokens). localStorage: immune to CSRF but readable by any script — one XSS leaks it. You're trading one attack surface for another; HttpOnly cookies + CSRF defenses are the common choice."], ["security", "Sec", "What is CSRF and how do you mitigate it?", "A malicious site triggers an authenticated request using the victim's automatically-sent cookies. Mitigate with SameSite cookies, anti-CSRF tokens, and Origin/Referer checks."], ["security", "Sec", "What is XSS and how does it relate to token storage?", "Injected script runs in your page's origin and can read anything JS can — localStorage and non-HttpOnly cookies. Mitigate with output escaping, a CSP, and HttpOnly cookies."], ["security", "Sec", "Session-based auth vs JWT.", "Sessions: server stores state, client holds an ID — easy to revoke, but stateful. JWT: self-contained and stateless (scales well), but revocation before expiry is harder (needs a denylist / short TTLs)."], ["dns", "DNS", "Walk me through what happens when you type a URL and hit Enter.", "The browser resolves the hostname — its own cache, the OS cache, then a recursive resolver that walks root, TLD, and authoritative nameservers — then opens a TCP connection, negotiates TLS, and sends the request. The server responds; the browser parses HTML, requests subresources, builds the DOM and CSSOM, and paints. Most of the first-visit latency is in resolution and handshakes, before the request is even sent."], ["dns", "DNS", "What is a recursive resolver versus an authoritative nameserver?", "The recursive resolver is the one you ask; it does the work of walking the hierarchy on your behalf and caches the result. The authoritative nameserver is the one that actually holds the zone's records and gives the definitive answer."], ["dns", "DNS", "Why does a DNS change take hours to take effect?", "Because every resolver caches the previous answer for its TTL, and nothing pushes an update. Lower the TTL well before a planned migration — doing it at cutover is too late, since the old long TTL is already cached everywhere."], ["dns", "DNS", "Why can't you put a CNAME at the root of a domain?", "The DNS spec does not allow a CNAME to coexist with the other records a zone apex must have, such as NS and SOA. Providers work around it with ALIAS or ANAME records that resolve server-side and return an A record."], ["dns", "DNS", "What is the difference between dns-prefetch and preconnect?", "dns-prefetch only resolves the hostname. preconnect also completes the TCP handshake and the TLS negotiation, so the connection is ready when the request is made. preconnect saves more time but holds an open connection, so reserve it for the few origins on the critical path."], ["dns", "DNS", "Why does preconnect to a font host need crossorigin?", "Font files are fetched in anonymous CORS mode, and a preconnect only warms a connection that matches the mode of the eventual request. Without the crossorigin attribute the browser performs only the DNS lookup, so the hint degrades to a dns-prefetch. The same applies to any cross-origin fetch that is not sent with credentials."], ["dns", "DNS", "Is domain sharding still a good idea?", "No. It was a workaround for the roughly six connections per origin limit in HTTP/1.1. Under HTTP/2 a single multiplexed connection carries everything, so sharding just adds DNS lookups and handshakes. HTTP/2 even coalesces hostnames that resolve to the same IP under a covering certificate onto one connection."], ["dns", "DNS", "How do you reduce DNS and connection cost on a page?", "Use fewer origins — self-host fonts and consolidate asset domains — then preconnect the handful that remain on the critical path, matching the crossorigin mode. HSTS removes the HTTP-to-HTTPS redirect round trip on repeat visits, or on the very first visit if you are on the preload list, and TLS 1.3 session resumption removes a round trip when reconnecting."], ["tls", "TLS", "What three guarantees does HTTPS provide?", "Confidentiality (encryption), integrity (tamper detection), and authentication (server identity via a CA-signed certificate)."], ["tls", "TLS", "Roughly, how does the TLS handshake work?", "Client and server agree on a cipher, the server presents its certificate, they exchange keys, and derive a shared symmetric session key used for the rest of the connection."], ["tls", "TLS", "What is HSTS?", "A response header (Strict-Transport-Security) telling browsers to always use HTTPS for the domain, preventing downgrade / SSL-strip attacks - after the first visit; it is trust-on-first-use, and the browser preload list closes that first-visit gap."], ["versions", "Ver", "Why did HTTP/1.1 need multiple connections and workarounds?", "HOL blocking — one response at a time per connection. Browsers opened ~6 connections and used sprites, concatenation, and domain sharding to fake concurrency."], ["versions", "Ver", "What is HTTP/2 multiplexing, and how does it work?", "Many interleaved streams over a single TCP connection via the binary framing layer; frames carry a stream ID and are reassembled at the other end — removing app-layer HOL blocking."], ["versions", "Ver", "What is HPACK?", "HTTP/2 header compression: Huffman coding plus a shared static/dynamic indexed table, so repeated header values are sent as small index references."], ["versions", "Ver", "(Follow-up) What HOL blocking does HTTP/2 NOT solve?", "TCP-level: because TCP is an ordered byte stream, a single lost packet stalls all multiplexed streams until it's retransmitted."], ["versions", "Ver", "How does HTTP/3 / QUIC fix that?", "QUIC runs on UDP with independent streams, so a lost packet only blocks its own stream. It also combines the transport + TLS handshake (0-RTT for known servers) and encrypts by default."], ["versions", "Ver", "Why is QUIC better when switching WiFi to cellular?", "QUIC identifies a connection by a connection ID rather than the IP/port tuple, so the session survives an IP change without a full re-handshake."], ["versions", "Ver", "What's the status of HTTP/2 server push?", "Largely deprecated — removed from Chrome. Use rel=preload and 103 Early Hints instead."], ["versions", "Ver", "How does HTTP/2 change how you bundle assets?", "Multiplexing makes 1.x workarounds counter-productive: heavy concatenation and domain sharding hurt caching and fragment the single connection. Smaller, independently-cacheable files are fine under H2/H3."], ["realtime", "RT", "Short polling vs long polling.", "Short: the client requests on a fixed interval — simple, wasteful, laggy. Long: the server holds the request open until data is available, then the client immediately re-requests."], ["realtime", "RT", "SSE vs WebSockets.", "SSE is one-way server→client over HTTP, text-only, with auto-reconnect (EventSource). WebSockets are full-duplex, binary or text, and start with an HTTP upgrade."], ["realtime", "RT", "How does a WebSocket connection start?", "As an HTTP request with Upgrade: websocket and Connection: Upgrade; the server replies 101 Switching Protocols, then both sides exchange framed messages."], ["realtime", "RT", "For a live order book, would you pick SSE or WebSockets, and why?", "WebSockets — low-latency, full-duplex traffic where the client also sends frequently (subscriptions, orders). SSE fits one-directional feeds where the client only receives."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like protocol vocabulary
+const codeify = s => esc(s).replace(
+  /\b(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS|HTTP\/[0-9.]+|[1-5][0-9]{2}|Cache-Control|Set-Cookie|Content-Type|Content-Encoding|Content-Length|Accept-Encoding|Accept-Language|Access-Control-[A-Za-z-]+|If-None-Match|If-Modified-Since|Last-Modified|Retry-After|Authorization|Transfer-Encoding|User-Agent|ETag|Vary|Origin|Referer|Upgrade|HttpOnly|SameSite|Secure|Bearer|max-age|no-cache|no-store|stale-while-revalidate|immutable|private|public|text\/event-stream|application\/json|EventSource|WebSocket|localStorage|gzip|br|HSTS|HPACK|QPACK|QUIC)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

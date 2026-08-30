@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interview Prep — Vibe Coding &amp; AI Agents</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --card: #ffffff;
+    --ink: #1c1b19;
+    --muted: #6b675f;
+    --line: #e3e0d8;
+    --accent: #2f6f57;
+    --accent-soft: #e6f0eb;
+    --warn: #8a5a00;
+    --warn-soft: #fbf1dc;
+    --code: #2b2a27;
+    --code-bg: #f0eee8;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  header {
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+  }
+  header .kicker {
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 0 0 20px;
+  }
+  h2 {
+    font-size: 19px;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2 .num {
+    font-size: 13px;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-weight: 700;
+  }
+  h3 { font-size: 15.5px; margin: 18px 0 6px; }
+  p { margin: 8px 0; }
+  ul { margin: 8px 0; padding-left: 20px; }
+  li { margin: 5px 0; }
+  .hook { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--code); background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
+  .lead {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 16.5px;
+    font-style: italic;
+  }
+  .insight {
+    background: var(--warn-soft);
+    border-left: 4px solid var(--warn);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-style: italic;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  td:first-child { font-weight: 600; white-space: nowrap; padding-right: 16px; }
+  .q { font-weight: 600; margin-top: 14px; }
+  .q + p { margin-top: 3px; color: var(--muted); }
+  .tag { display:inline-block; font-size:11.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:5px; padding:1px 7px; margin-left:2px; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 30px; }
+  @media print {
+    body { background: #fff; padding: 0; font-size: 12px; }
+    section { break-inside: avoid; border-color: #ccc; box-shadow: none; }
+    header { border-color: #333; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="kicker">Interview Prep · 10–20 min segment</p>
+  <h1>Vibe Coding Tools &amp; AI Agent Concepts</h1>
+  <p>One project carries this whole segment: <strong>Brelly</strong> — a React Native / Expo weather app. The real story isn't the app. It's how you built an AI agent to build it <em>safely</em>.</p>
+</header>
+
+<section>
+  <h2>The hook — open with this</h2>
+  <p class="lead">"I don't just prompt an AI and hope. I built a system of guardrails around the agent so it physically can't ship broken or outdated code — the checks, not the prompts, are what make it reliable."</p>
+</section>
+
+<section>
+  <h2><span class="num">1</span> Hooks — deterministic control around a non-deterministic agent</h2>
+  <p>Three hooks, wired in <span class="hook">.claude/settings.json</span>. Name them:</p>
+  <ul>
+    <li><strong>SessionStart</strong> <span class="hook">session-context.sh</span> — auto-injects the live task list &amp; "traps" doc into the agent's context, so it never works from stale assumptions. <span class="tag">context engineering</span></li>
+    <li><strong>PreToolUse</strong> <span class="hook">doc-gate.sh</span> — before the agent edits any JS/TS file (<span class="hook">.ts .tsx .js .jsx</span>), it fires a reminder that Expo is v57 and to check the live docs. <span class="tag">guardrail vs. outdated knowledge</span></li>
+    <li><strong>Stop</strong> <span class="hook">verify-gate.sh</span> — after every turn it runs <span class="hook">tsc</span>, lint &amp; tests. On failure it <strong>blocks the agent from finishing</strong> and feeds the errors back to fix before returning to me. <span class="tag">agentic feedback loop</span></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">2</span> Skills — reusable, scoped instructions loaded on demand</h2>
+  <p>Five skills in <span class="hook">.claude/skills/</span>. Example: <span class="hook">implement-feature</span> defines my "definition of done" — zero lint warnings, a test for every new function.</p>
+  <p class="tag" style="margin-left:0">progressive disclosure — the agent pulls the right instructions only when the task matches, instead of one giant prompt</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span> Defense in depth — I don't trust the agent's word</h2>
+  <p>Two layers, both backstopped by CI:</p>
+  <ul>
+    <li><strong>The code gate</strong> (tsc + lint + tests) runs in the <strong>Stop hook</strong> and again in <strong>CI</strong>.</li>
+    <li><strong>Convention checks</strong> (commit subject must start <span class="hook">feat/fix/chore</span>, branch names) run in <strong>git hooks</strong> (<span class="hook">.githooks/commit-msg</span>, <span class="hook">pre-push</span>) and are re-checked in <strong>CI</strong>.</li>
+  </ul>
+  <p><strong>Your line:</strong> "Local git hooks can be skipped with <span class="hook">--no-verify</span>, so CI re-runs everything — it never trusts them." → shows you know soft rules get bypassed, so real enforcement is machine-checked.</p>
+</section>
+
+<section>
+  <h2>Concept vocabulary — define these plainly</h2>
+  <table>
+    <thead><tr><th>Term</th><th>Your one-liner</th></tr></thead>
+    <tbody>
+      <tr><td>Vibe coding</td><td>Describe what you want in natural language, let the AI write the code. Coined by Andrej Karpathy (Feb 2025). <strong>Strict sense:</strong> you "accept all" and don't even read the diffs — fine for throwaway projects. <strong>Say this:</strong> "What I do is the disciplined version — the AI writes, but my guardrails verify. I don't ship code I haven't gated."</td></tr>
+      <tr><td>Agent</td><td>An LLM that can <em>act</em> in a loop — call tools, see results, decide next step — not just answer once.</td></tr>
+      <tr><td>Tools / tool use</td><td>Functions the agent can invoke (read a file, run a command, search). The model picks which and when.</td></tr>
+      <tr><td>Context window</td><td>The model's working memory. Managing what goes in it (context engineering) is half the battle — my SessionStart hook does this.</td></tr>
+      <tr><td>Hooks</td><td>Deterministic scripts that fire at fixed lifecycle points. How you add hard rules to a probabilistic system.</td></tr>
+      <tr><td>MCP</td><td>Model Context Protocol — an open standard (from Anthropic, Nov 2024; "USB-C for AI apps") for plugging external tools/data (Linear, Drive, etc.) into an agent.</td></tr>
+      <tr><td>Guardrails</td><td>The checks that catch the agent's mistakes. Key insight: agents are confidently wrong, so you verify, not trust.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>The one insight to repeat</h2>
+  <p class="insight">"AI is fast but confidently wrong — especially when its training is behind the current library version. My whole setup spends effort on the <strong>system around the agent</strong> — tests, doc-gates, feedback loops — rather than on perfect prompts. That's what turns it from a toy into something I'd ship."</p>
+</section>
+
+<section>
+  <h2>Likely questions</h2>
+  <p class="q">"How do you make sure the AI doesn't write bad code?"</p>
+  <p>→ The three-layer verification story: Stop hook + git hooks + CI, all re-running tsc/lint/tests.</p>
+  <p class="q">"What's a limitation of these tools?"</p>
+  <p>→ Outdated knowledge (my v57 example), confident hallucination, and that they can't tell whether a <em>test</em> is meaningful — a coverage gate stops uncovered code but not weak assertions.</p>
+  <p class="q">"Have you used agents beyond autocomplete?"</p>
+  <p>→ Yes: hooks, skills, a Stop-hook feedback loop that self-corrects, and MCP connectors.</p>
+</section>
+
+<footer>Brelly · personal interview prep · print to PDF for a one-pager</footer>
+
+</div>
+</body>
+</html>

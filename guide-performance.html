@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Performance — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#FB923C;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(251,146,60,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#F8C79A}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(251,146,60,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#F8C79A}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Web <em>Performance</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Attribution</a>
+    <a href="#crp"><span class="n">01</span> Critical rendering path</a>
+    <a href="#reflow"><span class="n">02</span> Reflow vs repaint</a>
+    <a href="#tech"><span class="n">03</span> Techniques</a>
+    <a href="#vitals"><span class="n">04</span> Web Vitals</a>
+    <a href="#drills"><span class="n">05</span> Drills</a>
+    <a href="#bank"><span class="n">06</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Performance is <span>attribution</span>, not vibes.</h1>
+      <p class="lede">Measure a baseline, change one thing, verify no regression. This guide covers the pipeline that turns HTML into pixels, what blocks it, and the Web Vitals you'll be asked to diagnose.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Critical path</span>
+        <span class="chip"><span class="dot d-rej"></span>Reflow</span>
+        <span class="chip"><span class="dot d-pending"></span>Techniques</span>
+        <span class="chip"><span class="dot d-micro"></span>Vitals</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The mindset</div>
+      <h2>Frame everything as attribution</h2>
+      <p>The senior signal on performance isn't a list of tricks — it's <strong>method</strong>: establish a baseline with a real tool (Profiler, Performance panel, Lighthouse), change one variable, and verify the improvement without a regression. &ldquo;I measured X, changed Y, confirmed Z&rdquo; beats &ldquo;I added <code class="k">useMemo</code> everywhere.&rdquo;</p>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;I don't optimise by guessing. I profile to find where the time actually goes, fix that, and re-measure — otherwise I'm adding complexity for an unproven win.&rdquo;</div>
+    </section>
+
+    <section id="crp">
+      <div class="kicker">01 — HTML to pixels</div>
+      <h2>The critical rendering path</h2>
+      <p>The browser turns bytes into pixels through a pipeline:</p>
+      <pre>HTML  &rarr; <span class="kw">DOM</span>
+CSS   &rarr; <span class="kw">CSSOM</span>
+DOM + CSSOM &rarr; <span class="kw">render tree</span> (visible nodes + computed styles)
+      &rarr; <span class="kw">layout</span>   (geometry: position + size)
+      &rarr; <span class="kw">paint</span>    (fill pixels: text, colours, borders)
+      &rarr; <span class="kw">composite</span> (assemble layers on the GPU)</pre>
+      <p>What blocks the first render:</p>
+      <ul class="body">
+        <li><strong>CSS is render-blocking</strong> — the browser won't paint until the CSSOM is built, because it needs styles to avoid a flash of unstyled content. Ship critical CSS small and fast; defer the rest.</li>
+        <li><strong>Synchronous <code class="k">&lt;script&gt;</code> is parser-blocking</strong> — it pauses HTML parsing. Use <code class="k">defer</code> (run after parse, in order) or <code class="k">async</code> (run as soon as fetched, unordered) to unblock.</li>
+        <li><code class="k">&lt;link rel="preload"&gt;</code> fetches a critical resource early without blocking.</li>
+      </ul>
+    </section>
+
+    <section id="reflow">
+      <div class="kicker">02 — The expensive middle</div>
+      <h2>Reflow vs repaint (and thrashing)</h2>
+      <ul class="body">
+        <li><strong>Reflow / layout</strong> — recomputing geometry. Expensive and cascading: changing one element's size can re-lay-out its subtree or the whole page. Triggered by changing width/height/position, adding/removing DOM, or reading layout after a write.</li>
+        <li><strong>Repaint</strong> — filling pixels for a visual change that doesn't move anything (colour, <code class="k">background</code>, <code class="k">visibility</code>). Cheaper than reflow.</li>
+        <li><strong>Composite-only</strong> — <code class="k">transform</code> and <code class="k">opacity</code> can be handled by the compositor on the GPU <em>without</em> layout or paint. That's why animations should prefer them.</li>
+      </ul>
+      <h3>Layout thrashing</h3>
+      <pre><span class="cmt">// BAD — read, write, read, write forces sync layout each loop</span>
+for (const el of items){
+  el.style.height = el.offsetHeight + 10 + 'px';  <span class="err">// read then write, repeatedly</span>
+}
+<span class="cmt">// GOOD — batch reads, then batch writes</span>
+const hs = items.map(el =&gt; el.offsetHeight);      <span class="out">// all reads</span>
+items.forEach((el, i) =&gt; el.style.height = hs[i] + 10 + 'px'); <span class="out">// all writes</span></pre>
+      <p>Interleaving DOM <em>reads</em> (<code class="k">offsetHeight</code>, <code class="k">getBoundingClientRect</code>) with <em>writes</em> forces the browser to recompute layout synchronously on every read. Batch all reads, then all writes — or batch your writes inside <code class="k">requestAnimationFrame</code>, and use <code class="k">IntersectionObserver</code>/<code class="k">ResizeObserver</code>, which hand you geometry asynchronously instead of forcing a sync read.</p>
+    </section>
+
+    <section id="tech">
+      <div class="kicker">03 — The toolkit (framed as attribution)</div>
+      <h2>Techniques</h2>
+      <ul class="body">
+        <li><strong>Code splitting</strong> — <code class="k">import()</code> / <code class="k">React.lazy</code> + <code class="k">Suspense</code> to ship less JS up front and load routes/features on demand. <em>Attribution: measured a 400KB initial bundle &rarr; split routes &rarr; verified TBT and LCP dropped.</em></li>
+        <li><strong>Lazy loading</strong> — <code class="k">loading="lazy"</code> on <strong>below-the-fold images only</strong> (never the LCP image — that one gets <code class="k">fetchpriority="high"</code>), plus offscreen components and below-the-fold routes.</li>
+        <li><strong>List virtualization / windowing</strong> — render only the visible rows of a long list (e.g. a 10k-row order history), recycling DOM nodes. Turns O(n) DOM into O(viewport).</li>
+        <li><strong>Avoid unnecessary re-renders</strong> — stable references + <code class="k">React.memo</code>; see the React Rendering tab. <em>Attribution: Profiler flame chart showed a parent re-rendering a heavy child &rarr; memoised &rarr; confirmed the child dropped out of the commit.</em></li>
+        <li><strong>Structural sharing</strong> — immutable updates reuse unchanged subtrees, so referential equality checks stay cheap and memoised selectors don't recompute.</li>
+        <li><strong>Field-level memoised selectors</strong> — subscribe a component to one slice of state so unrelated changes don't re-render it.</li>
+      </ul>
+    </section>
+
+    <section id="vitals">
+      <div class="kicker">04 — What Google measures</div>
+      <h2>Core Web Vitals &amp; diagnosing a slow interaction</h2>
+      <table class="tbl">
+        <tr><th>Metric</th><th>Measures</th><th>Good</th></tr>
+        <tr><td>LCP</td><td>Largest Contentful Paint — loading; when the main content appears</td><td>&lt; 2.5s</td></tr>
+        <tr><td>INP</td><td>Interaction to Next Paint — responsiveness across all interactions (replaced FID in March 2024)</td><td>&lt; 200ms</td></tr>
+        <tr><td>CLS</td><td>Cumulative Layout Shift — visual stability; unexpected movement</td><td>&lt; 0.1</td></tr>
+      </table>
+      <h3>Diagnosing a slow interaction (INP)</h3>
+      <ol class="body">
+        <li>Reproduce it in the <strong>Performance panel</strong> and record.</li>
+        <li>Look for <strong>long tasks</strong> (&ge; 50ms) &mdash; or better, <strong>long animation frames</strong> (LoAF), which attribute the whole frame including render &mdash; blocking the main thread around the interaction.</li>
+        <li>Break INP into <strong>input delay</strong> (main thread busy when the event arrives), <strong>processing duration</strong> (your event callbacks running to completion), and <strong>presentation delay</strong> (rendering, paint and compositing until the next frame is on screen).</li>
+        <li>Fix the dominant part: break up long tasks (<code class="k">scheduler.yield()</code>, with a <code class="k">setTimeout</code> fallback for Safari), move heavy state updates into <code class="k">startTransition</code>, memoise the expensive render, or offload pure computation to a <strong>Web Worker</strong>.</li>
+      </ol>
+      <div class="note warn"><span class="lbl">Common CLS cause</span>Images/ads/embeds without reserved dimensions, and injecting content above existing content. Fix by setting width/height (or <code class="k">aspect-ratio</code>) and reserving space.</div>
+    </section>
+
+    <section id="drills">
+      <div class="kicker">05 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — animate without jank</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A sliding panel animates with <code class='k'>left</code> and stutters. What do you change and why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">Animate <code class="k">transform: translateX()</code> instead of <code class="k">left</code>. <code class="k">left</code> triggers layout + paint every frame; <code class="k">transform</code> runs on the compositor once the element has its own layer, skipping layout and paint, so it keeps up with the refresh rate even while the main thread is busy. Add <code class="k">will-change: transform</code> sparingly to hint a layer.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — spot the thrash</div>
+        <pre>boxes.forEach(b =&gt; {
+  b.style.width = b.offsetWidth * 2 + 'px';
+});</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Layout thrashing — forced sync reflow per box</div>
+          <p style="margin:0">Reading <code class="k">offsetWidth</code> after writing <code class="k">width</code> forces the browser to flush layout on every iteration. Batch: read all widths into an array first, then write them all. O(n) reflows become one.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — which metric?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Users say the page 'jumps' as it loads and they mis-tap. Which Web Vital, and the fix?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">CLS (Cumulative Layout Shift). It's caused by content loading without reserved space — images/ads/fonts pushing layout. Fix by setting explicit width/height or <code class="k">aspect-ratio</code> on media and reserving space for late-loading content.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — the slow click</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Clicking 'Filter' freezes for 400ms. Walk me through diagnosing it.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">That's an INP problem. Record the interaction in the Performance panel, find the long task, and split INP into input delay / processing / presentation. Usually it's a heavy synchronous render. Fix by breaking up the long task, moving the expensive state update into <code class="k">startTransition</code> so the click paints first, memoising, or offloading pure work to a Web Worker — then re-measure.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — render-blocking</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Why does a big <code class='k'>&lt;link rel=stylesheet&gt;</code> in the head delay first paint, and what helps?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0">CSS is render-blocking: the browser won't paint until the CSSOM is built to avoid a flash of unstyled content. Inline critical CSS, split and defer non-critical CSS, minimise and compress it, and preload key resources so the CSSOM completes sooner.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">06 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="crp">Critical path</button>
+        <button class="fchip" data-f="reflow">Reflow/paint</button>
+        <button class="fchip" data-f="tech">Techniques</button>
+        <button class="fchip" data-f="vitals">Web Vitals</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · measure, change one thing, verify.</footer>
+
+<script>
+const QA = [["crp", "Critical path", "Walk through the critical rendering path.", "HTML→DOM, CSS→CSSOM, combined into the render tree (visible nodes + styles), then layout (geometry), paint (pixels), and composite (assemble GPU layers). Anything blocking DOM/CSSOM construction delays first paint."], ["crp", "Critical path", "Why is CSS render-blocking?", "The browser needs the full CSSOM before painting to avoid a flash of unstyled/incorrectly-styled content. So it blocks the first render until critical CSS is parsed. Keep critical CSS small; defer the rest."], ["crp", "Critical path", "defer vs async on a script?", "Both fetch without blocking the parser. defer runs after HTML parsing completes, in document order; async runs as soon as it's fetched, in no guaranteed order. Use defer for ordered app code, async for independent scripts."], ["reflow", "Reflow/paint", "Reflow vs repaint vs composite?", "Reflow/layout recomputes geometry (expensive, cascades). Repaint fills pixels for a visual-only change (colour). Composite assembles layers on the GPU. transform/opacity can be composite-only — no layout or paint."], ["reflow", "Reflow/paint", "What is layout thrashing?", "Interleaving DOM reads (offsetHeight, getBoundingClientRect) with writes in a loop, forcing the browser to flush layout synchronously on each read. Fix by batching all reads then all writes, or using rAF/observers."], ["reflow", "Reflow/paint", "Which CSS properties are cheapest to animate?", "transform and opacity — they can run on the compositor thread (GPU) without triggering layout or paint. Animating top/left/width/height causes reflow every frame and janks."], ["reflow", "Reflow/paint", "What triggers a forced synchronous layout?", "Reading a layout-dependent property (offsetTop, clientWidth, getBoundingClientRect, getComputedStyle) after a style write in the same frame — the browser must recompute layout immediately to answer."], ["tech", "Techniques", "What is code splitting and why?", "Breaking the bundle so code loads on demand (dynamic import / React.lazy + Suspense). It cuts the initial JS the user must download and parse, improving load (LCP) and main-thread blocking time (TBT/INP)."], ["tech", "Techniques", "What is list virtualization?", "Rendering only the rows currently in the viewport (windowing) and recycling nodes as you scroll, instead of mounting the whole list. Turns a huge O(n) DOM into O(viewport) — essential for long tables/order histories."], ["tech", "Techniques", "What is structural sharing?", "Immutable updates that reuse unchanged parts of a data structure, so only changed branches get new references. This keeps referential-equality checks and memoised selectors cheap and correct."], ["tech", "Techniques", "How do you avoid unnecessary re-renders?", "Keep references stable (useMemo/useCallback where they matter), memoise components with React.memo, pass primitive props, subscribe to narrow state slices via selectors, and restructure so heavy children aren't re-rendered — all verified with the Profiler."], ["vitals", "Web Vitals", "Name the three Core Web Vitals and thresholds.", "LCP (loading) good at or under 2.5s; INP (responsiveness) at or under 200ms; CLS (stability) at or under 0.1 - each judged at the 75th percentile of real-user field data (CrUX/RUM), not a single lab run."], ["vitals", "Web Vitals", "What replaced FID and why?", "INP (Interaction to Next Paint) replaced First Input Delay as a Core Web Vital in March 2024. FID only measured the delay of the first interaction; INP reflects responsiveness across all interactions during the visit."], ["vitals", "Web Vitals", "How do you diagnose a slow interaction?", "Record it in the Performance panel, find long tasks (>50ms), and split INP into input delay, processing time, and presentation delay. Fix the dominant part: break up long tasks, use startTransition, memoise, or offload to a Web Worker; then re-measure."], ["vitals", "Web Vitals", "Common causes of poor CLS?", "Images/ads/iframes without reserved dimensions, late-loading web fonts causing reflow, and injecting content above existing content. Fix with explicit width/height or aspect-ratio and reserved space."], ["vitals", "Web Vitals", "When would you use a Web Worker?", "For pure, CPU-heavy work (parsing, sorting/aggregating large datasets, crypto) that would block the main thread. Moving it to a worker keeps interactions responsive; communicate via postMessage."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

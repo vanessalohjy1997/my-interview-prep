@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript Promises — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#2FD98A;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(47,217,138,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#9FE7C4}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(47,217,138,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#9FE7C4}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">JavaScript <em>Promises</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Why promises exist</a>
+    <a href="#states"><span class="n">01</span> States &amp; anatomy</a>
+    <a href="#chaining"><span class="n">02</span> Chaining &amp; errors</a>
+    <a href="#timing"><span class="n">03</span> Timing (microtasks)</a>
+    <a href="#combinators"><span class="n">04</span> The four combinators</a>
+    <a href="#async"><span class="n">05</span> async / await</a>
+    <a href="#patterns"><span class="n">06</span> Real-world patterns</a>
+    <a href="#gotchas"><span class="n">07</span> Senior-level gotchas</a>
+    <a href="#drills"><span class="n">08</span> Output drills</a>
+    <a href="#bank"><span class="n">09</span> Q&amp;A bank</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>A promise is a <span>value that hasn't arrived yet.</span></h1>
+      <p class="lede">Everything async in a modern frontend — a fetch to the order-book API, a WebSocket handshake, a debounced save — is a promise underneath. This course builds the model from states up, then drills the timing and combinator questions senior interviews actually ask.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-pending"></span>Pending</span>
+        <span class="chip"><span class="dot d-ful"></span>Fulfilled</span>
+        <span class="chip"><span class="dot d-rej"></span>Rejected</span>
+        <span class="chip"><span class="dot d-chain"></span>The chain</span>
+      </div>
+    </header>
+
+    <!-- 00 -->
+    <section id="intro">
+      <div class="kicker">00 — The mental model</div>
+      <h2>Why promises exist</h2>
+      <p>Before promises, async results were delivered through <strong>callbacks</strong>: you pass a function in, it gets called later. That works for one operation. It falls apart the moment operations depend on each other:</p>
+      <pre><span class="cmt">// callback hell — nesting grows with every step, errors handled 3 times</span>
+getUser(id, (err, user) =&gt; {
+  if (err) return done(err);
+  getBalance(user, (err, bal) =&gt; {
+    if (err) return done(err);
+    getOrders(bal, (err, orders) =&gt; {
+      if (err) return done(err);
+      done(null, orders);
+    });
+  });
+});</pre>
+      <p>A <strong>promise is an object that represents the eventual result of an async operation</strong>. Instead of handing your continuation <em>into</em> the function, the function hands a promise <em>back</em> to you, and you attach continuations to it. That inversion is the whole point — it makes async values <strong>composable</strong>: they can be returned, passed around, chained, and combined.</p>
+      <pre><span class="cmt">// the same thing, flat and with one error path</span>
+getUser(id)
+  .then(user =&gt; getBalance(user))
+  .then(bal =&gt; getOrders(bal))
+  .then(orders =&gt; done(orders))
+  .catch(err =&gt; handle(err));   <span class="cmt">// one catch covers every step</span></pre>
+      <div class="note">
+        <span class="lbl">The one-liner definition</span>
+        "A promise is a placeholder for a future value. It's a state machine with three states and a guarantee: it settles <strong>once</strong>, and any handler you attach — even after it settles — will fire exactly once, asynchronously."
+      </div>
+      <p>Two structural guarantees make promises trustworthy, and both are worth naming in an interview:</p>
+      <ul class="body">
+        <li><strong>They settle once and are then immutable.</strong> A promise moves from pending to <em>either</em> fulfilled or rejected, exactly one time. After that its value never changes. A late <code class="k">resolve()</code> or <code class="k">reject()</code> is silently ignored.</li>
+        <li><strong>Handlers always run asynchronously.</strong> Even on an already-resolved promise, a <code class="k">.then</code> callback never runs synchronously — it's scheduled as a microtask. This removes the "sometimes-sync, sometimes-async" ambiguity that made raw callbacks so bug-prone.</li>
+      </ul>
+    </section>
+
+    <!-- 01 -->
+    <section id="states">
+      <div class="kicker">01 — The state machine</div>
+      <h2>States &amp; anatomy</h2>
+      <p>A promise is always in exactly one of three states:</p>
+      <div class="states">
+        <div class="statebox pending"><div class="st-name"><span class="dot d-pending"></span>Pending</div><p>The initial state. The async work hasn't finished. No value yet.</p></div>
+        <div class="statebox ful"><div class="st-name"><span class="dot d-ful"></span>Fulfilled</div><p>Completed successfully. Carries a <strong>value</strong>. Reached via <code class="k">resolve(value)</code>.</p></div>
+        <div class="statebox rej"><div class="st-name"><span class="dot d-rej"></span>Rejected</div><p>Failed. Carries a <strong>reason</strong> (usually an Error). Reached via <code class="k">reject(reason)</code> or a throw.</p></div>
+      </div>
+      <p>Vocabulary interviewers listen for: a promise is <strong>settled</strong> (or "resolved" in the loose sense) once it is either fulfilled or rejected — i.e. no longer pending. <strong>Settled is permanent.</strong> Note that "resolved" has a precise meaning too: a promise is <em>resolved</em> when it's locked onto another promise's eventual outcome — it may still be pending if that inner promise is.</p>
+
+      <h3>Creating one with the executor</h3>
+      <pre>const p = new Promise((resolve, reject) =&gt; {
+  <span class="cmt">// executor runs SYNCHRONOUSLY, immediately, right now</span>
+  connectToOrderBook()
+    .on('open',  ()   =&gt; resolve('connected'))
+    .on('error', (e)  =&gt; reject(e));
+});</pre>
+      <p>Three facts about the executor that get tested:</p>
+      <ul class="body">
+        <li>The executor function runs <strong>synchronously</strong> the instant you call <code class="k">new Promise</code>. Only the <em>settlement</em> (and your <code class="k">.then</code> handlers) is async.</li>
+        <li>If the executor <strong>throws</strong>, the promise rejects with the thrown value — <code class="k">throw e</code> is equivalent to <code class="k">reject(e)</code> there.</li>
+        <li>Calling <code class="k">resolve</code> or <code class="k">reject</code> more than once, or both, has <strong>no effect after the first</strong> — the promise is already settled.</li>
+      </ul>
+
+      <h3>The shortcuts</h3>
+      <pre>Promise.resolve(42);          <span class="cmt">// already-fulfilled promise of 42</span>
+Promise.reject(new Error('x'));<span class="cmt">// already-rejected promise</span>
+Promise.resolve(otherPromise);<span class="cmt">// adopts otherPromise's state (no double-wrap)</span></pre>
+      <div class="note gold">
+        <span class="lbl">Subtle but asked: thenables &amp; resolving with a promise</span>
+        If you <code class="k">resolve()</code> with another promise (or any "thenable" — an object with a <code class="k">.then</code> method), the outer promise doesn't fulfill <em>with that promise as its value</em>. It <strong>adopts</strong> it: it stays pending until the inner one settles, then takes on its outcome. Separately, <code class="k">Promise.resolve(p) === p</code> for a native promise <code class="k">p</code> — it short-circuits rather than re-wrapping. Adoption is why you can't have a promise that fulfills to another promise.
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="chaining">
+      <div class="kicker">02 — Composition</div>
+      <h2>Chaining &amp; error propagation</h2>
+      <p>The power is in <code class="k">.then</code>. The rule that unlocks everything: <strong>every <code class="k">.then</code> / <code class="k">.catch</code> / <code class="k">.finally</code> returns a brand-new promise</strong>, and what that new promise settles to depends on what your callback does.</p>
+      <table class="tbl">
+        <tr><th>Inside the handler you…</th><th>The returned promise…</th></tr>
+        <tr><td>return a plain value</td><td>fulfills with that value</td></tr>
+        <tr><td>return a promise</td><td>adopts that promise (waits for it, then mirrors it)</td></tr>
+        <tr><td>throw an error</td><td>rejects with that error</td></tr>
+        <tr><td>return nothing</td><td>fulfills with <code class="k">undefined</code></td></tr>
+      </table>
+      <p>Because a returned promise is <em>adopted</em>, you can flatten async steps into a linear chain — that's the callback-hell fix from section 00.</p>
+
+      <h3>Errors fall down the chain</h3>
+      <p>A rejection skips every <code class="k">.then</code> success handler until it hits a <code class="k">.catch</code> (or a <code class="k">.then</code>'s second argument). Think of it like a synchronous <code class="k">try/catch</code> laid out vertically:</p>
+      <pre>fetchPrice(symbol)
+  .then(price =&gt; price * qty)      <span class="cmt">// skipped if fetchPrice rejects</span>
+  .then(total =&gt; render(total))     <span class="cmt">// skipped too</span>
+  .catch(err =&gt; showError(err));    <span class="cmt">// catches a rejection from ANY step above</span></pre>
+      <ul class="body">
+        <li><code class="k">.catch(fn)</code> is just sugar for <code class="k">.then(undefined, fn)</code>.</li>
+        <li>A <code class="k">.catch</code> that doesn't re-throw <strong>recovers</strong> the chain — the next <code class="k">.then</code> runs with the fulfilled value the catch returned. This is how you supply fallbacks.</li>
+        <li><strong>Placement matters.</strong> <code class="k">.then(a, b)</code> — the <code class="k">b</code> reject handler does <em>not</em> catch an error thrown by <code class="k">a</code>, because they're registered on the same promise. A trailing <code class="k">.catch</code> does. Prefer the trailing catch.</li>
+      </ul>
+
+      <h3>.finally — cleanup, transparently</h3>
+      <pre>showSpinner();
+loadData()
+  .then(render)
+  .catch(showError)
+  .finally(hideSpinner);   <span class="cmt">// runs on BOTH paths</span></pre>
+      <p><code class="k">.finally(fn)</code> runs whether the promise fulfilled or rejected, and — crucially — it is <strong>transparent</strong>: it passes the original value/reason straight through. It ignores its callback's return value. But if <code class="k">finally</code>'s callback <em>throws</em> or returns a rejecting promise, that <em>does</em> override the outcome.</p>
+      <div class="note warn">
+        <span class="lbl">The #1 chaining bug: forgetting to return</span>
+        Inside a <code class="k">.then</code>, if you start an async op but don't <code class="k">return</code> its promise, the chain doesn't wait for it. <code class="k">.then(u =&gt; { save(u); })</code> moves on immediately; <code class="k">.then(u =&gt; save(u))</code> (or <code class="k">return save(u)</code>) waits. Missing returns cause races and swallowed errors.
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="timing">
+      <div class="kicker">03 — When callbacks actually run</div>
+      <h2>Promises run on the microtask queue</h2>
+      <p>This is the highest-value section for a senior loop, because it ties promises to the event loop. <strong>A resolved promise's <code class="k">.then</code> callback is queued as a <span class="t-micro">microtask</span></strong>, and the event loop drains the <em>entire</em> microtask queue after each macrotask (like <code class="k">setTimeout</code>) and before the next one — and before rendering.</p>
+      <pre>console.log('1');
+setTimeout(() =&gt; console.log('2'), 0);      <span class="cmt">// macrotask</span>
+Promise.resolve().then(() =&gt; console.log('3')); <span class="cmt">// microtask</span>
+console.log('4');
+<span class="out">// 1  4  3  2</span></pre>
+      <p><code class="k">3</code> beats <code class="k">2</code> even though the timer is <code class="k">0</code>ms and was scheduled first, because the microtask queue is fully drained before any macrotask runs. Say it as: <strong>"it's not about time, it's about queue priority."</strong></p>
+      <ul class="body">
+        <li>Each link in a chain is a <em>separate</em> microtask — <code class="k">.then</code> only schedules the next link once the current one runs. Two independent chains therefore <strong>interleave</strong> tick-by-tick.</li>
+        <li>An endless promise chain (<code class="k">Promise.resolve().then(loop)</code>) <strong>starves</strong> the loop — it never renders or handles input. Yield with <code class="k">setTimeout</code> when you need to loop.</li>
+      </ul>
+      <div class="note">
+        <span class="lbl">Say this in the room</span>
+        "Promise callbacks are microtasks. After each macrotask the loop drains all microtasks before rendering or taking the next macrotask — so promises always run before the next timer, and a runaway microtask chain can freeze the UI even though you 'used promises'."
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="combinators">
+      <div class="kicker">04 — Combining many promises</div>
+      <h2>The four static combinators</h2>
+      <p>You will be asked to compare these. Learn them as a 2×2: <em>do you want all of them or just one?</em> and <em>does a rejection stop everything or not?</em></p>
+      <table class="tbl">
+        <tr><th>Combinator</th><th>Fulfills when</th><th>Rejects when</th><th>Gives you</th></tr>
+        <tr><td>Promise.all</td><td>every input fulfills</td><td class="t-rej">the first one rejects (fail-fast)</td><td>array of values, in input order</td></tr>
+        <tr><td>Promise.allSettled</td><td>all settle (never rejects)</td><td>— never</td><td>array of <code class="k">{status, value|reason}</code></td></tr>
+        <tr><td>Promise.race</td><td>the first to <em>settle</em> fulfills</td><td>the first to <em>settle</em> rejects</td><td>that one settlement</td></tr>
+        <tr><td>Promise.any</td><td>the first to <em>fulfill</em></td><td>all reject → <code class="k">AggregateError</code></td><td>first fulfilled value</td></tr>
+      </table>
+
+      <h3>The distinctions that get probed</h3>
+      <ul class="body">
+        <li><strong><code class="k">all</code> is fail-fast.</strong> The instant one input rejects, <code class="k">all</code> rejects with that reason — but the other operations <em>keep running</em> (promises can't be cancelled); you just stop waiting for them. Any resolved values are lost.</li>
+        <li><strong><code class="k">allSettled</code> never rejects.</strong> Use it when you want every result regardless of individual failures — e.g. loading six independent dashboard widgets, showing the five that worked. Each entry is <code class="k">{status:'fulfilled', value}</code> or <code class="k">{status:'rejected', reason}</code>.</li>
+        <li><strong><code class="k">race</code> settles on the first to <em>settle</em> — including a rejection.</strong> A fast failure wins the race. This is why the classic "timeout" pattern uses race: whichever finishes first, the real fetch or the timeout rejection.</li>
+        <li><strong><code class="k">any</code> settles on the first to <em>fulfill</em>, ignoring rejections</strong> until they're all rejections, then it rejects with an <code class="k">AggregateError</code> collecting every reason. Good for "first mirror/CDN to respond wins."</li>
+        <li>All four accept <em>any iterable</em> and, given an <strong>empty</strong> input: <code class="k">all</code>/<code class="k">allSettled</code> fulfill immediately (with <code class="k">[]</code>); <code class="k">race</code> stays <em>forever pending</em>; <code class="k">any</code> rejects immediately with an empty <code class="k">AggregateError</code>.</li>
+      </ul>
+
+      <div class="filelabel">timeout via race — a pattern you can write on a whiteboard</div>
+      <pre>function withTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) =&gt;
+    setTimeout(() =&gt; reject(new Error('timed out')), ms));
+  return Promise.race([promise, timeout]);
+}
+await withTimeout(fetch('/orderbook'), 3000);</pre>
+      <div class="note gold">
+        <span class="lbl">Parallel vs sequential — the efficiency answer</span>
+        <code class="k">await a(); await b();</code> runs them <strong>one after another</strong> (sum of times). If they're independent, start both first, then await together: <code class="k">const [x,y] = await Promise.all([a(), b()])</code> — that runs them <strong>concurrently</strong> (max of times). Kicking off the calls <em>before</em> awaiting is the whole trick.
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="async">
+      <div class="kicker">05 — Syntax over promises</div>
+      <h2>async / await is promises in disguise</h2>
+      <p><code class="k">async/await</code> doesn't add capability — it's <strong>syntactic sugar over promises and microtasks</strong>. Naming the equivalences shows depth:</p>
+      <ul class="body">
+        <li>An <code class="k">async</code> function <strong>always returns a promise</strong>. <code class="k">return v</code> fulfills it with <code class="k">v</code>; <code class="k">throw e</code> rejects it. Returning a promise adopts it.</li>
+        <li><code class="k">await p</code> <strong>pauses the function</strong> until <code class="k">p</code> settles, then evaluates to its fulfilled value — or <strong>throws its rejection reason</strong>, which you catch with an ordinary <code class="k">try/catch</code>.</li>
+        <li>Code runs synchronously up to the first <code class="k">await</code>; everything after an <code class="k">await</code> is a <span class="t-micro">microtask continuation</span>. So <code class="k">await</code> is never a no-op — even <code class="k">await 5</code> yields to the microtask queue.</li>
+      </ul>
+      <pre><span class="cmt">// the .then chain from section 00, in async/await</span>
+async function loadOrders(id) {
+  try {
+    const user   = await getUser(id);
+    const bal    = await getBalance(user);
+    const orders = await getOrders(bal);
+    return orders;
+  } catch (err) {
+    handle(err);           <span class="cmt">// catches a rejection from ANY await</span>
+  } finally {
+    hideSpinner();
+  }
+}</pre>
+
+      <h3>The mistakes await makes easy</h3>
+      <ul class="body">
+        <li><strong>Accidentally sequential.</strong> <code class="k">await</code>-ing independent calls in a row serialises them. Await a <code class="k">Promise.all</code> of both instead.</li>
+        <li><strong><code class="k">await</code> inside <code class="k">forEach</code> does nothing useful</strong> — <code class="k">forEach</code> ignores the returned promises, so the loop doesn't wait. Use a <code class="k">for…of</code> loop (sequential) or <code class="k">Promise.all(arr.map(async …))</code> (parallel).</li>
+        <li><strong>A lone <code class="k">await</code> in a loop over N items</strong> is N round-trips back to back. Fine when each depends on the last; a latency bug when they don't.</li>
+      </ul>
+      <div class="note warn">
+        <span class="lbl">Common trap</span>
+        <pre style="margin:8px 0 0;background:#070E0D">[1,2,3].forEach(async id =&gt; {
+  await save(id);          <span class="cmt">// forEach does NOT await these</span>
+});
+console.log('done');        <span class="cmt">// prints BEFORE any save finishes</span></pre>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="patterns">
+      <div class="kicker">06 — Things you'll be asked to write</div>
+      <h2>Real-world patterns</h2>
+
+      <h3>Promisify a callback API</h3>
+      <pre>const readFile = (path) =&gt; new Promise((resolve, reject) =&gt; {
+  fs.readFile(path, 'utf8', (err, data) =&gt;
+    err ? reject(err) : resolve(data));
+});</pre>
+
+      <h3>Retry with backoff</h3>
+      <pre>async function retry(fn, times = 3, delay = 300) {
+  for (let i = 0; i &lt; times; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === times - 1) throw err;      <span class="cmt">// last attempt: give up</span>
+      await new Promise(r =&gt; setTimeout(r, delay * 2 ** i)); <span class="cmt">// backoff</span>
+    }
+  }
+}</pre>
+
+      <h3>Cancellation with AbortController</h3>
+      <p>Promises can't be cancelled, but the <em>work behind them</em> can be aborted. This is the modern, correct answer to "how do you cancel a fetch?"</p>
+      <pre>const ctrl = new AbortController();
+fetch('/orderbook', { signal: ctrl.signal })
+  .then(r =&gt; r.json())
+  .catch(err =&gt; {
+    if (err.name === 'AbortError') return;  <span class="cmt">// expected on cancel</span>
+    throw err;
+  });
+ctrl.abort();   <span class="cmt">// e.g. user navigated away / newer request supersedes</span></pre>
+
+      <h3>Concurrency limit (a pool)</h3>
+      <p>"Fetch 500 symbols but only 5 in flight at once" — a very common senior follow-up. The idea: keep a worker count, pull from a queue as each finishes.</p>
+      <pre>async function pool(items, worker, limit = 5) {
+  const results = [];
+  const queue = [...items.entries()];
+  async function run() {
+    while (queue.length) {
+      const [i, item] = queue.shift();
+      results[i] = await worker(item);      <span class="cmt">// preserve order by index</span>
+    }
+  }
+  await Promise.all(Array.from({ length: limit }, run));
+  return results;
+}</pre>
+      <div class="note">
+        <span class="lbl">Naming the tradeoff</span>
+        <code class="k">Promise.all(items.map(worker))</code> fires <em>all</em> requests at once — simplest, but it can hammer the API and trip rate limits (HTTP 429). A pool caps concurrency at the cost of a little more code. Knowing when to reach for which is the senior signal.
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="gotchas">
+      <div class="kicker">07 — The senior signal</div>
+      <h2>Gotchas that separate levels</h2>
+
+      <h3>1. Floating promises &amp; unhandled rejections</h3>
+      <p>A promise whose rejection is never handled triggers a global <code class="k">unhandledrejection</code> event (and a console error; in Node it crashes the process by default since v15). Calling an async function and ignoring its result is a "floating promise" — if it rejects, nothing catches it.</p>
+      <pre>doAsyncThing();          <span class="err">// floating — a rejection here is unhandled</span>
+void doAsyncThing().catch(reportError);  <span class="cmt">// explicit: handled &amp; intentional</span></pre>
+
+      <h3>2. Errors inside the executor after resolve</h3>
+      <pre>new Promise((resolve) =&gt; {
+  resolve(1);
+  throw new Error('boom');   <span class="cmt">// IGNORED — already settled</span>
+});</pre>
+      <p>Once settled, the promise is immutable, so a later throw in the executor is swallowed. Order matters.</p>
+
+      <h3>3. Returning vs awaiting in try/finally</h3>
+      <pre>async function f() {
+  try {
+    return await risky();    <span class="cmt">// finally can observe/override a rejection</span>
+  } finally {
+    cleanup();
+  }
+}</pre>
+      <p><code class="k">return await</code> (not bare <code class="k">return risky()</code>) keeps the rejection <em>inside</em> the try, so a surrounding <code class="k">catch</code>/<code class="k">finally</code> handles it correctly. Bare <code class="k">return risky()</code> settles the outer promise before finally's cleanup can react to a rejection.</p>
+
+      <h3>4. .then(f, f) vs .then(f).catch(f)</h3>
+      <p>Covered in §02, worth repeating because it's a favourite: the second argument of <code class="k">.then</code> cannot catch an error thrown by the <em>first</em> argument. A trailing <code class="k">.catch</code> can. Always prefer the trailing catch.</p>
+
+      <h3>5. Microtask starvation</h3>
+      <pre>function loop(){ Promise.resolve().then(loop); }
+loop();   <span class="err">// freezes the page — the microtask queue never empties</span></pre>
+      <p>The loop fully drains microtasks before rendering, so an ever-growing microtask chain means the browser never paints. Yield with a macrotask (<code class="k">setTimeout</code>) if you must loop.</p>
+
+      <div class="note" style="margin-top:34px">
+        <span class="lbl">How to sound senior on promises</span>
+        Don't just list <code class="k">.then/.catch</code>. Frame it as a <em>state machine</em> (settle-once, immutable), tie handlers to the <em>microtask queue</em>, compare the <em>combinators by failure mode</em>, and reach for <em>consequences</em>: fail-fast data loss, floating rejections, accidental serialisation, concurrency limits. That framing gets you the level.
+      </div>
+    </section>
+
+    <!-- 08 -->
+    <section id="drills">
+      <div class="kicker">08 — Drill until reflex</div>
+      <h2>Output prediction drills</h2>
+      <p>Predict the output <em>before</em> revealing. Say your reasoning out loud — that's what's scored.</p>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the classic ordering</div>
+        <pre>console.log('start');
+setTimeout(() =&gt; console.log('timeout'), 0);
+Promise.resolve().then(() =&gt; console.log('promise'));
+console.log('end');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">start · end · promise · timeout</div>
+          <p style="margin:0"><code class="k">start</code>/<code class="k">end</code> are synchronous. The stack empties → the microtask queue drains → <code class="k">promise</code>. Only then does the one macrotask (<code class="k">timeout</code>) run, even at 0ms.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — async function ordering</div>
+        <pre>console.log('A');
+async function foo(){
+  console.log('B');
+  await Promise.resolve();
+  console.log('C');
+}
+foo();
+console.log('D');</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">A · B · D · C</div>
+          <p style="margin:0"><code class="k">foo()</code> runs synchronously to the <code class="k">await</code> (prints <code class="k">B</code>), then suspends and returns control. <code class="k">D</code> prints. Stack empties → the continuation after <code class="k">await</code> runs as a microtask → <code class="k">C</code>.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — chain values &amp; a missing return</div>
+        <pre>Promise.resolve(1)
+  .then(x =&gt; x + 1)
+  .then(x =&gt; { x + 1; })     <span class="cmt">// no return!</span>
+  .then(x =&gt; console.log(x));</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">undefined</div>
+          <p style="margin:0">First <code class="k">.then</code> passes <code class="k">2</code> on. The second computes <code class="k">x + 1</code> but doesn't <code class="k">return</code>, so its promise fulfills with <code class="k">undefined</code> — which is what the third receives. Missing-return bug, made visible.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — Promise.all fail-fast</div>
+        <pre>const p1 = Promise.resolve('ok');
+const p2 = Promise.reject('boom');
+const p3 = new Promise(r =&gt; setTimeout(() =&gt; r('late'), 100));
+Promise.all([p1, p2, p3])
+  .then(v =&gt; console.log('then', v))
+  .catch(e =&gt; console.log('catch', e));</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">catch boom</div>
+          <p style="margin:0"><code class="k">all</code> is fail-fast: it rejects the moment <code class="k">p2</code> rejects, with <code class="k">'boom'</code>, without waiting for <code class="k">p3</code>. <code class="k">p3</code> still runs to completion in the background — its value is just discarded. Swap in <code class="k">allSettled</code> to keep every result.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — interleaving two chains</div>
+        <pre>Promise.resolve().then(() =&gt; console.log('a'))
+                 .then(() =&gt; console.log('b'));
+Promise.resolve().then(() =&gt; console.log('c'))
+                 .then(() =&gt; console.log('d'));</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">a · c · b · d</div>
+          <p style="margin:0">Each <code class="k">.then</code> schedules the next link only once the current one runs — one microtask per link. So the first link of each chain runs (a, c), then the second of each (b, d). The chains interleave tick-by-tick.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — await in a loop, timed</div>
+        <pre>async function run(){
+  const start = Date.now();
+  for (const url of ['/a','/b','/c']) {
+    await sleep(100);        <span class="cmt">// each takes 100ms</span>
+  }
+  console.log(Date.now() - start);
+}</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer">
+          <div class="out-line">~300</div>
+          <p style="margin:0">The <code class="k">await</code> inside <code class="k">for…of</code> serialises the three sleeps: 100 + 100 + 100 ≈ 300ms. If they were independent, <code class="k">await Promise.all(urls.map(u =&gt; sleep(100)))</code> would finish in ~100ms. This is the sequential-vs-parallel trap.</p>
+        </div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 — the conceptual one</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">"What's the difference between <code class='k'>Promise.all</code> and <code class='k'>Promise.allSettled</code>, and when would you pick each?"</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer">
+          <p style="margin:0"><code class="k">all</code> is fail-fast: it fulfills with all values only if every input fulfills, and rejects on the first rejection — so one failure loses every result. <code class="k">allSettled</code> never rejects; it waits for all to settle and hands back a status/value-or-reason for each. Pick <code class="k">all</code> when the operation is all-or-nothing (you can't proceed without every piece — e.g. data needed to render a page). Pick <code class="k">allSettled</code> when failures are independent and you want partial success — e.g. loading several dashboard widgets, rendering the ones that succeeded and flagging the ones that didn't.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="bank">
+      <div class="kicker">09 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+
+      <div class="qtools" role="group" aria-label="Filter and controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="basics">Basics</button>
+        <button class="fchip" data-f="chain">Chaining</button>
+        <button class="fchip" data-f="timing">Timing</button>
+        <button class="fchip" data-f="combos">Combinators</button>
+        <button class="fchip" data-f="async">async/await</button>
+        <button class="fchip" data-f="pitfalls">Pitfalls</button>
+      </div>
+
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · predict the output, then explain the queue out loud.</footer>
+
+<script>
+/* ---------------- Q&A data ---------------- */
+const QA = [
+ ["basics","Basics","What is a promise, in one sentence?","An object representing the eventual result of an async operation — a placeholder for a value that isn't available yet. It's a state machine: pending → fulfilled or rejected, settling exactly once."],
+ ["basics","Basics","What are the three states, and which are 'settled'?","Pending (initial), fulfilled (succeeded, has a value), rejected (failed, has a reason). Settled = fulfilled or rejected, i.e. no longer pending. Settling is permanent and one-time."],
+ ["basics","Basics","Does the executor function run synchronously or asynchronously?","The executor (the function passed to new Promise) runs synchronously and immediately. Only the settlement and the .then handlers are asynchronous."],
+ ["basics","Basics","What happens if you call resolve() twice, or resolve then reject?","Only the first call takes effect. Once settled, a promise is immutable — subsequent resolve/reject calls are silently ignored."],
+ ["basics","Basics","What does it mean to resolve a promise with another promise?","It adopts that promise: the outer stays pending until the inner settles, then mirrors its outcome. You can't have a promise that fulfills to another promise — they flatten. Same for any thenable."],
+ ["basics","Basics","Promise.resolve(x) vs new Promise(r => r(x))?","For a plain value both give a promise fulfilled with x. For a promise, Promise.resolve(x) returns x itself unchanged (no extra wrapping) and it may still be pending, whereas the constructor form always creates a new promise that adopts x."],
+
+ ["chain","Chaining","Why does .then return a new promise?","So chains compose. The new promise settles based on the callback: return a value → fulfills with it; return a promise → adopts it; throw → rejects. That's what lets you flatten async steps into a linear chain."],
+ ["chain","Chaining","How does error handling propagate in a chain?","A rejection skips all subsequent success handlers until it reaches a .catch (or a .then's second arg). One trailing .catch handles errors from every prior step, like a vertical try/catch."],
+ ["chain","Chaining","Difference between .then(f, g) and .then(f).catch(g)?","In .then(f, g), g cannot catch an error thrown by f — they're registered on the same promise. In .then(f).catch(g), the catch is on the promise f returns, so it catches f's throw too. Prefer the trailing catch."],
+ ["chain","Chaining","What does .catch return, and how do you 'recover'?","It returns a new promise. If the catch handler returns a value (doesn't re-throw), the chain recovers — the next .then runs with that value. Re-throw to keep the chain rejected."],
+ ["chain","Chaining","What does .finally do, and how is it different from .then?","Runs on both fulfill and reject, for cleanup. It's transparent: it ignores its return value and passes the original value/reason through — unless its callback throws or rejects, which overrides the outcome."],
+ ["chain","Chaining","Most common chaining bug?","Forgetting to return the inner promise from a .then. Without the return, the chain doesn't wait for that async op — causing races and swallowed errors."],
+
+ ["timing","Timing","What queue do promise callbacks run on?","The microtask queue. The event loop drains the entire microtask queue after each macrotask and before rendering — so promise callbacks run before the next setTimeout, even a 0ms one."],
+ ["timing","Timing","Can a .then callback ever run synchronously?","No. Even on an already-resolved promise, the callback is scheduled as a microtask — never called synchronously. This removes the sync/async ambiguity of raw callbacks."],
+ ["timing","Timing","Why does a promise callback run before a setTimeout(…, 0)?","Different queues, different rules. Promise callbacks are microtasks, drained fully after each macrotask; setTimeout is a macrotask, one per loop turn and only after microtasks are empty. It's queue priority, not timing."],
+ ["timing","Timing","How can promises freeze the UI?","Microtask starvation: an endless microtask chain (Promise.resolve().then(loop)) never lets the queue empty, so the loop never renders or handles input. Yield with a macrotask to loop safely."],
+
+ ["combos","Combinators","Promise.all — behaviour and failure mode?","Fulfills with an array of all values (in input order) once every input fulfills. Fail-fast: rejects with the first rejection's reason immediately. Other operations keep running but their results are discarded."],
+ ["combos","Combinators","Promise.allSettled — when to use it?","Waits for all to settle and never rejects; returns {status, value|reason} per input. Use it for independent operations where you want partial success — e.g. loading several widgets and showing the ones that worked."],
+ ["combos","Combinators","Promise.race vs Promise.any?","race settles on the first to SETTLE — a fast rejection can win. any settles on the first to FULFILL, ignoring rejections until all reject, then rejects with an AggregateError. race for timeouts; any for 'first success wins'."],
+ ["combos","Combinators","How do you implement a timeout for a fetch?","Promise.race the real promise against a promise that rejects via setTimeout after N ms. Whichever settles first wins. For true cancellation of the underlying request, pair it with AbortController."],
+ ["combos","Combinators","What do the combinators do with an empty iterable?","all and allSettled fulfill immediately with []. race stays pending forever (nothing ever settles). any rejects immediately with an empty AggregateError."],
+ ["combos","Combinators","Does Promise.all cancel the others when one rejects?","No — promises aren't cancellable. all just stops waiting and rejects; the other operations run to completion, their results discarded. Use AbortController if you need to actually stop the work."],
+
+ ["async","async/await","What does an async function return?","Always a promise. return v fulfills it with v; throw e rejects it; returning a promise adopts it. await unwraps a promise's value or throws its rejection reason."],
+ ["async","async/await","How do you catch errors with async/await?","A normal try/catch around the await — because await throws the rejection reason. Or attach .catch to the promise the async function returns."],
+ ["async","async/await","Sequential vs parallel with await — how do you make independent calls concurrent?","Awaiting them on separate lines serialises them (sum of times). Kick off both first, then await together: const [a, b] = await Promise.all([f(), g()]) runs them concurrently (max of times)."],
+ ["async","async/await","Why doesn't await work inside forEach?","forEach ignores the promises its callback returns, so it doesn't wait. Use for…of for sequential awaiting, or Promise.all(arr.map(async …)) for parallel."],
+ ["async","async/await","Is await ever a no-op?","No. Even await on a non-promise (await 5) yields to the microtask queue — code after the first await always runs as a microtask continuation, never synchronously."],
+
+ ["pitfalls","Pitfalls","What is a floating promise and why is it dangerous?","An async call whose result (and potential rejection) is never handled. If it rejects, nothing catches it → an unhandledrejection event, console error, or in Node a possible crash. Attach a .catch or await it."],
+ ["pitfalls","Pitfalls","What is unhandledrejection?","A global event fired when a rejected promise still has no rejection handler once the microtask queue drains — not the instant it rejects, so a .catch attached later in the same turn still prevents it. Listen for it to log/report; but the real fix is handling rejections at the source."],
+ ["pitfalls","Pitfalls","How do you limit concurrency to N in-flight promises?","A pool: keep N workers pulling tasks off a shared queue, each awaiting one task then taking the next. Prevents hammering an API (and 429s) that Promise.all(items.map(...)) would cause by firing everything at once."],
+ ["pitfalls","Pitfalls","return risky() vs return await risky() in a try?","return await keeps the rejection inside the try, so the surrounding catch/finally can handle it. Bare return risky() settles the outer promise before finally can react to a rejection."],
+ ["pitfalls","Pitfalls","Can you cancel a promise?","Not the promise itself — it's a one-way state machine. You cancel the underlying work: AbortController for fetch/DOM APIs, or a flag your then-handler checks. The promise then rejects (AbortError) or is ignored."]
+];
+
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

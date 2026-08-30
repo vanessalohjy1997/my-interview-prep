@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#FACC15;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(250,204,21,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#FCE895}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(250,204,21,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#FCE895}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">SEO for <em>engineers</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> The pipeline</a>
+    <a href="#crawl"><span class="n">01</span> Crawling &amp; indexing</a>
+    <a href="#js"><span class="n">02</span> JavaScript &amp; SEO</a>
+    <a href="#onpage"><span class="n">03</span> On-page fundamentals</a>
+    <a href="#structured"><span class="n">04</span> Structured data</a>
+    <a href="#intl"><span class="n">05</span> International SEO</a>
+    <a href="#vitals"><span class="n">06</span> Core Web Vitals</a>
+    <a href="#spa"><span class="n">07</span> SPA pitfalls</a>
+    <a href="#tools"><span class="n">08</span> Tools &amp; measurement</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Crawl, render, index, <span>then rank.</span></h1>
+      <p class="lede">Most SEO answers fail because they jump straight to meta tags. The engineer's version is a pipeline: can the bot fetch it, does your JavaScript survive rendering, is it indexed under the URL you intended — and only then, what does the page say about itself.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Crawl &amp; index</span>
+        <span class="chip"><span class="dot d-pending"></span>Rendering</span>
+        <span class="chip"><span class="dot d-chain"></span>Structured data</span>
+        <span class="chip"><span class="dot d-rej"></span>Vitals</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — Four stages, not one</div>
+      <h2>How search actually works</h2>
+
+      <p>SEO answers get vague because people talk about &ldquo;ranking&rdquo; as one thing. It is four stages, and a page can fail at any one of them independently:</p>
+      <div class="states">
+        <div class="statebox"><div class="st-name">1 · Discover</div><p>The crawler learns a URL exists — from a link, a sitemap, or a redirect.</p></div>
+        <div class="statebox pending"><div class="st-name">2 · Crawl</div><p>It fetches the URL. <code class="k">robots.txt</code> and status codes decide whether this happens.</p></div>
+        <div class="statebox ful"><div class="st-name">3 · Render</div><p>Googlebot queues the page for a headless Chromium pass that executes JavaScript.</p></div>
+        <div class="statebox rej"><div class="st-name">4 · Index &amp; rank</div><p>The rendered content is stored, deduplicated against canonicals, and ranked.</p></div>
+      </div>
+      <p>As a frontend engineer you own stages 1&ndash;3 almost entirely, and you influence stage 4 mainly through content structure and page experience. When an interviewer asks &ldquo;how would you improve SEO&rdquo;, the strong answer starts by <strong>identifying which stage is failing</strong> rather than listing tags.</p>
+      <div class="note gold"><span class="lbl">The framing to open with</span>&ldquo;First I check whether the page can be crawled, then whether its content survives rendering, then whether it is indexed under the URL I intend. Only after those do meta tags and structured data matter.&rdquo;</div>
+    </section>
+    <section id="crawl">
+      <div class="kicker">01 — Crawlable is not the same as indexable</div>
+      <h2>Crawling &amp; indexing controls</h2>
+
+      <table class="tbl">
+        <tr><th>Control</th><th>Where</th><th>What it actually does</th></tr>
+        <tr><td>robots.txt</td><td>/robots.txt</td><td>Asks crawlers not to <em>fetch</em> a path. It does not remove a page from the index.</td></tr>
+        <tr><td>meta robots</td><td><code class="k">&lt;meta name="robots" content="noindex"&gt;</code></td><td>Asks that the page not be <em>indexed</em>. The crawler must be allowed to fetch the page to see it.</td></tr>
+        <tr><td>X-Robots-Tag</td><td>HTTP response header</td><td>Same directives for non-HTML resources — PDFs, images, JSON.</td></tr>
+        <tr><td>rel=canonical</td><td>head link or HTTP header</td><td>A <em>hint</em> about which URL is the primary version of duplicate content.</td></tr>
+        <tr><td>sitemap.xml</td><td>Listed in robots.txt / Search Console</td><td>A discovery aid for URLs that are poorly linked. It does not guarantee indexing.</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">The classic trap</span><code class="k">Disallow</code> in robots.txt plus <code class="k">noindex</code> on the page is self-defeating: the crawler obeys the disallow, never fetches the page, and therefore never sees the noindex. The URL can still appear in results — as a bare link with no description — because it was discovered through inbound links. To de-index, <strong>allow</strong> crawling and serve <code class="k">noindex</code>.</div>
+      <h3>Status codes and redirects are SEO primitives</h3>
+      <ul class="body">
+        <li><strong>301 / 308</strong> — permanent. Signals move to the target. This is how you retire a URL without losing its history.</li>
+        <li><strong>302 / 307</strong> — temporary. The original URL stays indexed, at least initially; leave a &ldquo;temporary&rdquo; redirect in place long enough and Google will treat it as permanent and swap the canonical anyway. Using 302 for a known permanent move is a common self-inflicted wound.</li>
+        <li><strong>404 vs 410</strong> — gone is gone; 410 is a stronger signal but both work. What you must avoid is a <strong>soft 404</strong>: a &ldquo;not found&rdquo; page served with <code class="k">200 OK</code>.</li>
+        <li><strong>Redirect chains</strong> waste crawl budget and add latency — Googlebot follows about 10 hops and then gives up. Signals are <em>not</em> diluted per hop (Google has said 30x redirects do not lose PageRank), so do not repeat that myth; collapse chains anyway, because one broken hop kills the whole path.</li>
+      </ul>
+      <h3>Sitemaps, concretely</h3>
+      <p>One sitemap holds up to <strong>50,000 URLs</strong> or <strong>50&nbsp;MB uncompressed</strong>; beyond that, use a sitemap index. Include only canonical, indexable, <code class="k">200</code>-returning URLs — a sitemap full of redirects and noindexed pages is a quality signal against you. <code class="k">lastmod</code> is used if it is consistently honest, so do not set it to the build time of every page.</p>
+    </section>
+    <section id="js">
+      <div class="kicker">02 — The part that is actually your job</div>
+      <h2>JavaScript &amp; SEO</h2>
+
+      <p>Googlebot does execute JavaScript — it renders with an evergreen headless Chromium. But rendering is a <strong>second, deferred pass</strong>: the page is crawled, queued, and rendered when resources allow. Content that only exists after JS runs is indexed later and less reliably than content in the HTML response.</p>
+      <p>More importantly, <strong>Googlebot is not the only consumer of your HTML</strong>. Social and messaging crawlers — the ones that build link previews — generally do <em>not</em> execute JavaScript at all. A client-rendered Open Graph tag simply does not exist for them.</p>
+      <table class="tbl">
+        <tr><th>Approach</th><th>SEO outcome</th></tr>
+        <tr><td>CSR (empty shell + bundle)</td><td>Riskiest. Content depends on the render pass; previews and non-Google crawlers see nothing.</td></tr>
+        <tr><td>SSR</td><td>Content is in the initial HTML. The default answer for indexable, dynamic pages.</td></tr>
+        <tr><td>SSG / ISR</td><td>Best of all — indexable HTML, CDN-fast, and fast pages help page experience.</td></tr>
+        <tr><td>Dynamic rendering (serve prerendered HTML to bots)</td><td>Works, but Google now describes it as a workaround rather than a recommendation. It is a second codepath to keep correct.</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">Links must be links</span>A crawler discovers URLs from <code class="k">&lt;a href&gt;</code>. A <code class="k">&lt;div onClick={navigate}&gt;</code> or a <code class="k">&lt;button&gt;</code> that pushes history is invisible for discovery — and unusable with a keyboard or middle-click. This is the single most common SPA SEO defect, and the fix is also the accessibility fix.</div>
+      <p>The same applies to content behind interaction. Text revealed only after a click may be indexed if it is present in the DOM, but content <em>fetched</em> on click is not there at render time and will not be indexed.</p>
+    </section>
+    <section id="onpage">
+      <div class="kicker">03 — What the page says about itself</div>
+      <h2>On-page fundamentals</h2>
+
+      <ul class="body">
+        <li><strong>&lt;title&gt;</strong> — one of the strongest on-page signals, and the headline in results. Unique per page, front-load the distinguishing words, roughly 50&ndash;60 characters before truncation. Google may rewrite it if it is unhelpful.</li>
+        <li><strong>meta description</strong> — not a ranking factor. It influences click-through by supplying the snippet, and is often replaced by Google with page text that better matches the query.</li>
+        <li><strong>Headings</strong> — <code class="k">h1</code>&ndash;<code class="k">h6</code> should describe the document outline honestly. One <code class="k">h1</code> is a sound convention rather than a rule; what matters is that headings are not chosen for their font size.</li>
+        <li><strong>Semantic HTML</strong> — <code class="k">main</code>, <code class="k">nav</code>, <code class="k">article</code>, <code class="k">time</code>, real lists and tables. It helps parsers and assistive tech for the same reason.</li>
+        <li><strong>Image alt text</strong> — describes the image for image search and screen readers. Decorative images take <code class="k">alt=""</code> so they are skipped, not described badly.</li>
+        <li><strong>URLs</strong> — readable, stable, lowercase, hyphenated. Changing a URL costs you its accumulated signals unless you 301 it.</li>
+        <li><strong>Internal linking</strong> — how crawl equity flows and how orphan pages get discovered. Descriptive anchor text beats &ldquo;click here&rdquo; for both ranking and screen-reader users.</li>
+      </ul>
+      <h3>Link preview tags</h3>
+      <p>Open Graph and Twitter Card tags are not search-ranking signals, but they control how the URL appears when shared, and they must be in the server HTML for crawlers that do not run JavaScript.</p>
+      <pre>&lt;title&gt;Order book — Acme Exchange&lt;/title&gt;
+&lt;meta name="description" content="Live depth and trades for every listed pair."&gt;
+&lt;link rel="canonical" href="https://acme.com/markets/btc-usdt"&gt;
+&lt;meta property="og:title" content="BTC/USDT order book"&gt;
+&lt;meta property="og:image" content="https://acme.com/og/btc-usdt.png"&gt;
+&lt;meta name="twitter:card" content="summary_large_image"&gt;</pre>
+      <div class="note"><span class="lbl">Mobile-first indexing</span>Google indexes the <strong>mobile</strong> rendering of your page. Content, structured data, and metadata hidden or dropped from the mobile layout are effectively not indexed. Responsive markup avoids this entirely; separate mobile templates invite it.</div>
+    </section>
+    <section id="structured">
+      <div class="kicker">04 — Telling the engine what the page is</div>
+      <h2>Structured data</h2>
+
+      <p>Structured data annotates content with a machine-readable vocabulary (<strong>schema.org</strong>) so a search engine can recognise a page as a Product, Article, Recipe, Event, or Video. Google's preferred format is <strong>JSON-LD</strong> in a script tag — it is separate from your markup, so it does not entangle with your components.</p>
+      <pre>&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Aeron Chair",
+  "offers": {
+    "@type": "Offer",
+    "price": "1395.00",
+    "priceCurrency": "SGD",
+    "availability": "https://schema.org/InStock"
+  }
+}
+&lt;/script&gt;</pre>
+      <p>What it buys you is <strong>eligibility for rich results</strong> — star ratings, price and stock, breadcrumbs, recipe and event details — which raise click-through. It is not a direct ranking boost, and eligibility is never a guarantee that Google will show the enhancement.</p>
+      <div class="note"><span class="lbl">Do not cite FAQ rich results</span>Since August 2023 Google shows <code class="k">FAQPage</code> results only for authoritative government and health sites, and <code class="k">HowTo</code> was retired outright. Naming FAQ accordions as an example is the fastest way to date yourself; naming them as <em>a feature Google withdrew</em> does the opposite.</div>
+      <div class="note warn"><span class="lbl">It must match the page</span>Structured data that describes content a user cannot see is a policy violation and can earn a manual action. Generate it from the same data that renders the page, never by hand in a template that drifts.</div>
+    </section>
+    <section id="intl">
+      <div class="kicker">05 — One page per language and region</div>
+      <h2>International SEO</h2>
+
+      <p>If you ship localised pages, search engines need to know they are alternates of each other rather than duplicates. That is <code class="k">hreflang</code>.</p>
+      <pre>&lt;link rel="alternate" hreflang="en-sg" href="https://acme.com/sg/pricing"&gt;
+&lt;link rel="alternate" hreflang="ja-jp" href="https://acme.com/jp/pricing"&gt;
+&lt;link rel="alternate" hreflang="x-default" href="https://acme.com/pricing"&gt;</pre>
+      <ul class="body">
+        <li>Annotations must be <strong>bidirectional</strong> — every alternate lists every other, <em>including itself</em>. A one-way reference is ignored.</li>
+        <li>Values are <strong>BCP 47</strong> tags: language, optionally script, optionally region. <code class="k">x-default</code> marks the fallback for unmatched users.</li>
+        <li>They can live in the <code class="k">&lt;head&gt;</code>, in the sitemap, or in an HTTP header — pick one place and be consistent.</li>
+        <li>Each locale needs its <strong>own crawlable URL</strong>. Swapping language client-side from a cookie gives search engines a single URL with unstable content.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">Never auto-redirect by IP</span>Googlebot crawls predominantly from US IP addresses. IP-based redirects therefore mean it mostly only ever sees your US pages, so the other locales go largely unindexed — Google does run some geo-distributed crawling for locale-adaptive pages, but you cannot rely on it. Detect a preference, <em>suggest</em> the local site with a banner, and let the user choose — the same conclusion the localisation guide reaches for user-experience reasons.</div>
+    </section>
+    <section id="vitals">
+      <div class="kicker">06 — Page experience, precisely</div>
+      <h2>Core Web Vitals as a ranking signal</h2>
+
+      <p>Google uses page experience as a ranking signal, and its measurable core is the three Web Vitals — assessed on <strong>field data</strong> from real Chrome users (CrUX), not on your Lighthouse score. Specifically: the <strong>75th percentile</strong> of page loads over a rolling <strong>28-day</strong> window, segmented by mobile and desktop. That percentile is the most common follow-up question, and it is why a good median with a bad tail still fails.</p>
+      <table class="tbl">
+        <tr><th>Metric</th><th>Measures</th><th>Good</th></tr>
+        <tr><td>LCP</td><td>Largest Contentful Paint — when the main content appears</td><td>&le; 2.5 s</td></tr>
+        <tr><td>INP</td><td>Interaction to Next Paint — responsiveness across the visit</td><td>&le; 200 ms</td></tr>
+        <tr><td>CLS</td><td>Cumulative Layout Shift — visual stability</td><td>&le; 0.1</td></tr>
+      </table>
+      <p><strong>INP replaced FID in March 2024.</strong> Saying &ldquo;FID&rdquo; in an interview dates you; saying &ldquo;INP replaced FID because FID only measured the delay of the <em>first</em> interaction and almost everyone passed it&rdquo; does the opposite.</p>
+      <div class="note"><span class="lbl">Keep the weighting honest</span>Page experience is a real but modest signal — a tiebreaker among comparable results, not a substitute for relevance. The strong interview answer says so, rather than implying a fast site outranks a better-matching one.</div>
+    </section>
+    <section id="spa">
+      <div class="kicker">07 — Where single-page apps quietly fail</div>
+      <h2>SPA pitfalls</h2>
+
+      <ul class="body">
+        <li><strong>Soft 404s.</strong> A client-side router renders a &ldquo;not found&rdquo; view while the server returns <code class="k">200</code>. Google indexes an error page or flags a soft 404. Return a real <code class="k">404</code> status for unknown routes server-side.</li>
+        <li><strong>Fragment routing.</strong> <code class="k">/#/products/1</code> is one URL to a crawler — the fragment is never sent to the server. Use the History API so each view has a real path. The old <code class="k">#!</code> scheme is long deprecated.</li>
+        <li><strong>Head tags never updating.</strong> Client-side navigation must update title, description, and canonical. If the crawler renders the page and the head still describes the home page, every route looks duplicate.</li>
+        <li><strong>Infinite scroll.</strong> Content loaded on scroll may never be reached. Provide paginated, linked URLs behind the same data, and let infinite scroll be a progressive enhancement.</li>
+        <li><strong>Faceted navigation.</strong> Filter combinations explode into near-duplicate URLs. Be precise about which lever you need: <code class="k">noindex</code> and <code class="k">canonical</code> control what gets <em>indexed</em> — a noindexed URL is still fetched, so neither saves crawl budget. To stop the crawling, <code class="k">Disallow</code> the parameter patterns in robots.txt or move filters into URL fragments.</li>
+        <li><strong>Blocked assets.</strong> Disallowing <code class="k">/static/</code> or your JS in robots.txt stops the renderer from building the page — it sees an unstyled, contentless shell.</li>
+      </ul>
+    </section>
+    <section id="tools">
+      <div class="kicker">08 — How you actually diagnose it</div>
+      <h2>Tools &amp; measurement</h2>
+
+      <table class="tbl">
+        <tr><th>Tool</th><th>Use it for</th></tr>
+        <tr><td>Search Console</td><td>The ground truth. Pages report (indexed vs excluded, with reasons), Performance (queries, impressions, CTR), Core Web Vitals from field data, sitemap submission, manual actions.</td></tr>
+        <tr><td>URL Inspection</td><td>Per-URL: is it indexed, which canonical did Google pick, and — critically — <strong>view the rendered HTML</strong> Googlebot produced. This is how you prove a JS rendering problem.</td></tr>
+        <tr><td>Rich Results Test</td><td>Validates structured data and shows which rich result types the page qualifies for.</td></tr>
+        <tr><td>Lighthouse SEO audit</td><td>A shallow lab check — crawlability, title, description, link text, viewport. Passing 100 means nothing was obviously broken, not that the page is optimised.</td></tr>
+        <tr><td>Site crawlers</td><td>Screaming Frog, Sitebulb: crawl the whole site to find redirect chains, orphan pages, duplicate titles, broken canonicals at scale.</td></tr>
+        <tr><td>Server logs</td><td>What Googlebot actually fetched and how often — the only real view of crawl budget on a large site.</td></tr>
+      </table>
+      <div class="note gold"><span class="lbl">Say this when asked which tools you use</span>&ldquo;Search Console for whether Google indexed it and under which canonical, URL Inspection's rendered HTML for whether our JavaScript actually produced the content, a crawler for site-wide structural issues, and CrUX for whether the vitals problem is real for users rather than only in my lab run.&rdquo;</div>
+    </section>
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the page that will not de-index</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We added <code class='k'>noindex</code> to /admin and blocked it in robots.txt a month ago. It is still in Google. Why?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">The robots.txt <code class='k'>Disallow</code> prevents Google from fetching the page, so it never sees the <code class='k'>noindex</code>. The URL stays indexed from inbound links, typically with no description. Fix: <strong>remove the disallow</strong> so the page can be crawled, keep the noindex, and wait for a recrawl — or use the Removals tool to speed it up. Once it has dropped out, you can re-block if you want to save crawl budget.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — the React app that ranks for nothing</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A CSR React site has good content but almost no organic traffic and link previews show a blank card. Diagnose.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">The HTML response is an empty shell. Confirm it: <code class='k'>curl</code> the URL, or use URL Inspection's rendered HTML in Search Console. Google may eventually render it, but the deferred render pass makes indexing slow and unreliable, and social crawlers do not execute JavaScript at all — hence the blank preview. Fix by moving to SSR or SSG so the title, description, Open Graph tags, and main content are in the initial response. Also check that navigation uses real <code class='k'>&lt;a href&gt;</code> links so pages are discoverable.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — traffic dropped after a redesign</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We changed URL structure. Rankings collapsed. What went wrong and what do you check?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Old URLs lost their accumulated signals. Check: are old URLs 301-redirecting to the closest equivalent new page (not all to the home page, which Google treats as a soft 404)? Are there redirect chains? Do internal links and the sitemap point at the new URLs directly? Are canonicals self-referential on the new pages? Then watch the Pages report in Search Console for a spike in <em>Page with redirect</em> or <em>Not found</em>.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — spot the error</div>
+        <pre>&lt;link rel="alternate" hreflang="en" href="/en/"&gt;
+&lt;link rel="alternate" hreflang="fr" href="/fr/"&gt;
+<span class="cmt">// …on the English page only</span></pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Missing reciprocity, self-reference and x-default</div>
+          <p style="margin:0">Two problems. First, hreflang must be <strong>bidirectional</strong> — the French page must carry the same set, or the annotation is ignored. Second, the set must include a <strong>self-reference</strong>, and there is no <code class='k'>x-default</code> for users whose language matches neither. Also prefer absolute URLs, which is what Google documents for hreflang.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — how would you improve SEO here?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;An e-commerce SPA. Open-ended: what do you do first?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Resist listing tags. Work the pipeline: (1) <strong>Crawl</strong> — is robots.txt blocking assets or key paths, do product links use real anchors, are there redirect chains? (2) <strong>Render</strong> — does the raw HTML contain the product name, price, and description, or only a shell? (3) <strong>Index</strong> — in Search Console, how many product URLs are indexed versus excluded, and which canonical did Google choose for filtered URLs? (4) Only then: titles and descriptions per product, Product structured data generated from the same data as the page, and Core Web Vitals from field data. Naming the order is the answer they are grading.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="crawl">Crawling</button>
+        <button class="fchip" data-f="js">JavaScript</button>
+        <button class="fchip" data-f="onpage">On-page</button>
+        <button class="fchip" data-f="sd">Structured data</button>
+        <button class="fchip" data-f="intl">International</button>
+        <button class="fchip" data-f="vitals">Vitals</button>
+        <button class="fchip" data-f="tools">Tools</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · which stage of the pipeline is failing?</footer>
+
+<script>
+const QA = [["crawl", "Crawling", "What is the difference between robots.txt and a noindex tag?", "robots.txt controls crawling — it asks a bot not to fetch a URL. noindex controls indexing — it asks that a fetched page not appear in results. They operate at different stages, which is why blocking a page in robots.txt prevents Google from ever seeing its noindex."], ["crawl", "Crawling", "Can a page blocked by robots.txt still appear in search results?", "Yes. If other pages link to it, the URL can be indexed without content — typically shown with no description, because the crawler was never allowed to fetch it."], ["crawl", "Crawling", "How do you correctly remove a page from the index?", "Allow crawling, serve noindex via a meta robots tag or an X-Robots-Tag header, and wait for a recrawl. Use the Removals tool in Search Console if it is urgent. Only block it in robots.txt afterwards, if you want to stop wasting crawl budget."], ["crawl", "Crawling", "What is rel=canonical for, and is it binding?", "It tells search engines which URL is the primary version among duplicates or near-duplicates, consolidating signals onto one URL. It is a hint — Google can and does choose a different canonical, which URL Inspection will show you."], ["crawl", "Crawling", "301 vs 302 for SEO?", "301 or 308 is permanent and passes signals to the target while dropping the old URL from the index. 302 or 307 is temporary and keeps the original indexed — though a long-lived temporary redirect eventually gets treated as permanent anyway. Using 302 for a genuine move delays the new URL inheriting the old one."], ["crawl", "Crawling", "What is a soft 404 and why does it matter?", "A page that tells the user nothing was found but returns 200 OK — common in SPAs, where the router renders a not-found view without the server knowing. Google may index the error page or flag the URL, wasting crawl budget. Return a real 404 status for unknown routes."], ["crawl", "Crawling", "What belongs in a sitemap?", "Only canonical, indexable URLs that return 200. Up to 50,000 URLs or 50 MB uncompressed per file, with a sitemap index above that. Include an honest lastmod; a sitemap full of redirects and noindexed URLs is a negative quality signal."], ["crawl", "Crawling", "What is crawl budget and when do you care?", "Roughly, how many URLs a crawler will fetch from your site in a period. It only becomes a real constraint on large sites — faceted navigation generating hundreds of thousands of near-duplicate URLs is the classic case. The important nuance is that noindex and canonical do not save crawl budget, because those URLs are still fetched; only robots.txt disallow rules, URL fragments, and removing redirect chains reduce crawling."], ["js", "JavaScript", "Does Google execute JavaScript?", "Yes — it renders pages with an evergreen headless Chromium. But rendering is a deferred second pass after the initial crawl, so JS-dependent content is indexed later and less reliably than content present in the HTML response."], ["js", "JavaScript", "Why is client-side rendering still risky for SEO?", "Because indexing depends on that deferred render pass, and because non-Google crawlers — notably the social and messaging bots that build link previews — generally do not execute JavaScript at all. A client-rendered Open Graph tag does not exist for them."], ["js", "JavaScript", "How do you make a JavaScript app indexable?", "Server-render or statically generate the pages so content and metadata are in the initial HTML, use real anchor elements for navigation so URLs are discoverable, give every view a distinct URL and updated head tags, and do not block your JS or CSS in robots.txt."], ["js", "JavaScript", "What is dynamic rendering and should you use it?", "Detecting bots and serving them prerendered HTML while users get the SPA. It works and is not treated as cloaking when the content matches, but Google now describes it as a workaround rather than a recommendation — it is a second codepath that drifts. Prefer SSR or SSG."], ["js", "JavaScript", "Why do div-based click handlers hurt SEO?", "Crawlers discover URLs from anchor elements with an href. A div or button that calls the router pushes history without ever exposing a link, so those pages are only discoverable via the sitemap. The same defect breaks keyboard navigation and open-in-new-tab."], ["onpage", "On-page", "How important is the meta description?", "It is not a ranking factor. It supplies the snippet, so it affects click-through rate, and Google frequently rewrites it with page text that better matches the query. Write it for humans deciding whether to click."], ["onpage", "On-page", "What makes a good title tag?", "Unique per page, distinguishing words first, roughly 50 to 60 characters before truncation, and descriptive of the actual content. It is one of the strongest on-page signals and the headline users see in results. Google has never published a ranking of on-page factors, so avoid calling it the single strongest."], ["onpage", "On-page", "Do you need exactly one h1?", "It is a sound convention rather than a hard rule — modern parsers cope with several. What matters is that headings describe the document outline honestly and are not picked for their font size, which is also what screen-reader users navigate by."], ["onpage", "On-page", "How does alt text relate to SEO?", "It describes an image for image search and for screen readers. Decorative images should carry an empty alt so they are skipped rather than announced. Keyword-stuffed alt text helps neither audience."], ["onpage", "On-page", "What is mobile-first indexing?", "Google indexes the mobile rendering of a page. Content, metadata, or structured data that is dropped from the mobile layout is effectively not indexed. Responsive markup makes this a non-issue; separate mobile templates invite it."], ["sd", "Structured data", "What is structured data and what does it get you?", "Machine-readable schema.org annotation of your content, preferably as JSON-LD in a script tag. It makes the page eligible for rich results such as prices, ratings, breadcrumbs, recipes and events, which lift click-through. It is not a direct ranking boost and eligibility is not a guarantee. Do not cite FAQ accordions as an example — Google restricted FAQPage results to authoritative government and health sites in 2023 and retired HowTo entirely."], ["sd", "Structured data", "Why JSON-LD over microdata?", "It is Google's documented preference, and it lives in a single script block rather than being woven through your markup — so it does not entangle with components, and it is easy to generate from the same data that renders the page."], ["sd", "Structured data", "What is the main risk with structured data?", "Describing content the user cannot see on the page. That is a policy violation and can trigger a manual action. Generate the markup from the rendered data rather than maintaining it by hand."], ["intl", "International", "What does hreflang do?", "It tells search engines that several URLs are language or region variants of the same content, so the right one is served and they are not treated as duplicates. Annotations must be bidirectional and include a self-reference; x-default marks the fallback."], ["intl", "International", "Why should you not redirect users by IP address?", "Googlebot crawls predominantly from US IP addresses, so IP redirects mean it mostly sees only your US pages and the other locales go largely unindexed. Google does run some geo-distributed crawling for locale-adaptive pages, but it is not dependable. Detect a preference, suggest the local site with a dismissible banner, and let the user choose."], ["intl", "International", "How should localised URLs be structured?", "Give every locale a distinct crawlable URL — subdirectory (/jp/), subdomain, or country domain. Subdirectories are usually simplest and inherit domain authority. Switching language client-side from a cookie leaves one URL with unstable content, which search engines cannot index per locale."], ["vitals", "Vitals", "What are the Core Web Vitals?", "LCP for loading (good at 2.5 s or less), INP for responsiveness (200 ms or less), and CLS for visual stability (0.1 or less). They are assessed on field data from real Chrome users at the 75th percentile over a rolling 28-day window, segmented by mobile and desktop — not on your Lighthouse score."], ["vitals", "Vitals", "Which metric replaced FID and why?", "INP replaced FID in March 2024. FID measured only the input delay of the first interaction, so almost every site passed it while still feeling sluggish. INP looks at the full latency of interactions across the visit, up to the next paint."], ["vitals", "Vitals", "How much does page speed affect ranking?", "It is a genuine but modest signal — effectively a tiebreaker between results of comparable relevance. A faster page does not outrank a better-matching one, and claiming otherwise in an interview reads as cargo cult."], ["tools", "Tools", "How do you prove Google is seeing your rendered content?", "URL Inspection in Search Console: run a live test and view the rendered HTML and screenshot Googlebot produced. If your content is missing there, it is a rendering problem, not a ranking one."], ["tools", "Tools", "What does Search Console tell you that Lighthouse cannot?", "Whether pages are actually indexed and why they were excluded, which canonical Google chose, real query impressions and click-through, field-data Core Web Vitals, and manual actions. Lighthouse is a lab check of one page against a shallow SEO checklist."], ["tools", "Tools", "How would you audit SEO on a large site?", "Crawl it with a tool like Screaming Frog for redirect chains, duplicate titles, broken canonicals, and orphan pages; cross-reference Search Console for indexation and query data; read server logs to see what Googlebot actually fetches; and spot-check rendered HTML on representative templates."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>

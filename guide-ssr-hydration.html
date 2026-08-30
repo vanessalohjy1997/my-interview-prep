@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSR &amp; Hydration — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#34D399;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(52,211,153,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#A3EBD1}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(52,211,153,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#A3EBD1}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">SSR &amp; <em>Hydration</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#intro"><span class="n">00</span> Where HTML comes from</a>
+    <a href="#modes"><span class="n">01</span> CSR / SSR / SSG / ISR</a>
+    <a href="#hydration"><span class="n">02</span> Hydration</a>
+    <a href="#mismatch"><span class="n">03</span> Hydration mismatches</a>
+    <a href="#stream"><span class="n">04</span> Streaming &amp; Suspense</a>
+    <a href="#rsc"><span class="n">05</span> Server Components</a>
+    <a href="#data"><span class="n">06</span> Data on the server</a>
+    <a href="#pitfalls"><span class="n">07</span> What breaks on a server</a>
+    <a href="#choose"><span class="n">08</span> Choosing a strategy</a>
+    <a href="#drills"><span class="n">09</span> Drills</a>
+    <a href="#bank"><span class="n">10</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>Server rendering is a <span>question about time.</span></h1>
+      <p class="lede">At what moment does the HTML exist — build, request, or after JavaScript runs? Hydration, streaming, and Server Components are all machinery around that one choice, and each one costs something specific.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>CSR / SSR / SSG</span>
+        <span class="chip"><span class="dot d-pending"></span>Hydration</span>
+        <span class="chip"><span class="dot d-chain"></span>Streaming</span>
+        <span class="chip"><span class="dot d-rej"></span>Server Components</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 — The only question that matters</div>
+      <h2>Where does the HTML come from?</h2>
+
+      <p>Every rendering strategy is one answer to one question: <strong>at what moment is the HTML for this page produced?</strong> At build time, on the server per request, or in the browser after JavaScript runs. Everything else — hydration, streaming, Server Components — is machinery around that choice.</p>
+      <p>Interviewers are not testing whether you can name the acronyms. They are testing whether you can say <em>what each one costs</em>, and pick one for a described product. Frame every answer as a trade between <strong>TTFB</strong> (how fast the first byte arrives), <strong>FCP/LCP</strong> (how fast the user sees content), <strong>data freshness</strong>, and <strong>server cost</strong>.</p>
+      <div class="note"><span class="lbl">The framing to open with</span>Rendering strategy is a per-route decision, not a per-app one. A marketing page, a product listing, and a logged-in dashboard in the same app should usually be static, revalidated, and server-rendered respectively.</div>
+    </section>
+    <section id="modes">
+      <div class="kicker">01 — Four strategies, one axis</div>
+      <h2>CSR, SSR, SSG and ISR</h2>
+
+      <table class="tbl">
+        <tr><th>Strategy</th><th>HTML made</th><th>Strengths</th><th>Costs</th></tr>
+        <tr><td>CSR</td><td>In the browser, after the JS bundle downloads and executes</td><td>Cheap hosting (static shell), rich app-like interactions, no server runtime</td><td>Slow FCP/LCP, blank page until JS runs, weakest for crawlers and link previews</td></tr>
+        <tr><td>SSR</td><td>On the server, on every request</td><td>Fresh, personalised HTML; content visible before JS; good for crawlers</td><td>Higher TTFB, a server per request, harder caching</td></tr>
+        <tr><td>SSG</td><td>At build time; served as files from a CDN</td><td>Fastest possible TTFB and LCP, trivially cacheable, cheapest</td><td>Data is as old as the last build; long builds for large sites</td></tr>
+        <tr><td>ISR / revalidation</td><td>At build, then regenerated in the background after a TTL or on demand</td><td>Static speed with bounded staleness; no full rebuild</td><td>Users can see stale HTML for one revalidation window; needs a stateful cache</td></tr>
+      </table>
+      <p>Note that <strong>SSR and CSR are not exclusive</strong>. Almost every real SSR app is <em>both</em>: the server renders the first page, the client bundle hydrates it, and every subsequent in-app navigation is client-rendered. That is the standard &ldquo;universal&rdquo; or &ldquo;isomorphic&rdquo; setup.</p>
+      <div class="filelabel">React's server entry points</div>
+      <pre><span class="cmt">// Node streams — the modern default, supports Suspense streaming</span>
+<span class="kw">import</span> { renderToPipeableStream } <span class="kw">from</span> 'react-dom/server';
+
+<span class="cmt">// Web streams — for edge/workers runtimes</span>
+<span class="kw">import</span> { renderToReadableStream } <span class="kw">from</span> 'react-dom/server';
+
+<span class="cmt">// Sync, returns a complete string. No streaming, no Suspense-on-server benefit.</span>
+<span class="kw">import</span> { renderToString } <span class="kw">from</span> 'react-dom/server';</pre>
+      <p>On the client the counterpart is <code class="k">hydrateRoot(container, &lt;App /&gt;)</code>, which is what you use instead of <code class="k">createRoot(...).render(...)</code> when the container already holds server HTML.</p>
+    </section>
+    <section id="hydration">
+      <div class="kicker">02 — Attaching behaviour to markup</div>
+      <h2>Hydration</h2>
+
+      <p><strong>Hydration is not rendering.</strong> The DOM already exists — the server sent it. Hydration is React walking the component tree on the client, building its internal fiber tree, and <em>adopting</em> the existing DOM nodes instead of creating them: attaching event handlers, wiring refs, and initialising state and effects.</p>
+      <ul class="body">
+        <li><strong>What it produces:</strong> an interactive page. Before hydration the HTML is visible but inert — clicks do nothing, controlled inputs are not controlled.</li>
+        <li><strong>What it costs:</strong> the client still downloads and executes the component code, and still runs the whole render pass. Server rendering improves <em>perceived</em> load; it does not reduce JavaScript.</li>
+        <li><strong>Why it hurts INP:</strong> hydrating a large tree is one long task. During it the main thread is blocked, so early clicks queue. This is the gap people call &ldquo;uncanny valley&rdquo; — it looks ready and does not respond.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">The sharp answer</span>&ldquo;SSR moves the <em>first paint</em> earlier but not the <em>first interaction</em>. If Time to Interactive is the problem, server rendering alone will not fix it — you need less client JavaScript: streaming with selective hydration, islands, or Server Components.&rdquo;</div>
+      <h3>React expects the trees to agree</h3>
+      <p>Hydration assumes the client's first render produces the same tree the server produced. React matches its output against the existing DOM node by node. When they disagree you get a <strong>hydration mismatch</strong>: React logs a recoverable error and discards the server HTML from the <strong>nearest <code class="k">&lt;Suspense&gt;</code> boundary above the mismatch</strong>, client-rendering that boundary instead. With no Suspense boundary above it — the common case — that is the entire root, so the whole page silently degrades to client rendering and every benefit of SSR is lost. This is still how React 19 recovers; what changed in 19 is only the error message, which now shows a server/client diff.</p>
+      <p>That recovery rule is also a concrete argument for placing Suspense boundaries in a server-rendered tree: they bound how much of the page a single mismatch can cost you.</p>
+    </section>
+    <section id="mismatch">
+      <div class="kicker">03 — The bug that eats your SSR</div>
+      <h2>Hydration mismatches</h2>
+
+      <p>Every mismatch has the same root cause: <strong>the server and the client rendered different things</strong>. The usual suspects:</p>
+      <table class="tbl">
+        <tr><th>Cause</th><th>Why it diverges</th><th>Fix</th></tr>
+        <tr><td>Date.now / new Date</td><td>The two renders happen at different instants</td><td>Pass a timestamp as a prop, or render it after mount</td></tr>
+        <tr><td>Math.random / uuid</td><td>Non-deterministic by definition</td><td>Use <code class="k">useId()</code> for IDs; otherwise generate on the server and pass down</td></tr>
+        <tr><td>Timezone / locale</td><td>Server runs in UTC, the user is in Asia/Singapore</td><td>Pass an explicit <code class="k">timeZone</code> and <code class="k">locale</code> to Intl</td></tr>
+        <tr><td>typeof window checks</td><td>The branch is false on the server, true on the client</td><td>Two-pass render (below), never a bare branch during render</td></tr>
+        <tr><td>localStorage / cookies</td><td>Not readable on the server (cookies are, via the request)</td><td><code class="k">useSyncExternalStore</code> with a server snapshot, or read the cookie server-side</td></tr>
+        <tr><td>Invalid HTML nesting</td><td>The browser repairs <code class="k">&lt;div&gt;</code> inside <code class="k">&lt;p&gt;</code> before React sees it</td><td>Fix the markup — React cannot match a tree the parser rewrote</td></tr>
+        <tr><td>Browser extensions</td><td>They inject attributes and nodes into the server HTML</td><td>Usually benign; reproduce in a clean profile before chasing it</td></tr>
+      </table>
+      <h3>The two-pass render</h3>
+      <p>When content genuinely can only exist on the client, render the server-safe version first and swap after mount. The first client render then matches the server, and the second render — after hydration is finished — is a normal update.</p>
+      <pre><span class="kw">const</span> [mounted, setMounted] = useState(<span class="kw">false</span>);
+useEffect(() =&gt; setMounted(<span class="kw">true</span>), []);
+<span class="cmt">// identical on server and first client render → hydration matches</span>
+<span class="kw">if</span> (!mounted) <span class="kw">return</span> &lt;Skeleton /&gt;;
+<span class="kw">return</span> &lt;Chart data={readFromLocalStorage()} /&gt;;</pre>
+      <div class="note warn"><span class="lbl">Do not reach for this first</span>A two-pass render costs you the server HTML for that subtree — the user sees a skeleton until JS runs. Use it for genuinely client-only things (a chart of local data, a theme from localStorage). For anything the server <em>could</em> know, pass the value down instead.</div>
+      <h3>suppressHydrationWarning</h3>
+      <p><code class="k">&lt;time suppressHydrationWarning&gt;</code> tells React to tolerate a text difference on that one element. It is correct for an unavoidably time-dependent leaf; it is a bandage anywhere else, because it silences the warning without making the trees agree.</p>
+    </section>
+    <section id="stream">
+      <div class="kicker">04 — Do not wait for the slowest query</div>
+      <h2>Streaming SSR &amp; Suspense</h2>
+
+      <p>Classic <code class="k">renderToString</code> is all-or-nothing: the server renders the entire tree, then sends it. One slow database call delays the whole document, so TTFB is bounded by your slowest dependency.</p>
+      <p><strong>Streaming SSR</strong> flushes HTML as it becomes ready. You mark slow regions with <code class="k">&lt;Suspense&gt;</code>; the server immediately sends the shell with the fallbacks in place, keeps the connection open, and streams each boundary's real HTML as its data resolves — followed by a tiny inline script that moves the content into place.</p>
+      <pre>&lt;Layout&gt;
+  &lt;Nav /&gt;                              <span class="cmt">// in the shell, sent immediately</span>
+  &lt;Suspense fallback={&lt;Skeleton /&gt;}&gt;
+    &lt;Reviews /&gt;                        <span class="cmt">// streamed in when its data resolves</span>
+  &lt;/Suspense&gt;
+&lt;/Layout&gt;</pre>
+      <h3>Selective hydration</h3>
+      <p>The same boundaries let React hydrate <em>independently and out of order</em>. A boundary can hydrate as soon as its HTML and code have arrived, without waiting for its siblings. Better still, if the user clicks inside a boundary that has not hydrated yet, React captures that event, prioritises hydrating that boundary, and then replays the event — so an early click is not lost.</p>
+      <div class="note"><span class="lbl">Say this in an interview</span>&ldquo;Suspense boundaries on the server are the unit of streaming; on the client they are the unit of hydration. That is why placing them well matters — one boundary around the whole page buys you nothing.&rdquo;</div>
+      <h3>What streaming costs you</h3>
+      <ul class="body">
+        <li>You cannot set a status code or headers after the first byte has flushed — an error deep in the tree can no longer become a clean 500. Frameworks handle this by rendering the shell first and only committing the status once it succeeds.</li>
+        <li>Whole-response caching is harder; edge caches must support streamed responses.</li>
+        <li>Streamed content is in the same response body, but it arrives <em>after</em> the shell, inside a hidden element that an inline script relocates. Googlebot renders JavaScript and copes; simpler scrapers and link-preview bots that read only the first chunk may not. Keep anything you cannot risk on that in the shell.</li>
+      </ul>
+    </section>
+    <section id="rsc">
+      <div class="kicker">05 — Components that never reach the browser</div>
+      <h2>React Server Components</h2>
+
+      <p>RSC is a different axis from SSR. SSR asks &ldquo;where is the HTML produced?&rdquo; RSC asks &ldquo;<strong>which components ship to the client at all?</strong>&rdquo; A Server Component runs only on the server, and its code is never included in the client bundle.</p>
+      <table class="tbl">
+        <tr><th></th><th>Server Component</th><th>Client Component</th></tr>
+        <tr><td>Marked by</td><td>the default in an RSC app</td><td><code class="k">'use client'</code> at the top of the file</td></tr>
+        <tr><td>Can</td><td>be <code class="k">async</code>, read a DB or the filesystem, use secrets</td><td>use state, effects, refs, event handlers, browser APIs</td></tr>
+        <tr><td>Cannot</td><td>use state, effects, or event handlers</td><td>be async, or touch server-only resources</td></tr>
+        <tr><td>Ships JS</td><td>no</td><td>yes — the component and its imports</td></tr>
+      </table>
+      <p>The boundary is <strong>an import boundary, not a render boundary</strong>: once a module has <code class="k">'use client'</code>, everything it imports becomes part of the client bundle too. But a Server Component can still pass a rendered Server Component <em>through</em> a Client Component as <code class="k">children</code> — the child was already rendered on the server, so it stays out of the bundle. That is the standard escape hatch for &ldquo;a client-side layout wrapping server content&rdquo;.</p>
+      <pre><span class="cmt">// page.jsx — a Server Component</span>
+<span class="kw">export default async function</span> Page() {
+  <span class="kw">const</span> post = <span class="kw">await</span> db.posts.find(id);   <span class="cmt">// no API route needed</span>
+  <span class="kw">return</span> (
+    &lt;Collapsible&gt;                        <span class="cmt">// a Client Component</span>
+      &lt;Article post={post} /&gt;            <span class="cmt">// still a Server Component</span>
+    &lt;/Collapsible&gt;
+  );
+}</pre>
+      <p>Props crossing the boundary must be <strong>serializable</strong> — but by React's own serializer, which is considerably richer than JSON. It handles primitives, plain objects and arrays, JSX, <code class="k">Date</code>, <code class="k">Map</code>, <code class="k">Set</code>, <code class="k">BigInt</code>, typed arrays, <code class="k">FormData</code> — and <strong>promises</strong>, which is what lets a Server Component start a fetch and hand the unresolved promise to a Client Component that unwraps it with <code class="k">use()</code>. What cannot cross: arbitrary functions (only Server Functions marked <code class="k">'use server'</code>) and class instances. What travels to the client is not HTML: it is the <em>RSC payload</em>, a streamed description of the rendered tree plus placeholders for client components.</p>
+      <div class="note warn"><span class="lbl">Do not confuse the directives</span><code class="k">'use client'</code> marks a module as client code. <code class="k">'use server'</code> marks <em>Server Actions</em> — functions a client may invoke over the network. They are not opposites, and <code class="k">'use server'</code> does not make a component a Server Component.</div>
+    </section>
+    <section id="data">
+      <div class="kicker">06 — Fetch once, not twice</div>
+      <h2>Data on the server</h2>
+
+      <p>The classic SSR bug is fetching the same data twice: once on the server to render, then again on the client because the component's effect runs after hydration. The fix is to <strong>serialise the server's data into the HTML and seed the client cache from it</strong>.</p>
+      <pre><span class="cmt">// server: render, then embed</span>
+&lt;script&gt;window.__STATE__ = ${serialize(state)}&lt;/script&gt;
+<span class="cmt">// client: hydrate from it instead of refetching</span>
+<span class="kw">const</span> store = createStore(window.__STATE__);</pre>
+      <p>Query libraries formalise this — TanStack Query calls it <code class="k">dehydrate</code> on the server and <code class="k">HydrationBoundary</code> on the client; Next's App Router does it for you via the RSC payload.</p>
+      <div class="note warn"><span class="lbl">Serialisation is an injection surface</span>Embedding JSON in a <code class="k">&lt;script&gt;</code> tag lets a string containing <code class="k">&lt;/script&gt;</code> break out of it. Escape <code class="k">&lt;</code>, and never inline unescaped user data. Use a dedicated serializer or a <code class="k">&lt;script type="application/json"&gt;</code> tag you parse.</div>
+      <h3>Waterfalls</h3>
+      <p>Server rendering makes request waterfalls invisible but not free: a parent that awaits before rendering a child that awaits serialises two round trips. Start independent requests together (<code class="k">Promise.all</code>, or kick off the fetch before awaiting), and hoist shared data to the closest common parent.</p>
+    </section>
+    <section id="pitfalls">
+      <div class="kicker">07 — There is no window on a server</div>
+      <h2>What breaks when you render server-side</h2>
+
+      <ul class="body">
+        <li><strong>Browser globals.</strong> <code class="k">window</code>, <code class="k">document</code>, <code class="k">localStorage</code>, <code class="k">IntersectionObserver</code> do not exist. Guard access inside effects (which never run on the server) rather than during render.</li>
+        <li><strong>Module-level mutable state.</strong> A module scope is shared across every request the process handles. A cache, a store singleton, or a &ldquo;current user&rdquo; assigned at module level leaks one user's data into another's response. State must be created per request and passed down.</li>
+        <li><strong>Effects do not run.</strong> <code class="k">useEffect</code> and <code class="k">useLayoutEffect</code> are skipped on the server, so anything you rely on them for is absent from the HTML. Data needed for the first paint must be fetched before rendering.</li>
+        <li><strong>Cleanup never happens.</strong> Subscriptions, timers, or listeners created during render on the server are never torn down, because there is no unmount — a steady memory leak.</li>
+        <li><strong>Environment differences.</strong> The server's timezone, locale, and even <code class="k">Intl</code> data can differ from the client's. Be explicit about both.</li>
+        <li><strong>Secrets.</strong> Anything reachable from a client module ends up in the bundle. Keep server-only code in server-only modules and rely on your framework's server-only guards.</li>
+      </ul>
+    </section>
+    <section id="choose">
+      <div class="kicker">08 — The answer is per route</div>
+      <h2>Choosing a strategy</h2>
+
+      <table class="tbl">
+        <tr><th>The page is…</th><th>Use</th><th>Because</th></tr>
+        <tr><td>Marketing, docs, blog</td><td>SSG</td><td>Same for everyone, changes rarely — serve files from a CDN</td></tr>
+        <tr><td>Catalogue, listings, prices</td><td>ISR / SSR with edge cache</td><td>Shared across users, must be reasonably fresh and indexable</td></tr>
+        <tr><td>Personalised, behind auth</td><td>SSR (or CSR shell)</td><td>Not cacheable publicly; SEO is irrelevant behind a login</td></tr>
+        <tr><td>A heavy tool or editor</td><td>CSR</td><td>Long session, no crawler audience, first paint matters least</td></tr>
+      </table>
+      <p>SSR interacts directly with HTTP caching. A shared, non-personalised server-rendered page can be cached at the CDN with <code class="k">Cache-Control: public, s-maxage=60, stale-while-revalidate=600</code> — which is, in effect, ISR implemented in cache headers. A personalised one must be <code class="k">private</code> or <code class="k">no-store</code>, and mixing the two is how one user's dashboard gets served to another.</p>
+      <div class="note gold"><span class="lbl">Closing line</span>&ldquo;I default to static, escalate to revalidated-static when data ages, and only pay for per-request SSR when the response is genuinely personalised. Then I keep the personalised part small enough that the rest can still be cached.&rdquo;</div>
+    </section>
+    <section id="drills">
+      <div class="kicker">09 — Drill until reflex</div>
+      <h2>Scenario drills</h2>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 — the SSR that stopped working</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We server-render, but Lighthouse shows a blank first paint and the console has a hydration error. What happened?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">A hydration mismatch. React found the client's first render disagreeing with the server HTML, discarded the server tree for that subtree — at the root, the whole page — and re-rendered on the client, so the user effectively gets CSR. Find the non-deterministic render: a date, a random value, a <code class='k'>typeof window</code> branch, a locale-formatted number, or invalid HTML nesting the parser repaired. Fix the determinism rather than suppressing the warning.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 — TTFB got worse</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;We moved from CSR to SSR and TTFB tripled. Users complain the page feels slower to start. What do you do?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">SSR moves work to the server, so TTFB now includes rendering and data fetching. Two fixes: <strong>stream</strong> — wrap slow regions in <code class='k'>&lt;Suspense&gt;</code> and use <code class='k'>renderToPipeableStream</code> so the shell flushes immediately; and <strong>cache</strong> — if the page is not personalised, put it behind a CDN with <code class='k'>s-maxage</code> + <code class='k'>stale-while-revalidate</code> so most requests never touch the renderer. Also check for a request waterfall in the server data fetching.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 — theme flash</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Dark mode is stored in localStorage. Server-rendered pages flash light before switching. Fix it.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">The server cannot read localStorage, so it renders the default theme. Two real fixes: (1) store the preference in a <strong>cookie</strong> so the server can read it on the request and render the correct class on <code class='k'>&lt;html&gt;</code> immediately; or (2) keep localStorage but set the class from a tiny <strong>blocking inline script</strong> in <code class='k'>&lt;head&gt;</code> that runs before first paint, and mark that attribute <code class='k'>suppressHydrationWarning</code>. A <code class='k'>useEffect</code> fix is too late — it runs after paint, which is exactly the flash.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 — where does this code run?</div>
+        <pre>'use client';
+import { db } from './db';
+export function Panel() { <span class="cmt">/* ... */</span> }</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">Server-only code pulled into the client bundle</div>
+          <p style="margin:0">This is broken. <code class='k'>'use client'</code> makes the module — and everything it imports — part of the client bundle, so the database module and any secrets it holds get shipped to the browser (and will fail to build or run there). Fetch in a Server Component and pass the data down as serializable props, or expose a Server Action for the mutation.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 — SSG or SSR?</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A product page: price and stock change a few times an hour, must rank in Google, gets heavy traffic.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Static with revalidation (ISR), not per-request SSR. The page is identical for all users, so it is cacheable; a 60-second revalidation window bounds staleness at a cost users never see, and the CDN absorbs the traffic. Render the price server-side so crawlers index it, and if stock must be exact, hydrate a small client component that re-checks it after load — keeping the cacheable shell separate from the personalised or volatile fragment.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">10 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="modes">Modes</button>
+        <button class="fchip" data-f="hydration">Hydration</button>
+        <button class="fchip" data-f="stream">Streaming</button>
+        <button class="fchip" data-f="rsc">RSC</button>
+        <button class="fchip" data-f="server">Server-side</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep · when does the HTML exist, and what does it cost?</footer>
+
+<script>
+const QA = [["modes", "Modes", "What is the difference between SSR and SSG?", "SSR renders the HTML on the server on every request, so it can be fresh and personalised but costs server time per request. SSG renders at build time and serves files from a CDN, so it is far faster and cheaper but the data is as old as the last build. ISR sits between them: static output regenerated after a TTL or on demand."], ["modes", "Modes", "When would you choose client-side rendering?", "When there is no crawler audience and the first paint matters least — an authenticated dashboard, an editor, an internal tool. Long sessions amortise the initial bundle cost, and skipping a server renderer removes a whole class of infrastructure and hydration bugs."], ["modes", "Modes", "Is SSR always better for performance?", "No. It improves FCP and LCP because content arrives as HTML, but it worsens TTFB because the server must render first, and it does not reduce the JavaScript the client downloads and executes. If the bottleneck is Time to Interactive or INP, SSR alone will not help."], ["modes", "Modes", "What is an isomorphic or universal app?", "One where the same component code runs on the server to produce the initial HTML and on the client to hydrate and handle subsequent navigations. The first page load is server-rendered; in-app navigation is client-rendered."], ["modes", "Modes", "renderToString vs renderToPipeableStream?", "renderToString is synchronous and returns the complete markup only when the whole tree is done, so the slowest data source sets your TTFB and Suspense gives you nothing on the server. renderToPipeableStream streams: it flushes the shell immediately and sends each Suspense boundary as it resolves. renderToReadableStream is the Web-streams equivalent for edge runtimes."], ["hydration", "Hydration", "What is hydration?", "The client-side pass where React builds its fiber tree over the DOM the server already sent — adopting the existing nodes rather than creating them, attaching event handlers, wiring refs, and initialising state and effects. It turns visible-but-inert HTML into an interactive app."], ["hydration", "Hydration", "Why is hydration expensive?", "The browser still downloads and executes every component, and React still runs a full render pass to build its tree. On a large page that is one long task that blocks the main thread, so the page looks ready while clicks queue — poor INP despite a fast LCP."], ["hydration", "Hydration", "What causes a hydration mismatch?", "Anything that makes the client's first render differ from the server's output: Date.now or new Date, Math.random, locale or timezone formatting, a typeof window branch, reading localStorage during render, invalid HTML nesting the parser repaired, or a browser extension mutating the DOM."], ["hydration", "Hydration", "What does React do on a mismatch?", "It logs a recoverable error and discards the server HTML from the nearest Suspense boundary above the mismatch, client-rendering that boundary. With no Suspense boundary above it — the usual case — that is the whole root, so the page silently degrades to client rendering while you keep paying for SSR. React 19 recovers the same way; it only improved the error message, which now shows a diff."], ["hydration", "Hydration", "How do you render something that only exists on the client?", "Two-pass render: return the server-safe output on the first render, set a mounted flag in useEffect, and render the client-only content on the second pass. The first client render then matches the server. Use it only when the server genuinely cannot know the value — otherwise pass the value down as a prop."], ["hydration", "Hydration", "When is suppressHydrationWarning appropriate?", "On a single leaf whose text is unavoidably time- or environment-dependent, such as a relative timestamp. It silences the warning for that element without making the trees agree, so it is a bandage — never a fix for a structural mismatch."], ["hydration", "Hydration", "How does useId help with SSR?", "It generates identifiers that are stable across the server and client renders, so accessibility wiring like aria-describedby matches during hydration. Random or counter-based IDs generated per render diverge between the two environments and cause mismatches."], ["hydration", "Hydration", "What is useSyncExternalStore's server snapshot for?", "External stores often have no value on the server. getServerSnapshot supplies the value React should use while server-rendering and during the first client render, so hydration matches; the real subscription takes over afterwards."], ["stream", "Streaming", "How does streaming SSR work?", "The server begins sending HTML before the whole tree has rendered. Content inside a Suspense boundary is sent as a fallback first; when its data resolves, the server streams the real markup plus a small inline script that swaps it into place. TTFB then depends on the shell, not on the slowest query."], ["stream", "Streaming", "What is selective hydration?", "React hydrates Suspense boundaries independently and out of order, as their HTML and code arrive. If the user interacts with a boundary that has not hydrated, React captures the event, prioritises hydrating that boundary, and replays the event so the interaction is not lost."], ["stream", "Streaming", "What is the downside of streaming?", "You cannot change the status code or headers once the first byte is flushed, so a late error cannot become a clean 500, and whole-response caching is harder. Content after the shell is in the same response body but arrives later, hidden until an inline script relocates it — fine for Googlebot, which renders JavaScript, but not for simple scrapers or link-preview bots that read only the first chunk."], ["rsc", "RSC", "What is a React Server Component?", "A component that runs only on the server and is never included in the client bundle. It can be async and read a database or the filesystem directly, but it cannot use state, effects, refs, or event handlers, because it never runs in the browser."], ["rsc", "RSC", "How is RSC different from SSR?", "SSR is about where HTML is produced; RSC is about which components ship to the client at all. SSR still sends every component's code for hydration. RSC keeps server components out of the bundle entirely, and what it streams to the client is a serialized description of the tree, not HTML."], ["rsc", "RSC", "What does 'use client' actually do?", "It marks a module as the boundary into client code. That module and everything it imports are bundled for the browser. It is an import boundary, not a render boundary — a Server Component can still be passed through a Client Component as children and stay on the server."], ["rsc", "RSC", "What are the rules for props across the boundary?", "They must be serializable by React's own serializer, which is richer than JSON: primitives, plain objects and arrays, JSX, Date, Map, Set, BigInt, typed arrays, FormData, and promises — a promise can cross the boundary and be unwrapped on the client with use(). Arbitrary functions cannot, apart from Server Functions marked 'use server', and neither can class instances."], ["rsc", "RSC", "'use client' vs 'use server'?", "They are not opposites. 'use client' marks a module as client-side code. 'use server' marks Server Actions — functions the client may invoke over the network, which execute on the server. Putting 'use server' in a component file does not make it a Server Component."], ["server", "Server-side", "Why does module-level state break SSR?", "A module scope is shared by every request the server process handles, so a cache or store assigned at module level leaks one user's data into another user's response. Create per-request state and pass it down through context or arguments."], ["server", "Server-side", "Do effects run during server rendering?", "No. useEffect and useLayoutEffect are skipped on the server, so anything they set up is absent from the HTML and never cleaned up. Data required for the first paint must be fetched before rendering, not in an effect."], ["server", "Server-side", "How do you avoid double-fetching data after SSR?", "Serialize the server's data into the HTML and seed the client cache from it during hydration — the __STATE__ pattern by hand, dehydrate plus HydrationBoundary with TanStack Query, or the RSC payload in the App Router. Escape the embedded JSON, since an unescaped closing script tag is an XSS vector."], ["server", "Server-side", "How does SSR interact with HTTP caching?", "A non-personalised server-rendered page can be cached at the CDN with public, s-maxage and stale-while-revalidate, which gives you ISR-like behaviour in headers. A personalised response must be private or no-store; getting this wrong serves one user's page to another and is a real security bug, not just a caching one."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>
