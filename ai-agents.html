@@ -1,694 +1,732 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Interview Prep — Vibe Coding Tools &amp; AI Agents</title>
+<base href="about:srcdoc">
+<script>if(window.top===window.self){var b=document.currentScript.previousElementSibling;if(b&&b.tagName==="BASE")b.remove();}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe Coding Tools &amp; AI Agents — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f7f6f3;
-    --card: #ffffff;
-    --ink: #1c1b19;
-    --muted: #6b675f;
-    --line: #e3e0d8;
-    --accent: #2f6f57;
-    --accent-soft: #e6f0eb;
-    --warn: #8a5a00;
-    --warn-soft: #fbf1dc;
-    --bad: #9b3232;
-    --bad-soft: #fbeaea;
-    --code: #2b2a27;
-    --code-bg: #f0eee8;
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#4BBF8F;  /* the agent / the loop / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
   }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    padding: 40px 20px 80px;
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
   }
-  .layout { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 34px; align-items: start; }
-  .wrap { max-width: 880px; min-width: 0; }
+  ::selection{background:var(--emerald);color:#08110F}
 
-  /* ---- side nav ---- */
-  nav.toc {
-    position: sticky; top: 24px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-    padding: 16px 14px; font-size: 13px; max-height: calc(100vh - 48px); overflow-y: auto;
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
   }
-  nav.toc .toc-title { text-transform: uppercase; letter-spacing: .09em; font-size: 11px; font-weight: 700; color: var(--muted); margin: 0 0 10px; }
-  nav.toc .part { text-transform: uppercase; letter-spacing: .07em; font-size: 10.5px; font-weight: 700; color: var(--accent); margin: 14px 0 6px; }
-  nav.toc .part:first-of-type { margin-top: 4px; }
-  nav.toc a { display: block; color: var(--ink); text-decoration: none; padding: 3px 6px; border-radius: 5px; line-height: 1.35; }
-  nav.toc a:hover { background: var(--accent-soft); }
-  nav.toc a .n { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 5px; font-size: 11.5px; }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
 
-  header {
-    border-bottom: 3px solid var(--accent);
-    padding-bottom: 18px;
-    margin-bottom: 28px;
-  }
-  header .kicker {
-    text-transform: uppercase;
-    letter-spacing: .09em;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--accent);
-    margin: 0 0 6px;
-  }
-  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
-  header p { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
 
-  .partband {
-    margin: 34px 0 18px;
-    padding: 14px 18px;
-    border-radius: 12px;
-    background: #1c2b25;
-    color: #eef3f0;
-  }
-  .partband .lab { text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 700; color: #8fc9b0; margin: 0 0 4px; }
-  .partband h2 { font-size: 20px; margin: 0 0 4px; color: #fff; }
-  .partband p { margin: 0; font-size: 13.5px; color: #b9c9c2; }
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
 
-  section {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 22px 24px;
-    margin: 0 0 20px;
-    scroll-margin-top: 20px;
-  }
-  h2 {
-    font-size: 19px;
-    margin: 0 0 14px;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  h2 .num {
-    font-size: 13px;
-    color: #fff;
-    background: var(--accent);
-    border-radius: 6px;
-    padding: 2px 8px;
-    font-weight: 700;
-    flex: none;
-  }
-  h3 { font-size: 15.5px; margin: 22px 0 6px; }
-  h4 { font-size: 14px; margin: 16px 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  p { margin: 8px 0; }
-  ul, ol { margin: 8px 0; padding-left: 22px; }
-  li { margin: 5px 0; }
-  .hook, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--code); background: var(--code-bg); padding: 1px 6px; border-radius: 5px; }
-  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 12.8px; line-height: 1.5; margin: 10px 0; }
-  pre code { background: none; padding: 0; font-size: inherit; }
-  .lead {
-    background: var(--accent-soft);
-    border-left: 4px solid var(--accent);
-    border-radius: 8px;
-    padding: 14px 18px;
-    font-size: 16.5px;
-    font-style: italic;
-  }
-  .insight {
-    background: var(--warn-soft);
-    border-left: 4px solid var(--warn);
-    border-radius: 8px;
-    padding: 14px 18px;
-    font-style: italic;
-  }
-  .say {
-    background: var(--accent-soft);
-    border-left: 4px solid var(--accent);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin: 12px 0;
-    font-size: 15px;
-  }
-  .say b { display: block; text-transform: uppercase; letter-spacing: .07em; font-size: 10.5px; color: var(--accent); margin-bottom: 3px; }
-  .trap {
-    background: var(--bad-soft);
-    border-left: 4px solid var(--bad);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin: 12px 0;
-    font-size: 15px;
-  }
-  .trap b { display: block; text-transform: uppercase; letter-spacing: .07em; font-size: 10.5px; color: var(--bad); margin-bottom: 3px; }
-  .num-note {
-    background: var(--warn-soft);
-    border-left: 4px solid var(--warn);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin: 12px 0;
-    font-size: 15px;
-  }
-  .num-note b { display: block; text-transform: uppercase; letter-spacing: .07em; font-size: 10.5px; color: var(--warn); margin-bottom: 3px; }
-  .tblwrap { overflow-x: auto; margin: 10px 0; }
-  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-  td:first-child { font-weight: 600; padding-right: 16px; }
-  table.tools td:first-child { white-space: nowrap; }
-  .q { font-weight: 600; margin-top: 16px; }
-  .q + p { margin-top: 3px; }
-  .tag { display:inline-block; font-size:11.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:5px; padding:1px 7px; margin-left:2px; }
-  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 30px; }
-  @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
-    nav.toc { position: static; max-height: none; }
-  }
-  @media print {
-    body { background: #fff; padding: 0; font-size: 11.5px; }
-    .layout { display: block; max-width: none; }
-    nav.toc { display: none; }
-    section { break-inside: avoid; border-color: #ccc; box-shadow: none; }
-    .partband { background: #fff; color: #000; border: 2px solid #333; break-after: avoid; }
-    .partband h2, .partband .lab, .partband p { color: #000; }
-    header { border-color: #333; }
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(75,191,143,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#A9E6CE}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(75,191,143,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#A9E6CE}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
   }
 </style>
 </head>
 <body>
-<div class="layout">
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">≡</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">Vibe coding &amp; <em>AI agents</em></div>
+    <div class="brand-sub">Senior FE · deep dive</div>
+    <a href="#vibe"><span class="n">00</span> Vibe coding, precisely</a>
+    <a href="#tools"><span class="n">01</span> The tool landscape</a>
+    <a href="#choosing"><span class="n">02</span> Choosing a tool</a>
+    <a href="#loop"><span class="n">03</span> The agent loop</a>
+    <a href="#tooluse"><span class="n">04</span> Tool use, mechanically</a>
+    <a href="#context"><span class="n">05</span> Context & memory</a>
+    <a href="#mcp"><span class="n">06</span> MCP</a>
+    <a href="#search"><span class="n">07</span> Retrieval vs agentic search</a>
+    <a href="#multi"><span class="n">08</span> Multi-agent systems</a>
+    <a href="#eval"><span class="n">09</span> Evaluating agents</a>
+    <a href="#security"><span class="n">10</span> Security</a>
+    <a href="#cost"><span class="n">11</span> Cost & latency</a>
+    <a href="#brelly"><span class="n">12</span> Brelly · hooks & skills</a>
+    <a href="#depth"><span class="n">13</span> Brelly · defence in depth</a>
+    <a href="#limits"><span class="n">14</span> Brelly · the loop & its limits</a>
+    <a href="#vocab"><span class="n">15</span> Vocabulary</a>
+    <a href="#bank"><span class="n">16</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>An agent is a model <span>in a loop.</span></h1>
+      <p class="lede">Everything else — hooks, skills, MCP, sub-agents, the whole guardrail stack — is engineering around that one sentence. Know the loop, know where determinism enters it, and the tooling questions answer themselves.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>The loop</span>
+        <span class="chip"><span class="dot d-pending"></span>Context</span>
+        <span class="chip"><span class="dot d-chain"></span>Tools &amp; MCP</span>
+        <span class="chip"><span class="dot d-rej"></span>Guardrails</span>
+      </div>
+    </header>
 
-<nav class="toc">
-  <p class="toc-title">Contents</p>
-  <p class="part">Part A · Vibe coding</p>
-  <a href="#s1"><span class="n">1</span>What vibe coding is</a>
-  <a href="#s2"><span class="n">2</span>The tool landscape</a>
-  <a href="#s3"><span class="n">3</span>Picking a tool</a>
-  <a href="#s4"><span class="n">4</span>What changes in the workflow</a>
-  <p class="part">Part B · Agent concepts</p>
-  <a href="#s5"><span class="n">5</span>The agent loop</a>
-  <a href="#s6"><span class="n">6</span>Tool use, mechanically</a>
-  <a href="#s7"><span class="n">7</span>Context engineering</a>
-  <a href="#s8"><span class="n">8</span>Memory</a>
-  <a href="#s9"><span class="n">9</span>MCP</a>
-  <a href="#s10"><span class="n">10</span>Retrieval vs agentic search</a>
-  <a href="#s11"><span class="n">11</span>Multi-agent systems</a>
-  <a href="#s12"><span class="n">12</span>Evaluating agents</a>
-  <a href="#s13"><span class="n">13</span>Security &amp; prompt injection</a>
-  <a href="#s14"><span class="n">14</span>Cost &amp; latency</a>
-  <p class="part">Part C · Brelly</p>
-  <a href="#s15"><span class="n">15</span>Hooks</a>
-  <a href="#s16"><span class="n">16</span>Skills</a>
-  <a href="#s17"><span class="n">17</span>Defence in depth</a>
-  <a href="#s18"><span class="n">18</span>Why hooks, not prompts</a>
-  <a href="#s19"><span class="n">19</span>The feedback loop</a>
-  <a href="#s20"><span class="n">20</span>Limits of my setup</a>
-  <p class="part">Part D · Delivery</p>
-  <a href="#s21"><span class="n">21</span>Vocabulary</a>
-  <a href="#s22"><span class="n">22</span>Likely questions</a>
-</nav>
+    <section id="vibe">
+      <div class="kicker">00 — The word everyone uses loosely</div>
+      <h2>Vibe coding — and the version you actually practise</h2>
 
-<div class="wrap">
+<p>Andrej Karpathy coined it in a post in <strong>February 2025</strong>. The original is stricter than how the phrase gets used now: you "fully give in to the vibes, embrace exponentials, and forget that the code even exists" — you say what you want, accept every diff without reading it, and when something breaks you paste the error back in rather than debugging. Crucially he framed it as fine for <strong>throwaway weekend projects</strong>. It named a mode; it did not recommend it for production. Collins made it their word of the year for 2025, which tells you how fast it escaped that framing.</p>
+<p>Most people now use "vibe coding" to mean any AI-assisted coding at all. That looseness is your opening — <strong>drawing the distinction is free credibility</strong>, because it shows you read the source rather than the headlines.</p>
+<div class="note"><span class="lbl">Say this</span>"Strictly, vibe coding means not reading the diffs — Karpathy's own framing was that it's for throwaway projects. He actually retired the term about a year later and proposed <em>agentic engineering</em> for the professional version: you're not writing the code, you're orchestrating agents and providing oversight. That's the distinction I care about — the AI writes, but the diff still gets reviewed and every change has to survive a machine-checked gate. Same speed, different accountability."</div>
+<p>Knowing that the author dropped his own term is the detail that proves you read the source rather than the coverage — and "agentic engineering" is a more precise name for what you actually do.</p>
 
-<header>
-  <p class="kicker">Interview Prep · 10–20 min segment</p>
-  <h1>Vibe Coding Tools &amp; AI Agent Concepts</h1>
-  <p>Parts A and B are the general ground — the tools that exist, and how an agent actually works underneath. Part C is the project that proves you've done it: <strong>Brelly</strong>, a React Native / Expo weather app. The real story isn't the app. It's how you built an AI agent to build it <em>safely</em>.</p>
-</header>
+<h3>The autonomy ladder — place any tool on this</h3>
+<p>Rather than memorising products, hold one axis in your head: <strong>how much of the loop the human is still inside</strong>. Every tool sits somewhere on it, and the failure mode changes as you climb.</p>
+<table class="tbl">
+  <thead><tr><th>Rung</th><th>What the human does</th><th>Dominant failure mode</th></tr></thead>
+  <tbody>
+    <tr><td>0 · autocomplete</td><td>Types; accepts or rejects each suggestion</td><td>A plausible-looking line that's subtly wrong — you accept it because it's one keystroke</td></tr>
+    <tr><td>1 · chat</td><td>Asks a question, copies the answer across</td><td>Right in general, wrong for <em>your</em> codebase</td></tr>
+    <tr><td>2 · inline edit</td><td>Selects a region, describes the change, reviews the diff</td><td>Blast-radius creep — it rewrites more than you selected</td></tr>
+    <tr><td>3 · supervised agent</td><td>Gives a task; approves each tool call</td><td>Approval fatigue — after twenty prompts you stop reading them</td></tr>
+    <tr><td>4 · sandboxed agent</td><td>Gives a task; reviews the finished PR</td><td>You review a 900-line diff you didn't watch being written</td></tr>
+    <tr><td>5 · fleet</td><td>Queues many tasks; triages results</td><td>Review becomes the bottleneck; nobody holds the whole picture</td></tr>
+  </tbody>
+</table>
+<div class="note gold"><span class="lbl">The pattern to name</span>As you climb the ladder, <strong>the work doesn't disappear — it moves from writing to reviewing</strong>. Rungs 0–2 save you typing. Rungs 3–5 save you typing and then hand you back a reviewing job you didn't have before. That's the honest trade, and saying it out loud is the most senior-sounding sentence in this whole section.</div>
+    </section>
+    <section id="tools">
+      <div class="kicker">01 — Six categories, not thirty product names</div>
+      <h2>What actually exists, and what each kind is bad at</h2>
 
-<section>
-  <h2>The hook — open with this</h2>
-  <p class="lead">"I don't just prompt an AI and hope. I built a system of guardrails around the agent so it physically can't ship broken or outdated code — the checks, not the prompts, are what make it reliable."</p>
-  <p>Then give them the map, so they know where you're going: <em>"There are three things I can talk about — the tools and where each one fits, how an agent actually works under the hood, and the guardrail setup I built on my own project. Which is most useful?"</em> Offering the menu reads as senior; it also lets them steer you to the part they're actually assessing.</p>
-</section>
+<p>Interviewers ask "what tools have you used?" expecting a list. Give them a taxonomy, then name what you've actually touched inside it. Products change every quarter; the categories don't.</p>
 
-<div class="partband">
-  <p class="lab">Part A</p>
-  <h2>Vibe coding &amp; the tool landscape</h2>
-  <p>What the term means, what's on the market, and how you'd choose. This is the part most candidates answer with a list of product names — you answer it with categories and trade-offs.</p>
-</div>
+<h3>A · Inline completion</h3>
+<p><strong>GitHub Copilot</strong> (2021 — not the first, Kite and TabNine predate it, but the one that made the category mainstream) and the tab-completion inside <strong>Cursor</strong>, <strong>Devin Desktop</strong> and <strong>Zed</strong>. The model predicts the next span from surrounding code. The latency budget is brutal — a suggestion that takes more than a few hundred milliseconds arrives after you've typed the line — so these run smaller, faster models than the chat panel beside them.</p>
+<p><strong>Genuinely good at</strong> boilerplate with a strong local pattern: a fifth test case shaped like the previous four, a mapper between two structs, filling out a switch. <strong>Where it hurts:</strong> it optimises for "looks like what usually comes next", which is exactly wrong at the points where your codebase is unusual.</p>
 
-<section id="s1">
-  <h2><span class="num">1</span> What "vibe coding" actually means — and the version you practise</h2>
-  <p>Andrej Karpathy coined it in a post in <strong>February 2025</strong>. The original description is stricter than how the phrase gets used now: you "fully give in to the vibes, embrace exponentials, and forget that the code even exists" — you talk or type what you want, accept every diff without reading it, and when something breaks you paste the error back in rather than debugging. Crucially he framed it as fine for <em>throwaway weekend projects</em>. It was named to describe a mode, not to recommend it for production. Collins Dictionary made it their word of the year for 2025, which tells you how fast it escaped its original meaning.</p>
-  <p>Most people now use "vibe coding" loosely, to mean any AI-assisted coding. That looseness is your opening — <strong>drawing the distinction is free credibility</strong>, because it shows you've read the source rather than the headlines.</p>
-  <div class="say"><b>Say this</b>"Strictly, vibe coding means not reading the diffs — Karpathy's own framing was that it's for throwaway projects. Karpathy actually retired the term about a year later and proposed <em>agentic engineering</em> for the professional version: you're not writing the code, you're orchestrating agents and providing oversight. That's the distinction I care about — the AI writes, but the diff still gets reviewed and every change has to survive a machine-checked gate. Same speed, different accountability."</div>
-  <p>Knowing that the author dropped his own term is the detail that proves you read the source rather than the coverage — and "agentic engineering" is a more precise name for what you actually do.</p>
+<h3>B · AI-native editors</h3>
+<p><strong>Cursor</strong> (a VS Code fork) and <strong>Devin Desktop</strong> are the best-known, with Google's <strong>Antigravity</strong> the other current entrant; JetBrains and VS Code itself have shipped their own agent modes. The differentiator isn't the model — most let you pick from the same handful — it's the <strong>context plumbing</strong>: how the editor decides which files to put in front of the model, and how it applies a diff back without mangling the file.</p>
+<p>Two details worth having. "Apply the edit" is its own hard problem: a big model describes the change and a smaller, faster <em>apply model</em> merges it into the real file — when an edit lands in the wrong place, that second model usually failed, not the one that wrote the code. And know the Windsurf arc: it was the other big name until Cognition acquired it and renamed it Devin Desktop in June 2026, which is why Devin and the editor are now the same company. Getting that right costs nothing and reads as current.</p>
 
-  <h3>The autonomy ladder — place any tool on this</h3>
-  <p>Rather than memorising products, hold one axis in your head: <strong>how much of the loop the human is still inside</strong>. Every tool sits somewhere on it, and the failure mode changes as you climb.</p>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th>Rung</th><th>What the human does</th><th>Example shape</th><th>Dominant failure mode</th></tr></thead>
-    <tbody>
-      <tr><td>0 · Autocomplete</td><td>Types; accepts or rejects each suggestion</td><td>Inline "ghost text" completion</td><td>Plausible-looking line that's subtly wrong; you accept it because it's one keystroke</td></tr>
-      <tr><td>1 · Chat / ask</td><td>Asks a question, copies the answer across</td><td>Sidebar chat with file context</td><td>Answer is right in general and wrong for <em>your</em> codebase</td></tr>
-      <tr><td>2 · Inline edit</td><td>Selects a region, describes the change, reviews the diff</td><td>"Edit this function to…"</td><td>Blast radius creep — it rewrites more than you selected</td></tr>
-      <tr><td>3 · Agent, supervised</td><td>Gives a task; approves each tool call / command</td><td>Terminal or IDE agent with permission prompts</td><td>Approval fatigue — after twenty prompts you stop reading them</td></tr>
-      <tr><td>4 · Agent, autonomous in a sandbox</td><td>Gives a task; reviews the finished PR</td><td>Cloud agent that opens a pull request</td><td>You review a 900-line diff you didn't watch being written</td></tr>
-      <tr><td>5 · Fleet / background</td><td>Queues many tasks; triages results</td><td>Several agents on separate issues at once</td><td>Review becomes the bottleneck; nobody has the whole picture</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <div class="num-note"><b>The pattern to name</b>As you climb the ladder, <strong>the work doesn't disappear — it moves from writing to reviewing</strong>. Rungs 0–2 save you typing. Rungs 3–5 save you typing and then hand you back a reviewing job you didn't have before. That's the honest trade, and saying it out loud is the single most senior-sounding sentence in this whole section.</div>
-</section>
+<h3>C · Terminal / CLI agents</h3>
+<p><strong>Claude Code</strong>, <strong>OpenAI Codex CLI</strong>, Google's <strong>Antigravity CLI</strong> (which replaced Gemini CLI for individual accounts in June 2026), <strong>Aider</strong>, <strong>OpenHands</strong>. The agent lives in your shell, in your repo, with your credentials and your test runner. This is the category that made agentic coding real, because the terminal is where the <em>feedback</em> is — the agent runs the failing test itself instead of asking you what happened.</p>
+<div class="note"><span class="lbl">Say why the category matters</span>"An editor plugin sees files; a terminal agent sees files <em>and consequences</em>. That closed loop — edit, run, read the error, edit again — is the difference between a code generator and something that can finish a task."</div>
 
-<section id="s2">
-  <h2><span class="num">2</span> The tool landscape — six categories, not thirty product names</h2>
-  <p>Interviewers ask "what tools have you used?" expecting a list. Give them a taxonomy instead, then name what you've actually touched inside it. Products change every quarter; the categories don't.</p>
+<h3>D · Asynchronous / cloud agents</h3>
+<p>You hand over an issue and get back a pull request: <strong>GitHub Copilot's coding agent</strong>, <strong>OpenAI Codex</strong> in its cloud form, Google's <strong>Jules</strong>, Cognition's <strong>Devin</strong>, and the web modes of the CLI agents. Each task runs in its own sandboxed container with a fresh checkout.</p>
+<p>The engineering point: <strong>isolation is what makes parallelism safe</strong>. Two agents editing one working tree corrupt each other; two agents in two containers — or two <code class="k">git worktree</code>s — don't. If you've used worktrees for this, say so; it's a concrete detail that's hard to fake.</p>
 
-  <h3>A. Inline completion — the incumbent</h3>
-  <p><strong>GitHub Copilot</strong> (2021 — not the first, Kite and TabNine predate it, but the one that made the category mainstream) and the tab-completion built into <strong>Cursor</strong>, <strong>Devin Desktop</strong> (ex-Windsurf) and <strong>Zed</strong>. The model predicts the next span of code from the surrounding file. Latency budget is brutal — a suggestion that takes more than a few hundred milliseconds arrives after you've typed the line yourself — so these use smaller, faster models than the chat panel next to them.</p>
-  <p><strong>What it's genuinely good at:</strong> boilerplate with a strong local pattern — a fifth test case that looks like the previous four, a mapper between two structs, filling out a switch. <strong>Where it hurts:</strong> it optimises for "looks like what usually comes next", which is exactly wrong at the points where your codebase is unusual.</p>
+<h3>E · Prompt-to-app builders</h3>
+<p><strong>v0</strong>, <strong>Bolt.new</strong>, <strong>Lovable</strong>, <strong>Replit Agent</strong>. Natural language in, a deployed running app out. These are what the general public means by "vibe coding".</p>
+<p><strong>The honest read:</strong> extraordinary for the first 80% of a greenfield app and for a demo you need this afternoon. They degrade hard once the app has history — an existing schema, an auth model, a deploy pipeline someone else owns. They also generate the security-sensitive parts (auth, row-level access, secrets) with exactly the same confidence as a button, which is where the publicised incidents have come from.</p>
 
-  <h3>B. AI-native editors</h3>
-  <p><strong>Cursor</strong> (a VS Code fork) and <strong>Devin Desktop</strong> are the best-known, with Google's <strong>Antigravity</strong> the other current entrant; JetBrains and VS Code itself have shipped their own agent modes. <em>Know the Windsurf arc</em> — Windsurf was the other big name until Cognition acquired it and renamed it Devin Desktop in June 2026, which is why Devin and the editor are now the same company. Getting that right is a small currency signal that costs nothing and lands well. The differentiator isn't the model — most of them let you pick from the same handful of frontier models — it's the <em>context plumbing</em>: how the editor decides which files to put in front of the model, and how it applies a diff back into the file without mangling it.</p>
-  <p>Worth knowing that "apply the edit" is its own hard problem. A big model describes the change; a smaller, faster "apply model" merges it into the real file. When you see an edit land in the wrong place, that second model is usually what failed, not the one that wrote the code.</p>
+<h3>F · AI code review</h3>
+<p><strong>CodeRabbit</strong>, <strong>Greptile</strong>, GitHub's own PR review, and the review modes inside the CLI agents. Underrated, and the one to mention if you want to sound like you've thought about the whole lifecycle rather than the writing half.</p>
+<p>The argument is arithmetic: if agents multiply how much code gets <em>written</em>, review is the constraint that binds. But note the asymmetry — an AI reviewer is a probabilistic reviewer, so it belongs as an extra pair of eyes with no merge rights, never as the approval. Its real value is the boring sweep (nullability, missing error handling, a changed function whose callers weren't updated) that humans skim past on a big diff.</p>
 
-  <h3>C. Terminal / CLI agents</h3>
-  <p><strong>Claude Code</strong>, <strong>OpenAI Codex CLI</strong>, Google's <strong>Antigravity CLI</strong> (which replaced Gemini CLI for individual accounts in June 2026), <strong>Aider</strong>, <strong>OpenHands</strong>. The agent lives in your shell, in your repo, with your credentials and your test runner. This is the category that made "agentic coding" real, because the terminal is where the <em>feedback</em> is — the agent can run the failing test itself instead of asking you what happened.</p>
-  <p><strong>Say why this category matters:</strong> an editor plugin sees files; a terminal agent sees files <em>and</em> consequences. That closed loop — edit, run, read the error, edit again — is the difference between a code generator and something that can finish a task.</p>
+<div class="note warn"><span class="lbl">Trap</span>Don't recite this as a list — interviewers hear product names all day. What lands is: <em>"I think of it as three questions: how much autonomy, whether it can run my tests, and whether it's editing my working tree or a sandbox. Everything on the market is a point in that space."</em> Then name two or three you've actually used and what each was bad at.</div>
+    </section>
+    <section id="choosing">
+      <div class="kicker">02 — The matrix you reason from</div>
+      <h2>"Which is best?" is the wrong question — here is the right one</h2>
 
-  <h3>D. Asynchronous / cloud agents</h3>
-  <p>You hand over an issue and get back a pull request: <strong>GitHub Copilot's coding agent</strong>, <strong>OpenAI Codex</strong> in its cloud form, Google's <strong>Jules</strong>, Cognition's <strong>Devin</strong>, and the web/cloud modes of the CLI agents. Each task runs in its own sandboxed container with a fresh checkout.</p>
-  <p>The engineering point: <strong>isolation is what makes parallelism safe</strong>. Two agents editing one working tree corrupt each other; two agents in two containers (or two <code>git worktree</code>s) don't. If you've used worktrees for this, say so — it's a concrete detail that's hard to fake.</p>
+<p>The correct answer is "for what?", but only if you follow it immediately with a real breakdown.</p>
+<table class="tbl">
+  <thead><tr><th>Situation</th><th>Reach for</th><th>Because</th></tr></thead>
+  <tbody>
+    <tr><td>throwaway prototype</td><td>Prompt-to-app builder, or an agent on full autonomy</td><td>No existing convention to violate and no blast radius. Review cost is the only cost, and you aren't paying it.</td></tr>
+    <tr><td>feature in a big repo</td><td>Terminal or IDE agent, supervised</td><td>The hard part isn't writing code, it's matching twenty existing conventions. It needs to read a lot and you need to see what it read.</td></tr>
+    <tr><td>200-file migration</td><td>Agent, batched — one module per run</td><td>The highest-value case there is: repetitive, individually verifiable, and a test suite can prove each step. Small independent units also make a bad one cheap to throw away.</td></tr>
+    <tr><td>live incident</td><td>Chat, with you driving</td><td>You need a hypothesis, not a patch. An agent that starts editing before the cause is known produces plausible fixes that hide the symptom.</td></tr>
+    <tr><td>auth / payments</td><td>Human writes, AI reviews</td><td>These are the paths where "compiles and passes tests" says almost nothing about correctness, and being confidently wrong isn't a bug, it's a breach.</td></tr>
+    <tr><td>unfamiliar codebase</td><td>Agent in read-only mode — ask, don't edit</td><td>The best underrated use. "Trace what happens when a user hits this endpoint" across 40 files takes it minutes and you a day. No write access, so no risk.</td></tr>
+  </tbody>
+</table>
+<div class="note"><span class="lbl">Say this</span>"My rule of thumb is that autonomy should scale with how cheaply I can verify the result. A migration with a green test suite: run it wide. Auth logic: I write it. The variable isn't how hard the task is, it's how well I can check the answer."</div>
 
-  <h3>E. Prompt-to-app builders</h3>
-  <p><strong>v0</strong>, <strong>Bolt.new</strong>, <strong>Lovable</strong>, <strong>Replit Agent</strong>. Natural language in, a deployed running app out, hosting included. These are the tools the general public means by "vibe coding".</p>
-  <p><strong>The honest read:</strong> extraordinary for the first 80% of a greenfield app and for demos you need this afternoon. They degrade hard once the app has history — an existing schema, an auth model, a deploy pipeline someone else owns. They also generate the security-sensitive parts (auth, row-level access, secrets handling) with the same confidence as they generate a button, and that's where the publicised incidents have come from.</p>
+<h3>What actually changes in the workflow</h3>
+<p>If they ask "how has this changed how you work?", resist "it makes me faster" — everyone says that, and the evidence is genuinely mixed. A 2025 randomised trial by <strong>METR</strong> on experienced open-source maintainers working in repos they knew well found they were about <strong>19% slower</strong> with AI assistance while <em>predicting</em> they'd been roughly 20% faster. <strong>Volunteer the caveat:</strong> METR published a larger late-2025 follow-up that found a much smaller slowdown, flagged serious selection effects, and led them to retire that experiment design. The durable finding isn't the 19% — it's the perception gap, and it's why you shouldn't quote speed numbers about yourself.</p>
+<ul class="body">
+  <li><strong>Effort moves from writing to reviewing.</strong> Your throughput is now bounded by how fast you can read code you didn't write. Different skill, more tiring one.</li>
+  <li><strong>Small diffs get much cheaper; big diffs get more dangerous.</strong> The right response is to shrink the unit of work — one task per run, one PR per task — precisely <em>because</em> generation is cheap. If a run goes wrong, discard it and re-run with a better prompt rather than debugging its output.</li>
+  <li><strong>Tests stop being optional.</strong> Under human-only development a suite is insurance. With an agent it's the <em>control system</em> — the only channel by which it discovers it was wrong without you telling it.</li>
+  <li><strong>Codebase legibility becomes a performance feature.</strong> Clear names, small modules, a real README, typed boundaries — always nice, now measurably raising the agent's hit rate, because that's what it retrieves and reasons over. "Write for the next reader" now includes a machine reader.</li>
+</ul>
+<div class="note gold"><span class="lbl">Worth naming</span>Stack Overflow's 2025 developer survey had <strong>84% using or planning to use</strong> AI tools while only <strong>33% trusted the accuracy</strong> of the output and 46% actively distrusted it. That's not a contradiction, it's the correct posture — and it's your framing: <em>high adoption, low trust, so the value is in the verification layer.</em></div>
+<div class="note warn"><span class="lbl">Trap</span>Never claim a specific multiplier ("it made me 3× faster"). It invites "measured how?" and you have no answer. Say instead: <em>"It's clearly faster for the things I can verify cheaply, and I've been burned enough on the things I can't that I've stopped guessing at the average."</em></div>
+    </section>
+    <section id="loop">
+      <div class="kicker">03 — The one diagram to be able to draw</div>
+      <h2>An agent is a model in a loop with tools</h2>
 
-  <h3>F. AI code review</h3>
-  <p><strong>CodeRabbit</strong>, <strong>Greptile</strong>, GitHub's own PR review, and the review modes inside the CLI agents. Underrated category, and the one to mention if you want to sound like you've thought about the whole lifecycle rather than just the writing half.</p>
-  <p>The argument for it is arithmetic: if agents multiply how much code gets <em>written</em>, review is the constraint that binds. But note the asymmetry — an AI reviewer is a probabilistic reviewer, so it belongs as an extra pair of eyes with no merge rights, not as the approval. Its real value is the boring sweep (nullability, missing error handling, a changed function whose callers weren't updated) that humans skim past on a big diff.</p>
-
-  <div class="trap"><b>Trap</b>Don't recite this list as a list. Interviewers hear product names all day. The answer that lands is: <em>"I think of it as three questions — how much autonomy, whether it can run my tests, and whether it's editing my working tree or a sandbox. Everything on the market is a point in that space."</em> Then name two or three you've actually used and what each was bad at.</div>
-</section>
-
-<section id="s3">
-  <h2><span class="num">3</span> Choosing a tool — the matrix you reason from</h2>
-  <p>The correct answer to "which is best?" is "for what?", but only if you follow it immediately with a real breakdown. Here's the one to have ready.</p>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th>Situation</th><th>Reach for</th><th>Because</th></tr></thead>
-    <tbody>
-      <tr><td>Greenfield prototype, throwaway</td><td>Prompt-to-app builder, or an agent on full autonomy</td><td>There's no existing convention to violate and no blast radius. Review cost is the only cost, and you're not paying it.</td></tr>
-      <tr><td>New feature in a large existing repo</td><td>Terminal / IDE agent, supervised</td><td>The hard part isn't writing code, it's matching twenty existing conventions. The agent needs to read a lot and you need to see what it read.</td></tr>
-      <tr><td>Mechanical migration across 200 files</td><td>Agent, batched, one file or module per run</td><td>Highest-value case there is: repetitive, individually verifiable, and a test suite can prove each step. Small independent units also mean a bad one is cheap to throw away.</td></tr>
-      <tr><td>Debugging a live incident</td><td>Chat, with you driving</td><td>You need a hypothesis, not a patch. An agent that starts editing before the cause is known produces plausible fixes that hide the symptom.</td></tr>
-      <tr><td>Security-sensitive code (auth, crypto, payments, access control)</td><td>Human writes; AI reviews</td><td>These are the paths where "compiles and passes tests" says almost nothing about correctness, and the cost of being confidently wrong isn't a bug, it's a breach.</td></tr>
-      <tr><td>Unfamiliar codebase you've just joined</td><td>Agent in read-only mode — ask, don't edit</td><td>Best underrated use. "Trace what happens when a user hits this endpoint" across 40 files takes it minutes and you a day. No write access, so no risk.</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <div class="say"><b>Say this</b>"My rule of thumb is that autonomy should scale with how cheaply I can verify the result. A migration with a green test suite: run it wide. Auth logic: I write it. The variable isn't how hard the task is, it's how well I can check the answer."</div>
-</section>
-
-<section id="s4">
-  <h2><span class="num">4</span> What actually changes in the workflow</h2>
-  <p>If they ask "how has this changed how you work?", resist "it makes me faster". Everyone says that, and the research is genuinely mixed on it — a 2025 randomised trial by METR on experienced open-source maintainers working in repos they knew well found they were about <strong>19% slower</strong> with AI assistance, while <em>predicting</em> they'd been roughly 20% faster. <strong>Volunteer the caveat</strong> — METR published a larger late-2025 follow-up that found a much smaller slowdown, flagged serious selection effects, and led them to retire that experiment design. The durable finding isn't the 19%; it's the perception gap, and it's why you shouldn't quote speed numbers about yourself.</p>
-
-  <h3>The four real shifts</h3>
-  <ul>
-    <li><strong>Effort moves from writing to reviewing.</strong> Your throughput is now bounded by how fast you can read code you didn't write. That's a different skill and a more tiring one.</li>
-    <li><strong>Small diffs get much cheaper; big diffs get more dangerous.</strong> The right response is to shrink the unit of work — one task per agent run, one PR per task — precisely <em>because</em> generation is cheap. If a run goes wrong, throw it away and re-run with a better prompt rather than debugging its output.</li>
-    <li><strong>Tests stop being optional.</strong> Under human-only development, a test suite is insurance. With an agent it's the <em>control system</em> — it's the only channel by which the agent finds out it was wrong without you telling it.</li>
-    <li><strong>Codebase legibility becomes a performance feature.</strong> Clear names, small modules, a real README, typed boundaries — these were always nice; now they measurably raise the agent's hit rate, because they're what it retrieves and reasons over. "Write for the next reader" now includes a machine reader.</li>
-  </ul>
-
-  <div class="num-note"><b>Worth naming</b>Industry survey data consistently shows a trust gap — Stack Overflow's 2025 developer survey had <strong>84% using or planning to use</strong> AI tools while only <strong>33% trusted the accuracy</strong> of the output and 46% actively distrusted it. That's not a contradiction; it's the correct posture. Use it as your framing: <em>"high adoption, low trust, so the value is in the verification layer."</em></div>
-
-  <div class="trap"><b>Trap</b>Never claim a specific multiplier ("it made me 3× faster"). It invites "measured how?", and you don't have an answer. Say instead: <em>"It's clearly faster for the things I can verify cheaply, and I've been burned enough times on the things I can't that I've stopped guessing at the average."</em></div>
-</section>
-
-<div class="partband">
-  <p class="lab">Part B</p>
-  <h2>How an AI agent actually works</h2>
-  <p>The mechanism underneath the products. If you can draw the loop and explain where determinism enters, you are answering a different question from the candidate who lists features.</p>
-</div>
-
-<section id="s5">
-  <h2><span class="num">5</span> The agent loop — the one diagram to be able to draw</h2>
-  <p>An LLM on its own is a function: text in, text out, no memory, no side effects. An <strong>agent</strong> is that function placed inside a loop with tools and a stopping condition. That's the entire idea, and it's worth being able to say it in one sentence.</p>
-  <div class="say"><b>Say this</b>"An agent is a model in a loop with tools. The model can't do anything itself — it emits a request to call a tool, some ordinary code executes it, the result is appended to the conversation, and the model runs again on the longer conversation. It repeats until it emits an answer instead of a tool call."</div>
-
-  <h4>The loop, step by step</h4>
-  <pre><code>context = [system_prompt, user_task]
+<p>An LLM on its own is a function: text in, text out, no memory, no side effects. An <strong>agent</strong> is that function placed inside a loop with tools and a stopping condition. That's the entire idea, and it's worth being able to say it in one sentence.</p>
+<div class="note"><span class="lbl">Say this</span>"An agent is a model in a loop with tools. The model can't do anything itself — it emits a request to call a tool, ordinary code executes it, the result is appended to the conversation, and the model runs again on the longer conversation. It repeats until it emits an answer instead of a tool call."</div>
+<div class="filelabel">the loop, in eight lines</div>
+<pre><span class="cmt"># 1. the model decides — it cannot act</span>
+context = [system_prompt, user_task]
 while True:
-    reply = model(context, tools=TOOL_SCHEMAS)   # 1. model decides
-    if not reply.tool_calls:                     # 2. no call = it's done
+    reply = model(context, tools=TOOL_SCHEMAS)
+    if not reply.tool_calls:            <span class="cmt"># 2. no call = it is done</span>
         return reply.text
-    for call in reply.tool_calls:                # 3. HARNESS executes
-        result = TOOLS[call.name](**call.args)   #    (ordinary code)
-        context += [call, result]                # 4. result fed back
-</code></pre>
-  <p>Four properties fall out of those eight lines, and each is worth a sentence:</p>
-  <ul>
-    <li><strong>The model never executes anything.</strong> It emits structured JSON saying "call <code>read_file</code> with this path". Your harness decides whether to actually do it. Every permission system, sandbox and guardrail lives at line 3 — that's the seam where you can intervene, and it's why guardrails are possible at all.</li>
-    <li><strong>The context grows every iteration.</strong> Each tool result is appended, so a 30-step task means the model re-reads a transcript that got longer 30 times. Prompt caching keeps the unchanged prefix cheap to re-send, so the cost curve is gentler than it looks — but attention still has to cross all of it, so long runs get slower and less accurate per step, not just longer in total.</li>
-    <li><strong>Termination is the model's choice.</strong> Nothing external decides the task is done — the loop ends when the model stops asking for tools. That's exactly why production harnesses add hard bounds: a max-turns cap, a token budget, a wall-clock timeout.</li>
-    <li><strong>Errors are just more input.</strong> A failed command isn't an exception, it's a string appended to the context. This is the whole trick behind self-correction: a stack trace is a better instruction than anything a human would have written in advance.</li>
-  </ul>
+    for call in reply.tool_calls:       <span class="cmt"># 3. the HARNESS executes</span>
+        result = TOOLS[call.name](**call.args)
+        context += [call, result]       <span class="cmt"># 4. result fed back in</span>
+</pre>
+<p>Four properties fall out of those eight lines, and each is worth a sentence:</p>
+<ul class="body">
+  <li><strong>The model never executes anything.</strong> It emits structured JSON saying "call <code class="k">read_file</code> with this path". Your harness decides whether to actually do it. Every permission system, sandbox and guardrail lives at line 3 — that seam is why guardrails are possible at all.</li>
+  <li><strong>The context grows every iteration.</strong> Each tool result is appended, so a 30-step task means the model re-reads a transcript that got longer 30 times. Prompt caching keeps the unchanged prefix cheap to re-send, so the cost curve is gentler than it looks — but attention still has to cross all of it, so long runs get slower and less accurate per step, not just longer in total.</li>
+  <li><strong>Termination is the model's choice.</strong> Nothing external decides the task is done; the loop ends when it stops asking for tools. Exactly why production harnesses add hard bounds — a max-turns cap, a token budget, a wall-clock timeout.</li>
+  <li><strong>Errors are just more input.</strong> A failed command isn't an exception, it's a string appended to the context. That is the whole trick behind self-correction: a stack trace is a better instruction than anything a human would have written in advance.</li>
+</ul>
 
-  <h3>ReAct — the name to know</h3>
-  <p>The pattern of interleaving <em>reasoning</em> with <em>acting</em> comes from the ReAct paper (Yao et al., 2022): rather than planning everything up front, the model thinks a step, acts, observes the result, and re-plans with what it now knows. The reason it beats plan-then-execute is simple — most of the information you need is discovered <em>during</em> the task, not before it. Modern agents are all essentially ReAct with better tools.</p>
+<h3>ReAct — the name to know</h3>
+<p>Interleaving <em>reasoning</em> with <em>acting</em> comes from the ReAct paper (Yao et al., 2022): rather than planning everything up front, the model thinks a step, acts, observes, and re-plans with what it now knows. Why it beats plan-then-execute is simple — most of the information you need is discovered <em>during</em> the task, not before it. Modern agents are essentially ReAct with better tools.</p>
 
-  <h3>Agents vs. workflows — the distinction people get wrong</h3>
-  <p>Anthropic's widely cited framing: a <strong>workflow</strong> is a system where the LLM and tools are orchestrated along <em>predefined code paths</em>; an <strong>agent</strong> is one where the LLM <em>directs its own process</em> and decides which tools to use. Prompt chaining, routing and parallelisation are workflows. Only the model-drives-the-loop case is an agent.</p>
-  <div class="trap"><b>Trap — and the answer that scores</b>"Agent" is the fashionable word, so candidates use it for everything. The senior move is arguing for <em>less</em> agency: most production tasks are better served by a deterministic workflow with an LLM at one or two nodes, because you can test it, reproduce failures and bound the cost. Reach for a real agent only when the number of steps and their order genuinely can't be known in advance. <em>"The right question is how little autonomy the task actually needs."</em></div>
-</section>
+<h3>Agents vs. workflows — the distinction people get wrong</h3>
+<p>Anthropic's widely cited framing: a <strong>workflow</strong> is a system where LLMs and tools are orchestrated along <em>predefined code paths</em>; an <strong>agent</strong> is one where the LLM <em>dynamically directs its own process</em> and tool usage. Prompt chaining, routing and parallelisation are workflows. Only the model-drives-the-loop case is an agent.</p>
+<div class="note warn"><span class="lbl">Trap — and the answer that scores</span>"Agent" is the fashionable word, so candidates use it for everything. The senior move is arguing for <em>less</em> agency: most production tasks are better served by a deterministic workflow with an LLM at one or two nodes, because you can test it, reproduce failures and bound the cost. Reach for a real agent only when the number of steps and their order genuinely can't be known in advance. <em>"The right question is how little autonomy the task actually needs."</em></div>
+    </section>
+    <section id="tooluse">
+      <div class="kicker">04 — Where determinism enters the system</div>
+      <h2>The model chooses; the harness executes</h2>
 
-<section id="s6">
-  <h2><span class="num">6</span> Tool use, mechanically — where determinism enters</h2>
-  <p>People say "the model calls a function". It doesn't. Being precise here is a strong signal.</p>
-  <ol>
-    <li>You send the model a list of <strong>tool definitions</strong> — each a name, a description, and a JSON Schema for its parameters. These are injected into the prompt, so they occupy context on every request. Caching makes them cheap to re-send and some harnesses defer loading a large catalogue until the model searches for it — but whatever is loaded competes for the model's attention.</li>
-    <li>The model, instead of ordinary prose, emits a structured <strong>tool-use block</strong>: the tool name plus arguments matching that schema.</li>
-    <li>Generation <em>stops</em>. The model is now waiting. Nothing has happened.</li>
-    <li><strong>Your code</strong> — the harness — validates the arguments, decides whether it's allowed, runs it, and captures the output.</li>
-    <li>The output goes back as a <strong>tool-result</strong> message and the model is called again with the extended conversation.</li>
-  </ol>
-  <div class="num-note"><b>The line that shows you understand it</b>"The model chooses; the harness executes. That split is why guardrails work — I can't stop a model from <em>wanting</em> to run <code>rm -rf</code>, but I control the process that would actually run it."</div>
+<p>People say "the model calls a function". It doesn't. Being precise here is a strong signal.</p>
+<ol class="body">
+  <li>You send the model a list of <strong>tool definitions</strong> — each a name, a description, and a JSON Schema for its parameters. These are injected into the prompt, so they occupy context on every request. Caching makes them cheap to re-send and some harnesses defer loading a large catalogue until the model searches for it, but whatever is loaded competes for the model's attention.</li>
+  <li>The model, instead of prose, emits a structured <strong>tool-use block</strong>: the tool name plus arguments matching that schema.</li>
+  <li>Generation <strong>stops</strong>. The model is now waiting. Nothing has happened.</li>
+  <li><strong>Your code</strong> — the harness — validates the arguments, decides whether it's allowed, runs it, captures the output.</li>
+  <li>The output goes back as a <strong>tool-result</strong> message and the model is called again with the extended conversation.</li>
+</ol>
+<div class="note gold"><span class="lbl">The line that shows you understand it</span>"The model chooses; the harness executes. That split is why guardrails work — I can't stop a model from <em>wanting</em> to run <code class="k">rm -rf</code>, but I control the process that would actually run it."</div>
 
-  <h3>What makes a tool good, and why it's a prompt-engineering problem</h3>
-  <p>The model picks a tool from its <em>description</em> — so tool design is prompt design wearing a different hat.</p>
-  <ul>
-    <li><strong>Few, well-separated tools beat many overlapping ones.</strong> Two tools whose descriptions could both plausibly apply produce coin-flip selection. If you have twenty tools and half are near-duplicates, accuracy collapses long before the context does.</li>
-    <li><strong>Return errors as text the model can act on.</strong> <code>ENOENT</code> is nearly useless; <code>"No file at src/uti.ts — did you mean src/utils.ts?"</code> gets fixed on the next turn. You are writing error messages for a reader that will actually change its behaviour based on them.</li>
-    <li><strong>Cap the output size.</strong> A tool that returns a 200k-token file dump destroys the context in one call. Paginate, truncate with an explicit marker, or return a summary plus a handle to fetch more.</li>
-    <li><strong>Make destructive tools narrow.</strong> A general <code>run_bash</code> tool is maximally capable and maximally dangerous. Specific tools (<code>run_tests</code>, <code>read_file</code>) are auditable and can be auto-approved; the general one shouldn't be.</li>
-  </ul>
-  <div class="say"><b>Say this if asked "how would you design tools for an agent?"</b>"I'd treat the tool description as part of the prompt, keep the set small and non-overlapping, make every error message actionable, and cap output size — because tool results are the main thing that eats the context window."</div>
-</section>
+<h3>What makes a tool good — it's a prompt-engineering problem</h3>
+<p>The model picks a tool from its <em>description</em>, so tool design is prompt design wearing a different hat.</p>
+<ul class="body">
+  <li><strong>Few, well-separated tools beat many overlapping ones.</strong> Two tools whose descriptions could both plausibly apply produce coin-flip selection. With twenty tools, half of them near-duplicates, accuracy collapses long before the context does.</li>
+  <li><strong>Return errors as text the model can act on.</strong> <code class="k">ENOENT</code> is nearly useless; <em>"No file at src/uti.ts — did you mean src/utils.ts?"</em> gets fixed on the next turn. You are writing error messages for a reader that will genuinely change its behaviour based on them.</li>
+  <li><strong>Cap the output size.</strong> A tool returning a 200k-token file dump destroys the context in one call. Paginate, truncate with an explicit marker, or return a summary plus a handle to fetch more.</li>
+  <li><strong>Make destructive tools narrow.</strong> A general <code class="k">run_bash</code> is maximally capable and maximally dangerous. Specific tools (<code class="k">run_tests</code>, <code class="k">read_file</code>) are auditable and can be auto-approved; the general one shouldn't be.</li>
+</ul>
+<div class="note"><span class="lbl">If asked "how would you design tools for an agent?"</span>"I'd treat the tool description as part of the prompt, keep the set small and non-overlapping, make every error message actionable, and cap output size — because tool results are the main thing that eats the context window."</div>
+    </section>
+    <section id="context">
+      <div class="kicker">05 — The discipline that replaced prompt engineering</div>
+      <h2>Context engineering, and the three things called "memory"</h2>
 
-<section id="s7">
-  <h2><span class="num">7</span> Context engineering — the discipline that replaced prompt engineering</h2>
-  <p>The term has genuinely shifted. <strong>Prompt engineering</strong> is wording one message well. <strong>Context engineering</strong> is deciding what occupies the finite window at each step of a long-running loop — which files, which tool results, which history, which instructions — and what gets evicted. For agents, the second is far more of the job, because the prompt is written once and the context is rebuilt every turn.</p>
+<p>The term has genuinely shifted. <strong>Prompt engineering</strong> is wording one message well. <strong>Context engineering</strong> is deciding what occupies the finite window at each step of a long-running loop — which files, which tool results, which history, which instructions — and what gets evicted. For agents the second is far more of the job, because the prompt is written once and the context is rebuilt every turn.</p>
+<ul class="body">
+  <li><strong>Attention is quadratic — during prefill.</strong> Self-attention compares every token to every other, so <em>processing the prompt</em> scales with roughly the square of its length: doubling the prompt is more than double the work. Once generation starts a KV cache makes each new token cost roughly <em>linear</em> in context — still growing, just not quadratically — and prompt caching means the stable prefix often isn't reprocessed at all. Know that split; it's a favourite follow-up.</li>
+  <li><strong>Frontier models today are typically 1M tokens</strong> — 200k was the norm until recently and still is for the cheap, fast tiers. At roughly 0.75 words per token that's ~750k words at 1M, ~150k at 200k. Sounds enormous until an agent reads six files and runs a test suite whose output is 20k tokens on its own.</li>
+  <li><strong>Quality degrades before the limit does.</strong> "Context rot": accuracy on retrieval-style tasks falls as input grows, and models attend better to the beginning and end than the middle — the "lost in the middle" effect from Liu et al. (2023). A fact buried at 60% depth in a huge context can be effectively invisible.</li>
+</ul>
+<div class="note gold"><span class="lbl">The counter-intuitive rule</span>More context is not better. Every irrelevant token competes for attention with the relevant ones. <em>"The goal is the smallest set of high-signal tokens that makes the next decision correct"</em> — that's the sentence to remember.</div>
 
-  <h4>Why the window is a hard constraint, not a soft one</h4>
-  <ul>
-    <li><strong>Attention is quadratic — during prefill.</strong> Self-attention compares every token to every other, so <em>processing the prompt</em> scales with roughly the square of its length: doubling the prompt is more than double the work. Once generation starts a KV cache makes each new token cost roughly <em>linear</em> in context — still growing, just not quadratically — and prompt caching means the stable prefix often isn't reprocessed at all. Know that split; it's a favourite follow-up. The window is still a hard constraint, but the binding reason is attention <em>quality</em> more than raw FLOPs.</li>
-    <li><strong>Frontier models today are typically 1M tokens</strong> — 200k was the norm until recently and still is for the cheap, fast tiers. At roughly 0.75 words per token that's ~750k words at 1M, ~150k at 200k. Sounds enormous until an agent reads six files and runs a test suite whose output is 20k tokens on its own.</li>
-    <li><strong>Quality degrades before the limit does.</strong> "Context rot": accuracy on retrieval-style tasks falls as the input grows, and models attend better to the beginning and end than the middle — the "lost in the middle" effect from Liu et al. (2023). A fact buried at 60% depth in a huge context can be effectively invisible.</li>
-  </ul>
-  <div class="num-note"><b>The counter-intuitive rule</b>More context is not better. Every irrelevant token competes for attention with the relevant ones. <em>"The goal is the smallest set of high-signal tokens that makes the next decision correct"</em> — that's the sentence to remember.</div>
+<h3>The techniques, and what each costs</h3>
+<table class="tbl">
+  <thead><tr><th>Technique</th><th>Mechanism</th><th>What it costs</th></tr></thead>
+  <tbody>
+    <tr><td>compaction</td><td>Near the limit, summarise the transcript and continue from the summary plus the most recent turns</td><td>Lossy by construction. The detail you drop is gone — so pin what must survive: the task, key decisions, file paths</td></tr>
+    <tr><td>just-in-time</td><td>Don't preload files; give the agent search and read tools and let it pull what it needs, when it needs it</td><td>More turns, so more latency. But it's how humans work, and context stays proportional to the task</td></tr>
+    <tr><td>sub-agents</td><td>Hand a self-contained investigation to a fresh agent with its own clean window; it returns only a summary</td><td>The parent never sees the detail — good (it's the point) and bad (it can't second-guess the conclusion)</td></tr>
+    <tr><td>external memory</td><td>Write findings to files, read them back later. The filesystem as unbounded context</td><td>Nothing keeps it fresh. Stale notes are worse than no notes — they're confidently wrong</td></tr>
+    <tr><td>note-taking</td><td>A running to-do / progress file the agent rewrites each turn</td><td>Cheap and effective on long tasks; it re-anchors a goal that would otherwise drift out of attention</td></tr>
+  </tbody>
+</table>
+<p><strong>The mistake to name:</strong> stuffing the whole repo in "just in case". It raises cost and latency on every turn <em>and</em> lowers accuracy — you've buried the three relevant files under two hundred irrelevant ones.</p>
 
-  <h3>The techniques, and when each applies</h3>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th>Technique</th><th>Mechanism</th><th>What it costs</th></tr></thead>
-    <tbody>
-      <tr><td>Compaction</td><td>When the window nears its limit, summarise the transcript so far and continue from the summary plus the most recent turns</td><td>Lossy by construction. The detail you drop is gone — so pin the things that must survive (the task, key decisions, file paths)</td></tr>
-      <tr><td>Just-in-time retrieval</td><td>Don't preload files; give the agent search and read tools and let it pull what it needs, when it needs it</td><td>More turns, so more latency. But it's how humans work, and it keeps the context proportional to the task</td></tr>
-      <tr><td>Sub-agents</td><td>Hand a self-contained investigation to a fresh agent with its own clean window; it returns only a summary</td><td>The parent never sees the detail — good (it's the point) and bad (it can't second-guess the conclusion)</td></tr>
-      <tr><td>External memory</td><td>Write findings to files; read them back later. The filesystem as unbounded context</td><td>Nothing keeps it fresh. Stale notes are worse than no notes — they're confidently wrong</td></tr>
-      <tr><td>Structured note-taking</td><td>Maintain a running to-do / progress file the agent rewrites each turn</td><td>Cheap and effective for long tasks; it re-anchors the goal that would otherwise drift out of attention</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p><strong>The mistake to name:</strong> stuffing the entire repo in "just in case". It raises cost and latency on every turn and lowers accuracy — you've buried the three relevant files under two hundred irrelevant ones.</p>
-</section>
+<h3>Memory — three different things wearing one word</h3>
+<p>"Does it remember?" is ambiguous, and the ambiguity is the answer.</p>
+<ul class="body">
+  <li><strong>In-context (working) memory</strong> — the current conversation. Perfect recall, strictly bounded, gone when the session ends. The only kind the model actually has.</li>
+  <li><strong>Persistent instructions</strong> — a project file (<code class="k">CLAUDE.md</code>, <code class="k">AGENTS.md</code>, editor rules) loaded into every session. Not memory so much as a standing brief: conventions, commands, architecture, the traps. The highest-leverage thing you can write for a coding agent, because it's the one context always present.</li>
+  <li><strong>Retrieved long-term memory</strong> — facts written to files or a vector store and fetched when relevant. Genuinely useful and genuinely hard, because the difficulty isn't storing, it's <em>invalidating</em>. A remembered fact about a file you've since refactored is a landmine.</li>
+</ul>
+<div class="note"><span class="lbl">Say this</span>"Models are stateless between calls. Everything that looks like memory is a retrieval-and-re-injection trick built around them — the interesting engineering problem is deciding what to bring back and when to throw it away, not how to store it."</div>
+    </section>
+    <section id="mcp">
+      <div class="kicker">06 — The integration standard</div>
+      <h2>Model Context Protocol — and the security question that follows</h2>
 
-<section id="s8">
-  <h2><span class="num">8</span> Memory — three different things wearing one word</h2>
-  <p>"Does it remember?" is ambiguous and the ambiguity is the answer.</p>
-  <ul>
-    <li><strong>In-context (working) memory</strong> — the current conversation. Perfect recall, strictly bounded, gone when the session ends. This is the only kind the model actually has.</li>
-    <li><strong>Persistent instructions</strong> — a project file (<code>CLAUDE.md</code>, <code>AGENTS.md</code>, cursor rules) loaded into every session. Not memory so much as a standing brief: conventions, commands, architecture, the traps. Highest-leverage thing you can write for a coding agent, because it's the one context that's always present.</li>
-    <li><strong>Retrieved long-term memory</strong> — facts written to files or a vector store and fetched when relevant. Genuinely useful and genuinely hard, because the difficulty isn't storing, it's <em>invalidating</em>. A remembered fact about a file you've since refactored is a landmine.</li>
-  </ul>
-  <div class="say"><b>Say this</b>"Models are stateless between calls. Everything that looks like memory is a retrieval-and-re-injection trick built around them — the interesting engineering problem is deciding what to bring back and when to throw it away, not how to store it."</div>
-</section>
+<p>An open standard published by <strong>Anthropic in November 2024</strong> and now broadly adopted across vendors; Anthropic donated it to the Linux Foundation's <strong>Agentic AI Foundation in December 2025</strong>, so it's a genuine cross-vendor standard rather than one company's. The usual one-liner is <em>"a USB-C port for AI applications"</em>.</p>
 
-<section id="s9">
-  <h2><span class="num">9</span> MCP — Model Context Protocol</h2>
-  <p>Open standard published by <strong>Anthropic in November 2024</strong> and now broadly adopted across vendors; Anthropic donated it to the Linux Foundation's <strong>Agentic AI Foundation in December 2025</strong>, so it's a genuine cross-vendor standard rather than one company's. The usual one-liner is <em>"a USB-C port for AI applications"</em>.</p>
+<h3>The problem it solves — say it as arithmetic</h3>
+<p>Before: every AI application needed a bespoke integration with every tool. <strong>M</strong> applications × <strong>N</strong> tools = M×N connectors, each maintained separately. With a shared protocol it's <strong>M + N</strong>: each app implements a client once, each tool ships one server. Same shape of argument as the Language Server Protocol, and comparing it to LSP is a good way to show it isn't magic — it's an interface boundary in the right place.</p>
 
-  <h4>The problem it solves — say it as arithmetic</h4>
-  <p>Before: every AI application needed a bespoke integration with every tool. <strong>M</strong> applications × <strong>N</strong> tools = M×N connectors, each maintained separately. With a shared protocol it's <strong>M + N</strong>: each app implements a client once, each tool ships one server. It's the same shape of argument as the Language Server Protocol, and comparing it to LSP is a good way to show it isn't magic — it's an interface boundary in the right place.</p>
+<h3>The mechanism</h3>
+<ul class="body">
+  <li><strong>Client / server over JSON-RPC 2.0.</strong> The host application — your IDE, agent or desktop app — runs an MCP client; each integration is a server.</li>
+  <li><strong>Two transports.</strong> <code class="k">stdio</code> for a local server the host launches as a subprocess, and a streamable HTTP transport for remote servers.</li>
+  <li><strong>Three primitives the server exposes.</strong> <em>Tools</em> (model-controlled actions), <em>Resources</em> (data the application reads into context), and <em>Prompts</em> (user-invoked templates, e.g. slash commands). The who-controls-what split is the detail worth knowing — it separates "the model decided to do this" from "the application supplied this" from "the user asked for this".</li>
+</ul>
+<div class="note warn"><span class="lbl">Trap — the security follow-up</span>Every MCP server you connect is <strong>untrusted code holding your credentials, and untrusted text entering your context</strong>. A malicious or compromised server can return content designed to steer the agent, and a legitimate one can leak data across boundaries — the pattern where an agent with access to both a private repo and a public one is talked into moving content between them. Answer: connect servers deliberately, prefer least-privilege tokens over broad ones, and don't auto-approve tool calls from a server whose output you haven't seen.</div>
+    </section>
+    <section id="search">
+      <div class="kicker">07 — Why the default flipped, and where it did not</div>
+      <h2>RAG, grep, and a disagreement worth knowing about</h2>
 
-  <h4>The mechanism</h4>
-  <ul>
-    <li><strong>Client / server over JSON-RPC 2.0.</strong> The host application (your IDE, agent, or desktop app) runs an MCP client; each integration is a server.</li>
-    <li><strong>Two transports.</strong> <code>stdio</code> for a local server the host launches as a subprocess, and an HTTP-based transport for remote servers.</li>
-    <li><strong>Three primitives the server exposes.</strong> <em>Tools</em> (model-invoked actions), <em>Resources</em> (data the app can read into context), and <em>Prompts</em> (user-invoked templates, e.g. slash commands). The tools/resources split is the detail worth knowing — it separates "the model decided to do this" from "the application supplied this".</li>
-  </ul>
-  <div class="trap"><b>Trap — the security follow-up</b>Every MCP server you connect is <strong>untrusted code with your credentials and untrusted text entering your context</strong>. A malicious or compromised server can return content designed to steer the agent (see §13), and a legitimate one can leak data across boundaries — the pattern where an agent with access to both a private repo and a public one is talked into moving content between them. Answer: connect servers deliberately, prefer least-privilege tokens over broad ones, and don't auto-approve tool calls from a server whose output you haven't seen.</div>
-</section>
+<p>A useful "I've thought about this" answer, because the intuitive one is out of date <em>and</em> the frontier is genuinely split — so present it as a live disagreement, not a settled result.</p>
+<p><strong>RAG</strong> (retrieval-augmented generation): pre-chunk the corpus, embed each chunk into a vector, embed the query, fetch the nearest chunks, put them in the prompt. It was the default answer to "how does the AI know about my codebase" for years.</p>
+<p><strong>Agentic search:</strong> don't index anything. Give the model <code class="k">grep</code>, <code class="k">find</code> and <code class="k">read_file</code>, and let it search the way a developer would — start with a symbol name, follow the imports, read the file.</p>
+<p><strong>The split worth knowing.</strong> The CLI agents dropped the vector index: Claude Code's lead has said early versions used RAG with a local vector DB and that agentic search simply worked better — simpler, with none of the staleness, privacy or index-maintenance problems. Cursor went the other way, training its own embedding model in late 2025 and reporting around <strong>12.5% higher accuracy</strong> on code questions, with the gap widening on repos over a thousand files. Both grep heavily; the disagreement is whether semantic search earns its keep on top. Saying <em>that</em> beats picking a side.</p>
+<table class="tbl">
+  <thead><tr><th></th><th>Embedding-based RAG</th><th>Agentic search</th></tr></thead>
+  <tbody>
+    <tr><td>freshness</td><td>Index goes stale the moment code changes; needs re-indexing</td><td>Always current — it reads the working tree</td></tr>
+    <tr><td>precision</td><td>Semantic similarity, so it finds "things about auth" but may miss the exact symbol</td><td>Exact. Code is full of unique identifiers, which is ideal for lexical search</td></tr>
+    <tr><td>latency</td><td>One fast lookup</td><td>Several sequential model turns — slower and more tokens</td></tr>
+    <tr><td>structure</td><td>Naive chunking cuts across function boundaries and loses the call graph; AST-aware chunking fixes the first half, not the second</td><td>Follows imports and references the way a human would</td></tr>
+    <tr><td>best for</td><td>Large prose corpora — docs, tickets, support history</td><td>Codebases, where identifiers are unique and structure is navigable</td></tr>
+  </tbody>
+</table>
+<div class="note"><span class="lbl">Say this</span>"For prose, embeddings win — you're searching for meaning. For code, exact search usually wins, because code is full of unique identifiers and the structure is already navigable. The strong setups do both: lexical search for symbols, semantic search for 'where do we handle refunds', and the model decides which to use."</div>
+    </section>
+    <section id="multi">
+      <div class="kicker">08 — When more agents is the wrong answer</div>
+      <h2>Orchestrator, workers, and a 15× token bill</h2>
 
-<section id="s10">
-  <h2><span class="num">10</span> RAG vs. agentic search — why the default flipped, and where it didn't</h2>
-  <p>A useful "I've thought about this" answer, because the intuitive one is out of date <em>and</em> the frontier is genuinely split — so present it as a live disagreement, not a settled result.</p>
-  <p><strong>RAG</strong> (retrieval-augmented generation): pre-chunk the corpus, embed each chunk into a vector, embed the query, fetch the nearest chunks, put them in the prompt. It was the default answer to "how does the AI know about my codebase" for years.</p>
-  <p><strong>Agentic search:</strong> don't index anything. Give the model <code>grep</code>, <code>find</code> and <code>read_file</code>, and let it search the way a developer would — start with a symbol name, follow the imports, read the file.</p>
-  <p><strong>The split worth knowing.</strong> The CLI agents dropped the vector index: Claude Code's lead has said early versions used RAG with a local vector DB and that agentic search simply worked better — simpler, with none of the staleness, privacy or index-maintenance problems. Cursor went the other way, training its own embedding model in late 2025 and reporting around <strong>12.5% higher accuracy</strong> on code questions, with the gap widening on repos over a thousand files. Both grep heavily; the disagreement is whether semantic search earns its keep on top. Saying <em>that</em> beats picking a side.</p>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th></th><th>Embedding-based RAG</th><th>Agentic search</th></tr></thead>
-    <tbody>
-      <tr><td>Freshness</td><td>Index goes stale the moment code changes; needs re-indexing</td><td>Always current — it reads the working tree</td></tr>
-      <tr><td>Precision</td><td>Semantic similarity, so it finds "things about auth" but may miss the exact symbol</td><td>Exact. Code is full of unique identifiers, which is ideal for lexical search</td></tr>
-      <tr><td>Latency &amp; cost</td><td>One fast lookup</td><td>Several sequential model turns — slower and more tokens</td></tr>
-      <tr><td>Structure</td><td>Naive chunking cuts across function boundaries and loses the call graph — AST-aware chunking fixes the first half, not the second</td><td>Follows imports and references the way a human would</td></tr>
-      <tr><td>Best for</td><td>Large prose corpora — docs, tickets, support history</td><td>Codebases, where identifiers are unique and structure is navigable</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <div class="say"><b>Say this</b>"For prose, embeddings win — you're searching for meaning. For code, exact search usually wins, because code is full of unique identifiers and the structure is already navigable. The strong setups do both: lexical search for symbols, semantic search for 'where do we handle refunds', and the model decides which to use."</div>
-</section>
+<p>The common shape is <strong>orchestrator–worker</strong>: a lead agent decomposes the task and spawns sub-agents, each with its own clean context, each returning a summary. Two real benefits — <em>parallelism</em> (n investigations at once) and <em>context isolation</em> (the lead never holds all the raw detail).</p>
+<p>Anthropic reported that a multi-agent research system outperformed a single-agent baseline by <strong>90.2%</strong> on its internal research eval, on breadth-first queries — and, in the same write-up, that agents burn roughly <strong>4× the tokens of a chat interaction, and multi-agent systems around 15×</strong>. That figure is the whole trade-off in one number, so remember it.</p>
+<h3>When it helps</h3>
+<ul class="body">
+  <li>The subtasks are genuinely independent and mostly <strong>read-only</strong> — search, research, audit, review from several angles.</li>
+  <li>Breadth matters more than a single deep chain of reasoning.</li>
+  <li>Each subtask's output compresses well into a summary the parent can act on.</li>
+</ul>
+<h3>When it hurts</h3>
+<ul class="body">
+  <li><strong>Shared mutable state.</strong> Two agents editing the same files conflict in ways neither can see. Fix: isolate — separate worktrees or containers — or don't parallelise the writes.</li>
+  <li><strong>Tightly coupled steps.</strong> If step 2 needs step 1's reasoning, splitting them just loses information across a summary boundary.</li>
+  <li><strong>Cost and debuggability.</strong> ~15× a chat, so roughly 4× a <em>single</em> agent — quote the baseline, because "15×" said inside a single-agent comparison is exactly the slip an interviewer who has read the post will catch. And a failure now has to be traced through several transcripts instead of one.</li>
+</ul>
+<div class="note gold"><span class="lbl">The senior line</span>"Sub-agents are a context-management tool before they're a parallelism tool. The reason to spawn one usually isn't speed — it's that I want the messy 40k tokens of an investigation to happen somewhere that isn't my main context, and only the conclusion to come back."</div>
+    </section>
+    <section id="eval">
+      <div class="kicker">09 — The question nobody prepares for</div>
+      <h2>How would you know an agent is any good?</h2>
 
-<section id="s11">
-  <h2><span class="num">11</span> Multi-agent systems — and when they're the wrong answer</h2>
-  <p>The common shape is <strong>orchestrator–worker</strong>: a lead agent decomposes the task and spawns sub-agents, each with its own clean context, each returning a summary. Two real benefits: <em>parallelism</em> (n investigations at once) and <em>context isolation</em> (the lead never has to hold all the raw detail).</p>
-  <p>Anthropic reported that a multi-agent research system outperformed a single-agent baseline by <strong>90.2%</strong> on its internal research eval, on breadth-first queries — and, in the same write-up, that agents burn roughly <strong>4× the tokens of a chat interaction, and multi-agent systems around 15×</strong>. That number is the whole trade-off in one figure, so it's worth remembering.</p>
+<p>Ask an interviewer's favourite unasked question before they ask it. Most candidates have no answer here at all.</p>
+<ul class="body">
+  <li><strong>The benchmark to name:</strong> SWE-bench and its human-validated subset SWE-bench Verified — real GitHub issues from real Python repos, scored by whether the model's patch makes the repo's own fail-to-pass and pass-to-pass tests green. Frontier scores went from single digits in 2023 to around 80% by late 2025 and into the mid-90s through 2026. <strong>Verified is now effectively saturated</strong>, with the top models within a point or so of each other, which is why serious evaluation has moved to harder sets like SWE-bench Pro.</li>
+  <li><strong>The caveat that matters more than the score:</strong> a benchmark whose tests are withheld from the model at solve time — but published, and therefore plausibly in its training data — measures "produces a patch that passes tests on issues resembling its training distribution". It doesn't measure design quality, matching your conventions, or knowing when to ask instead of guess. And the saturation is itself the point: the benchmark stopped discriminating long before agents stopped failing on real repos.</li>
+  <li><strong>Outcome vs. trajectory evaluation.</strong> Outcome: did the tests pass? Cheap, objective, blind to a horrifying route to the right answer. Trajectory: did it take sensible steps, avoid destructive commands, stay in scope? Expensive to grade, and where the real risk lives.</li>
+  <li><strong>LLM-as-judge</strong> for what you can't assert on — was the explanation accurate, is this diff in-house style. Fast and scalable, but it inherits the failure modes of the thing it's grading, so calibrate it against a human-labelled sample.</li>
+  <li><strong>What I'd actually do on a real system:</strong> build a small suite of <em>your own</em> tasks from your own repo with known-good outcomes, and re-run it whenever you change the model, the prompt or the tools. Twenty representative tasks you trust beat any public leaderboard.</li>
+</ul>
+    </section>
+    <section id="security">
+      <div class="kicker">10 — The part almost nobody prepares</div>
+      <h2>Prompt injection is not a bug you can patch</h2>
 
-  <h4>When it helps</h4>
-  <ul>
-    <li>The subtasks are genuinely independent and mostly <strong>read-only</strong> — search, research, audit, review from several angles.</li>
-    <li>Breadth matters more than a single deep chain of reasoning.</li>
-    <li>Each subtask's output compresses well into a summary the parent can act on.</li>
-  </ul>
-  <h4>When it hurts</h4>
-  <ul>
-    <li><strong>Shared mutable state.</strong> Two agents editing the same files conflict in ways neither can see. Fix: isolate — separate worktrees or containers — or don't parallelise the writes.</li>
-    <li><strong>Tightly coupled steps.</strong> If step 2 needs step 1's reasoning, splitting them just loses information across a summary boundary.</li>
-    <li><strong>Cost and debuggability.</strong> ~15× a chat, so roughly 4× a <em>single</em> agent — quote the baseline, because "15×" said inside a single-agent comparison is exactly the slip an interviewer who has read the post will catch. And a failure now has to be traced through several transcripts instead of one.</li>
-  </ul>
-  <div class="num-note"><b>The senior line</b>"Sub-agents are a context-management tool before they're a parallelism tool. The reason to spawn one usually isn't speed — it's that I want the messy 40k tokens of an investigation to happen somewhere that isn't my main context, and only the conclusion to come back."</div>
-</section>
+<p>The model sees one flat sequence of tokens. It has no reliable way to distinguish <em>your instructions</em> from <em>data it fetched</em>. So text inside a web page, a GitHub issue, a dependency's README or a tool result can carry instructions, and the model may follow them. This is a <strong>structural</strong> property of how LLMs consume input, not a defect awaiting a fix — which is exactly why the mitigation is architectural.</p>
+<p><strong>Direct</strong> injection is prompt input from the user altering the model's behaviour — in your own sandbox that's just jailbreaking, but in a multi-tenant product it's an attacker overriding <em>your</em> system prompt and guardrails (OWASP's LLM01). <strong>Indirect</strong> injection is the more insidious one: the payload arrives inside content the agent was asked to read, on behalf of a user who did nothing wrong.</p>
+<div class="note gold"><span class="lbl">The lethal trifecta — Simon Willison's framing, and the best thing to quote here</span>Risk becomes serious when an agent has all three at once: <strong>(1)</strong> access to private data, <strong>(2)</strong> exposure to untrusted content, and <strong>(3)</strong> the ability to communicate externally. Any two is usually survivable. All three means an attacker who controls the untrusted content can read your data and get it out. <em>The practical defence is to break the triangle</em> — the agent that reads untrusted input doesn't get network egress, or doesn't hold the secrets.</div>
 
-<section id="s12">
-  <h2><span class="num">12</span> How you'd know an agent is any good — evaluation</h2>
-  <p>Ask an interviewer's favourite unasked question before they ask it. Most candidates have no answer here at all.</p>
-  <ul>
-    <li><strong>The benchmark to name:</strong> SWE-bench and its human-validated subset SWE-bench Verified — real GitHub issues from real Python repos, scored by whether the model's patch makes the repo's own tests pass. Frontier scores went from single digits in 2023 to around 80% by late 2025 and into the mid-90s through 2026 — Verified is now effectively saturated, with the top models within a point or so of each other, which is why serious evaluation has moved to harder sets like SWE-bench Pro. <strong>That saturation is itself the point:</strong> the benchmark stopped discriminating long before agents stopped failing on real repos.</li>
-    <li><strong>The caveat that matters more than the score:</strong> a benchmark whose tests are withheld from the model at solve time — but published, and therefore plausibly in its training data — measures "produces a patch that passes tests on issues resembling its training distribution". It doesn't measure design quality, matching your conventions, or knowing when to ask instead of guess. Treat leaderboard position as a floor on capability, not a prediction about your repo.</li>
-    <li><strong>Outcome vs. trajectory evaluation.</strong> Outcome: did the tests pass? Cheap, objective, blind to a horrifying route to the right answer. Trajectory: did it take sensible steps, avoid destructive commands, stay in scope? Expensive to grade, and where the real risk lives.</li>
-    <li><strong>LLM-as-judge</strong> for the things you can't assert on — was the explanation accurate, is this diff in-house style. Fast and scalable, but it inherits the same failure modes as the thing it's grading, so it needs a human-labelled sample to be calibrated against.</li>
-    <li><strong>What I'd actually do on a real system:</strong> build a small suite of <em>your own</em> tasks from your own repo with known-good outcomes, and run it whenever you change the model, the prompt or the tools. Twenty representative tasks you trust beat any public leaderboard.</li>
-  </ul>
-</section>
+<h3>The other failure modes worth naming</h3>
+<ul class="body">
+  <li><strong>Hallucinated dependencies ("slopsquatting").</strong> Models invent plausible package names; attackers register them and wait for the install. Spracklen et al. (USENIX Security 2025) tested 16 models over 576,000 code samples and found <strong>19.7% of recommended packages didn't exist</strong> — and, crucially, <strong>43% of hallucinated names recurred in all ten reruns of the same prompt</strong>. That repeatability is what makes it exploitable rather than merely annoying: the attacker can predict the name and register it in advance. Rates are far lower on current frontier models, so quote it in the past tense. Defence: lockfiles, an allowlist or private registry, and a CI check that every new dependency was deliberate.</li>
+  <li><strong>Secrets in context.</strong> Anything in the window can end up in a log, a summary, or a request to the provider. Keep credentials in the <em>execution environment</em>, not in the prompt — the agent should call a tool that has the key, not be told the key.</li>
+  <li><strong>Insecure generated code.</strong> The model writes what's common in training data, and a lot of training data is insecure. Veracode's 2025 GenAI code-security report tested over 100 models across 80 tasks and found <strong>45% of generated code introduced an OWASP Top 10 flaw</strong>, with cross-site scripting and log injection failing well over 80% of the time. It doesn't "know" this is the auth path.</li>
+  <li><strong>Over-broad permissions.</strong> An agent with your production credentials has your production credentials. Scope tokens to the task, run in a sandbox or container, default to read-only unless the task needs writes.</li>
+</ul>
+<div class="note"><span class="lbl">Say this</span>"I treat everything the agent reads as untrusted input and everything it writes as unreviewed code. That means sandboxing, least-privilege credentials, and never putting private data, untrusted content and network egress in the same agent — that combination is where the real incidents come from."</div>
+    </section>
+    <section id="cost">
+      <div class="kicker">11 — The constraint people forget</div>
+      <h2>Where the money and the milliseconds actually go</h2>
 
-<section id="s13">
-  <h2><span class="num">13</span> Security — the part almost nobody prepares</h2>
+<ul class="body">
+  <li><strong>You pay per token, in and out, and output usually costs several times input</strong> — around 5× across current frontier pricing. But agents are input-heavy: the whole growing transcript is re-sent every turn, so a 30-turn task re-sends an ever-larger prompt 30 times, and token spend grows super-linearly with task length.</li>
+  <li><strong>Prompt caching is the main lever.</strong> A stable prefix — system prompt, tool definitions, project instructions — can be cached by the provider so re-sending it is far cheaper than the first time. It is a strict <em>prefix</em> match, which makes the design consequence concrete: <strong>put the stable things first and the changing things last</strong>. Reordering your system prompt per request quietly destroys the saving, because any changed byte invalidates everything after it.</li>
+  <li><strong>Latency is dominated by output tokens.</strong> Generation is sequential — roughly one token at a time — so a verbose answer is slow almost in proportion to its length, while a large input is comparatively cheap because prefill parallelises. "Be concise" is a performance instruction, not just a style one.</li>
+  <li><strong>Route by difficulty.</strong> A small fast model for classification, formatting and mechanical edits; a frontier model for the reasoning. Most production systems are mixtures, and saying so shows you've thought past "use the best model".</li>
+  <li><strong>Bound everything.</strong> Max turns, token budget, wall-clock timeout. An unbounded loop that can't solve the task will keep trying — the failure mode isn't a crash, it's an invoice.</li>
+</ul>
+    </section>
+    <section id="brelly">
+      <div class="kicker">12 — The project that proves it</div>
+      <h2>Deterministic control around a non-deterministic agent</h2>
 
-  <h3>Prompt injection, and why it isn't a bug you can patch</h3>
-  <p>The model sees one flat sequence of tokens. It has no reliable way to distinguish <em>your instructions</em> from <em>data it fetched</em>. So text inside a web page, a GitHub issue, a dependency's README or a tool result can carry instructions, and the model may follow them. This is a <strong>structural</strong> property of how LLMs consume input, not a defect awaiting a fix — which is exactly why the mitigation is architectural.</p>
-  <p><strong>Direct</strong> injection is prompt input from the user altering the model's behaviour — in your own sandbox that's just jailbreaking, but in a multi-tenant product it's an attacker overriding <em>your</em> system prompt and guardrails (OWASP's LLM01). <strong>Indirect</strong> injection is the more insidious one: the payload arrives in content the agent was asked to read, on behalf of a user who did nothing wrong.</p>
+<p>Everything above is general knowledge. This is the part only you can say: <strong>Brelly</strong>, a React Native / Expo weather app. The app is the excuse; the guardrail system around the agent is the answer.</p>
 
-  <div class="num-note"><b>The "lethal trifecta" — Simon Willison's framing, and the best thing to quote here</b>Risk becomes serious when an agent has all three at once: <strong>(1)</strong> access to private data, <strong>(2)</strong> exposure to untrusted content, and <strong>(3)</strong> a way to communicate externally. Any two is usually survivable. All three means an attacker who controls the untrusted content can read your data and get it out. <em>The practical defence is to break the triangle</em> — the agent that reads untrusted input doesn't get network egress, or doesn't hold the secrets.</div>
+<h3>Three hooks</h3>
+<p>Wired in <code class="k">.claude/settings.json</code>. Name them:</p>
+<ul class="body">
+  <li><strong>SessionStart</strong> — <code class="k">session-context.sh</code> auto-injects the live task list and "traps" doc into the agent's context, so it never works from stale assumptions. <em>Context engineering, applied.</em></li>
+  <li><strong>PreToolUse</strong> — <code class="k">doc-gate.sh</code> fires before the agent edits any JS/TS file (<code class="k">.ts .tsx .js .jsx</code>), reminding it that Expo is v57 and to check the live docs. <em>A guardrail against outdated training.</em></li>
+  <li><strong>Stop</strong> — <code class="k">verify-gate.sh</code> runs <code class="k">tsc</code>, lint and tests after every turn. On failure it <strong>blocks the agent from finishing</strong> and feeds the errors back to fix before returning to me. <em>An agentic feedback loop.</em></li>
+</ul>
+<div class="note gold"><span class="lbl">Know the mechanism</span>Exit 0 lets the turn end; <strong>exit code 2 blocks it unconditionally</strong>, and the reason handed back to the agent is your stderr. There is also a richer JSON form on stdout — a decision plus a reason, and <code class="k">additionalContext</code> for injecting text — which is what SessionStart and PreToolUse use to push content in. Mine takes the exit-code route because a shell script that already exits non-zero on a failing <code class="k">tsc</code> needs no extra plumbing. Being able to say <em>"exit 2 blocks, stderr is the reason, and JSON is the structured alternative"</em> is the difference between "I configured a hook" and "I understand the contract".</div>
+<p>Map each hook back to the concepts while you describe it — that's what turns three shell scripts into an argument. SessionStart is <strong>context engineering</strong>: deciding what occupies the window before the agent has done anything. PreToolUse is an <strong>interception at the harness seam</strong>: the point between "the model asked" and "the machine did". Stop is the <strong>bound on the loop</strong>: the agent doesn't get to decide it's finished.</p>
 
-  <h3>The other failure modes worth naming</h3>
-  <ul>
-    <li><strong>Hallucinated dependencies ("slopsquatting").</strong> Models invent plausible package names; attackers register them and wait for the install. Spracklen et al. (USENIX Security 2025) tested 16 models over 576,000 code samples and found <strong>19.7% of recommended packages didn't exist</strong> — and, crucially, <strong>43% of hallucinated names recurred in all ten reruns of the same prompt</strong>. That repeatability is what makes it exploitable rather than merely annoying: the attacker can predict the name and register it in advance. Rates are far lower on current frontier models, so quote it as "published research found around 20% across the models tested", not as a present-tense figure. Defence: lockfiles, an allowlist/private registry, and a CI check that every new dependency was deliberate.</li>
-    <li><strong>Secrets in context.</strong> Anything in the window can end up in a log, a summary, or a request to the provider. Keep credentials in the <em>execution environment</em>, not in the prompt — the agent should call a tool that has the key, not be told the key.</li>
-    <li><strong>Insecure generated code.</strong> The model writes what's common in training data, and a lot of training data is insecure. Veracode's 2025 GenAI code-security report tested over 100 models across 80 tasks and found <strong>45% of generated code introduced an OWASP Top 10 flaw</strong> — with cross-site scripting and log injection failing well over 80% of the time. It doesn't "know" this is the auth path.</li>
-    <li><strong>Over-broad permissions.</strong> An agent with your production credentials has your production credentials. Scope tokens to the task, run in a sandbox or container, and default to read-only unless the task needs writes.</li>
-  </ul>
-  <div class="say"><b>Say this</b>"I treat everything the agent reads as untrusted input and everything it writes as unreviewed code. That means sandboxing, least-privilege credentials, and never putting private data, untrusted content and network egress in the same agent — that combination is where the real incidents come from."</div>
-</section>
+<h3>Five skills</h3>
+<p>In <code class="k">.claude/skills/</code>. Example: <code class="k">implement-feature</code> defines my definition of done — zero lint warnings, a test for every new function. <em>Progressive disclosure:</em> the agent pulls the right instructions only when the task matches, instead of one giant prompt.</p>
+<p>Why this beats a longer system prompt is context engineering in practice: instructions that are always present compete for attention with everything else, and a 4,000-word standing brief makes every rule in it slightly less likely to be followed. A skill loads when its description matches the task, so the relevant instructions arrive uncontested. <strong>It is still persuasion, not enforcement</strong> — that's what the hooks are for — but persuasion delivered at the moment it's relevant.</p>
+    </section>
+    <section id="depth">
+      <div class="kicker">13 — Why hooks and not better prompts</div>
+      <h2>Put the soft rules in the prompt and the hard rules in the exit code</h2>
 
-<section id="s14">
-  <h2><span class="num">14</span> Cost &amp; latency — the engineering constraint people forget</h2>
-  <ul>
-    <li><strong>You pay per token, in and out, and output usually costs several times input.</strong> But agents are input-heavy: the whole growing transcript is re-sent every turn. A 30-turn task re-sends an ever-larger prompt 30 times, which is why token spend grows super-linearly with task length.</li>
-    <li><strong>Prompt caching is the main lever.</strong> Stable prefixes — system prompt, tool definitions, project instructions — can be cached by the provider so re-sending them is far cheaper than the first time. The design consequence is concrete: <strong>put the stable things first and the changing things last</strong>, because a cache hit requires an identical prefix. Reordering your system prompt per request quietly destroys the saving.</li>
-    <li><strong>Latency is dominated by output tokens.</strong> Generation is sequential — roughly one token at a time — so a verbose answer is slow almost in proportion to its length, while a large input is comparatively cheap to process. "Be concise" is a performance instruction, not just a style one.</li>
-    <li><strong>Route by difficulty.</strong> A small fast model for classification, formatting and mechanical edits; a frontier model for the reasoning. Most production systems are mixtures, and saying so shows you've thought past "use the best model".</li>
-    <li><strong>Bound everything.</strong> Max turns, token budget, wall-clock timeout. An unbounded loop that can't solve the task will keep trying — the failure mode isn't a crash, it's an invoice.</li>
-  </ul>
-</section>
+<p>Two layers, both backstopped by CI:</p>
+<ul class="body">
+  <li><strong>The code gate</strong> (<code class="k">tsc</code> + lint + tests) runs in the <strong>Stop hook</strong> and again in <strong>CI</strong>.</li>
+  <li><strong>Convention checks</strong> — commit subject must start <code class="k">feat/fix/chore</code>, branch naming — run in <strong>git hooks</strong> (<code class="k">.githooks/commit-msg</code>, <code class="k">pre-push</code>) and are re-checked in <strong>CI</strong>.</li>
+</ul>
+<p><strong>Your line:</strong> "Local git hooks can be skipped with <code class="k">--no-verify</code>, so CI re-runs everything — it never trusts them." That shows you know soft rules get bypassed, so real enforcement has to be machine-checked. Worth adding the second half: git hooks also aren't distributed by default — <code class="k">.git/hooks</code> isn't part of the repository — which is why mine live in a checked-in <code class="k">.githooks/</code> directory pointed at by <code class="k">core.hooksPath</code>. Small details are what make a story sound lived-in rather than read.</p>
 
-<div class="partband">
-  <p class="lab">Part C</p>
-  <h2>Brelly — the project that proves it</h2>
-  <p>A React Native / Expo weather app. The app is the excuse; the guardrail system around the agent is the answer. Everything in Parts A and B is general knowledge — this is the part only you can say.</p>
+<h3>The mechanism behind the choice</h3>
+<p>This is the follow-up that separates a demo from an engineering answer, so have the reasoning ready rather than the list.</p>
+<p>An LLM is <strong>probabilistic</strong>: the same prompt can produce different output, and there is no instruction you can write that makes compliance certain. A prompt is a <em>request</em>. So any rule that actually matters — "never ship failing types", "always check the current docs" — cannot live in the prompt, because the failure mode is silent and occasional, which is the worst kind. A hook is <strong>deterministic</strong>: a shell script the harness runs at a fixed lifecycle point, whose exit code is not negotiable.</p>
+<table class="tbl">
+  <thead><tr><th>Layer</th><th>Enforcement</th><th>What it can guarantee</th></tr></thead>
+  <tbody>
+    <tr><td>prompt</td><td>Persuasion</td><td>Nothing. It raises the probability of the right behaviour, which is useful but not a guarantee</td></tr>
+    <tr><td>skill</td><td>Scoped instructions loaded on match</td><td>Still persuasion — but far more reliable, because the instructions arrive when they're relevant instead of competing with everything else in a giant prompt</td></tr>
+    <tr><td>hook</td><td>Exit code</td><td>A hard stop. Exit 2 blocks the turn and returns stderr as the reason; the agent cannot decide to ignore it</td></tr>
+    <tr><td>CI</td><td>Exit code, off the developer's machine</td><td>The real backstop. Every local gate runs somewhere the developer controls and can edit or bypass — git hooks fall to <code class="k">--no-verify</code>, and agent hooks are just a settings file. CI can't be</td></tr>
+  </tbody>
+</table>
+<div class="note"><span class="lbl">Say this</span>"The prompt is where I ask. The hook is where I insist. CI is where nobody gets a vote."</div>
+    </section>
+    <section id="limits">
+      <div class="kicker">14 — Volunteer the failure modes</div>
+      <h2>The feedback loop, and what it is blind to</h2>
+
+<p>Walk the cycle step by step, because "it self-corrects" sounds like marketing until you describe it:</p>
+<ol class="body">
+  <li>The agent finishes a turn and tries to hand control back to me.</li>
+  <li>The <strong>Stop hook</strong> fires first and runs <code class="k">tsc</code>, lint and the test suite.</li>
+  <li>If anything fails, the script <strong>exits 2</strong> and writes the compiler and test output to stderr. (Exit 2 is the unconditional block; the JSON-on-stdout form would carry the reason in a decision field instead.)</li>
+  <li>The harness treats that as a block: the turn does not end, and stderr goes back to the agent as the reason — so it has the exact type error, not a vague instruction to try again.</li>
+  <li>It fixes and tries to stop again. The loop repeats until the gate passes, and only then do I see the result.</li>
+</ol>
+<p>Two things to point out, because they're the interesting engineering rather than the tooling. <strong>The error message is the prompt</strong> — a compiler error is a far better instruction than anything I could write in advance: specific, current, and grounded in the actual code. And <strong>the loop needs a bound</strong> — an agent that cannot fix the failure will keep trying, so you want an iteration cap and a way to surface "I'm stuck" to a human rather than burning tokens in a circle.</p>
+
+<h3>Limits — say these before you're asked</h3>
+<p>Volunteering the failure modes is what makes the rest credible.</p>
+<table class="tbl">
+  <thead><tr><th>Caught</th><th>Not caught</th></tr></thead>
+  <tbody>
+    <tr><td>type errors, lint, failing tests</td><td><strong>Weak tests.</strong> A gate proves tests ran and passed; it cannot tell whether they assert anything meaningful. An agent that writes the test and the code can satisfy both with the same misunderstanding</td></tr>
+    <tr><td>outdated API usage</td><td><strong>Confidently wrong architecture.</strong> Nothing in <code class="k">tsc</code> or lint objects to a design that works and is wrong for the codebase</td></tr>
+    <tr><td>convention drift</td><td><strong>Scope creep.</strong> The agent refactoring three files it wasn't asked to touch passes every gate</td></tr>
+    <tr><td>regressions on covered paths</td><td><strong>Anything uncovered.</strong> Coverage gates catch untested code, not untested behaviour</td></tr>
+  </tbody>
+</table>
+<p>The honest summary line: <strong>the gates make the agent's output verifiable, not correct — code review is still mine to do</strong>.</p>
+<div class="note warn"><span class="lbl">The cost, if pressed</span>This setup is <strong>friction</strong>. Every gate makes the loop slower, and a suite that takes three minutes turns each agent turn into a three-minute wait. That's a real tax, and the reason to keep the Stop-hook gate fast and push the slower checks to CI — the same speed-versus-confidence trade as any test suite.</div>
+<div class="note gold"><span class="lbl">The one insight to repeat</span>"AI is fast but confidently wrong — especially when its training is behind the current library version. My whole setup spends effort on the <strong>system around the agent</strong> — tests, doc-gates, feedback loops — rather than on perfect prompts. That's what turns it from a toy into something I'd ship."</div>
+    </section>
+    <section id="vocab">
+      <div class="kicker">15 — Definitions short enough to say out loud</div>
+      <h2>Concept vocabulary</h2>
+
+<table class="tbl">
+  <thead><tr><th>Term</th><th>Your one-liner</th></tr></thead>
+  <tbody>
+    <tr><td>vibe coding</td><td>Describe what you want in natural language, let the AI write the code. Karpathy, Feb 2025. <strong>Strict sense:</strong> you accept all and don't read the diffs — his framing was that it's fine for throwaway projects. He retired the term in early 2026 in favour of <em>agentic engineering</em> for the professional version.</td></tr>
+    <tr><td>agent</td><td>An LLM that can <em>act</em> in a loop — call tools, see results, decide the next step — not just answer once. Model + tools + loop.</td></tr>
+    <tr><td>workflow</td><td>LLM calls orchestrated along predefined code paths. Cheaper, testable, reproducible. Prefer it unless the steps genuinely can't be known in advance.</td></tr>
+    <tr><td>tool use</td><td>Functions the agent can invoke, described to it as JSON Schema. The model emits a request; <em>your harness</em> executes it. That split is where every guardrail lives.</td></tr>
+    <tr><td>harness</td><td>The ordinary, non-AI code around the model that runs tools, appends results, enforces permissions and decides when to stop. Most of an agent's quality lives here, not in the model.</td></tr>
+    <tr><td>ReAct</td><td>Reason → act → observe → repeat, rather than plan-everything-then-execute (Yao et al., 2022). Works because most of what you need is discovered during the task.</td></tr>
+    <tr><td>context window</td><td>The model's working memory — 1M tokens on most frontier models now, 200k on the cheaper tiers. Everything is re-sent every turn, so it's a budget, not a container.</td></tr>
+    <tr><td>context engineering</td><td>Deciding what occupies that window at each step. Replaced "prompt engineering" as the real skill for agents, because the prompt is written once and the context is rebuilt every turn.</td></tr>
+    <tr><td>context rot</td><td>Accuracy degrades as input grows, and models attend better to the start and end than the middle. More context is not free — irrelevant tokens compete with relevant ones.</td></tr>
+    <tr><td>compaction</td><td>Summarising the transcript when the window fills, then continuing from the summary. Lossy by design — pin what must survive.</td></tr>
+    <tr><td>sub-agent</td><td>A fresh agent with its own clean context, handed a self-contained job, returning only a summary. A context-management tool first, a parallelism tool second.</td></tr>
+    <tr><td>hooks</td><td>Deterministic scripts that fire at fixed lifecycle points. How you add hard rules to a probabilistic system — the rule lives in the exit code, not the wording.</td></tr>
+    <tr><td>MCP</td><td>Model Context Protocol — open standard (Anthropic, Nov 2024; "a USB-C port for AI applications") for plugging external tools and data into an agent, over JSON-RPC. Turns M×N bespoke integrations into M+N. Donated to the Linux Foundation's Agentic AI Foundation in Dec 2025, so it's genuinely cross-vendor now.</td></tr>
+    <tr><td>RAG</td><td>Retrieval-augmented generation: fetch relevant chunks, usually by embedding similarity, and put them in the prompt. Great for prose; often beaten by plain search on code, where identifiers are unique.</td></tr>
+    <tr><td>prompt injection</td><td>Instructions smuggled into content the model reads. Structural, not a patchable bug — the model sees one flat token stream and can't reliably tell instructions from data.</td></tr>
+    <tr><td>lethal trifecta</td><td>Private data + untrusted content + external communication in one agent. Any two is usually survivable; all three is exfiltration waiting to happen. Break the triangle.</td></tr>
+    <tr><td>prompt caching</td><td>The provider caches a stable prompt prefix so re-sending it is far cheaper. Strict prefix match, so stable content first, changing content last — or you lose the hit.</td></tr>
+    <tr><td>guardrails</td><td>The checks that catch the agent's mistakes. Key insight: agents are confidently wrong, so you verify, not trust.</td></tr>
+    <tr><td>SWE-bench</td><td>Real GitHub issues, scored by whether the patch passes the repo's own tests. Verified is the human-validated subset — now near-saturated, so treat it as a floor on capability, not a prediction about your codebase.</td></tr>
+  </tbody>
+</table>
+    </section>
+    <section id="bank">
+      <div class="kicker">16 — Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="vibe">Vibe</button>
+        <button class="fchip" data-f="tools">Tools</button>
+        <button class="fchip" data-f="loop">Agents</button>
+        <button class="fchip" data-f="context">Context</button>
+        <button class="fchip" data-f="mcp">MCP & search</button>
+        <button class="fchip" data-f="eval">Eval</button>
+        <button class="fchip" data-f="sec">Security</button>
+        <button class="fchip" data-f="cost">Cost</button>
+        <button class="fchip" data-f="brelly">Brelly</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
 </div>
+<footer>Built for interview prep · verify, don't trust</footer>
 
-<section id="s15">
-  <h2><span class="num">15</span> Hooks — deterministic control around a non-deterministic agent</h2>
-  <p>Three hooks, wired in <span class="hook">.claude/settings.json</span>. Name them:</p>
-  <ul>
-    <li><strong>SessionStart</strong> <span class="hook">session-context.sh</span> — auto-injects the live task list &amp; "traps" doc into the agent's context, so it never works from stale assumptions. <span class="tag">context engineering</span></li>
-    <li><strong>PreToolUse</strong> <span class="hook">doc-gate.sh</span> — before the agent edits any JS/TS file (<span class="hook">.ts .tsx .js .jsx</span>), it fires a reminder that Expo is v57 and to check the live docs. <span class="tag">guardrail vs. outdated knowledge</span></li>
-    <li><strong>Stop</strong> <span class="hook">verify-gate.sh</span> — after every turn it runs <span class="hook">tsc</span>, lint &amp; tests. On failure it <strong>blocks the agent from finishing</strong> and feeds the errors back to fix before returning to me. <span class="tag">agentic feedback loop</span></li>
-  </ul>
-  <div class="num-note"><b>Know the mechanism</b>Exit 0 lets the turn end; <strong>exit code 2 blocks it unconditionally</strong>, and the reason handed back to the agent is your stderr. There is also a richer JSON form on stdout — a decision plus a reason, and <code>additionalContext</code> for injecting text — which is what SessionStart and PreToolUse use to push content into the context. Mine takes the exit-code route because a shell script that already exits non-zero on a failing <span class="hook">tsc</span> needs no extra plumbing. Being able to say <em>"exit 2 blocks, stderr is the reason, and JSON is the structured alternative"</em> is the difference between "I configured a hook" and "I understand the contract".</div>
-  <p>Map each hook back to Part B while you're describing it, because that's what turns three shell scripts into an argument: SessionStart is <strong>context engineering</strong> (§7) — deciding what occupies the window before the agent has done anything. PreToolUse is an <strong>interception at the harness seam</strong> (§6) — the point between "the model asked" and "the machine did". Stop is the <strong>bound on the loop</strong> (§5) — the agent doesn't get to decide it's finished.</p>
-</section>
+<script>
+const QA = [["vibe", "Vibe", "What does vibe coding actually mean?", "Karpathy coined it in February 2025 for a specific mode: describe what you want, accept every diff without reading it, and paste errors back rather than debugging. He framed it as fine for throwaway weekend projects. The looser popular usage — any AI-assisted coding — is not what the term originally meant, and drawing that distinction is the whole value of knowing it."], ["vibe", "Vibe", "Is vibe coding still the right term?", "Karpathy himself retired it about a year later and proposed agentic engineering for the professional version: you are not writing the code 99% of the time, you are orchestrating agents and providing oversight. Using the newer term signals you read the source rather than the coverage."], ["vibe", "Vibe", "How is what you do different from vibe coding?", "Same speed, different accountability. The AI writes, but the diff still gets reviewed and every change has to survive a machine-checked gate — types, lint and tests — before it can even reach me. Vibe coding skips the reading; I moved the reading to a place that cannot be skipped."], ["vibe", "Vibe", "Describe the autonomy ladder.", "Six rungs by how much of the loop the human is inside: autocomplete, chat, inline edit, supervised agent, sandboxed agent that opens a PR, and a fleet of background agents. The important observation is that climbing it does not remove work — it converts writing into reviewing, and the failure mode shifts from a wrong line you accepted to a 900-line diff you never watched being written."], ["vibe", "Vibe", "Has AI actually made developers faster?", "Less clearly than people assume. METR's 2025 randomised trial on experienced maintainers in repos they knew well measured roughly 19% slower with AI, while the same developers estimated they had been about 20% faster. METR later found a smaller effect in a bigger follow-up and retired that design, so do not lean on the number — lean on the perception gap, which is why I never quote a personal speed multiplier."], ["tools", "Tools", "How would you categorise the tools rather than list them?", "Six categories: inline completion, AI-native editors, terminal or CLI agents, asynchronous cloud agents that open PRs, prompt-to-app builders, and AI code review. Or compress it to three questions — how much autonomy, can it run my tests, and is it editing my working tree or a sandbox. Every product is a point in that space."], ["tools", "Tools", "Why did terminal agents change things?", "Because the terminal is where the feedback is. An editor plugin sees files; a terminal agent sees files and consequences — it can run the failing test itself instead of asking you what happened. That closed loop is the difference between a code generator and something that can finish a task."], ["tools", "Tools", "What is the apply model, and why does it matter?", "In AI-native editors a large model describes the change and a smaller, faster model merges it into the real file. When an edit lands in the wrong place or mangles surrounding code, that second model usually failed, not the one that wrote the code. Knowing the split is a good sign you have used these tools rather than read about them."], ["tools", "Tools", "When are prompt-to-app builders the right choice?", "Greenfield with no history: a demo this afternoon, or the first 80% of a new app. They degrade hard once there is an existing schema, an auth model or a deploy pipeline someone else owns — and they generate auth and access control with exactly the same confidence as a button, which is where the publicised incidents came from."], ["tools", "Tools", "What makes parallel agents safe?", "Isolation. Two agents editing one working tree corrupt each other in ways neither can see; two agents in two containers or two git worktrees do not. That is why cloud agents each get their own sandboxed checkout, and it is the concrete detail to mention if you have actually done it."], ["tools", "Tools", "Where does AI code review fit?", "As an extra pair of eyes with no merge rights, never as the approval — it is a probabilistic reviewer. Its real value is the boring sweep humans skim past on a big diff: nullability, missing error handling, a changed function whose callers were not updated. The argument for it is arithmetic — if agents multiply how much code gets written, review is the constraint that binds."], ["tools", "Tools", "How do you decide how much autonomy to give?", "Autonomy scales with how cheaply I can verify the result, not with how hard the task is. A 200-file migration with a green suite: run it wide, one module per run. Auth or payments: I write it, because passing the tests says almost nothing about correctness there. An unfamiliar codebase: read-only, ask rather than edit."], ["tools", "Tools", "Which coding tool is best?", "Do not answer the product question — they are converging on the same models. Choose on three axes: how much autonomy you want, whether it can run your tests, and whether it edits your working tree or a sandbox. Then name what you have actually used and its real weakness."], ["loop", "Agents", "Explain an agent to someone non-technical.", "It is a model in a loop. It cannot do anything itself — it can only say please read this file or please run the tests. Ordinary code does the thing and hands back the result, and it decides what to do next with that. It stops when it answers instead of asking."], ["loop", "Agents", "What is the difference between an agent and a workflow?", "A workflow orchestrates LLM calls along predefined code paths; an agent lets the model direct its own process and choose its own tools. Prompt chaining, routing and parallelisation are workflows. The senior position is to prefer the workflow — you can test it, reproduce failures and bound the cost — and reach for a real agent only when the steps and their order genuinely cannot be known in advance."], ["loop", "Agents", "What is ReAct?", "Interleaving reasoning with acting — think a step, act, observe, re-plan — rather than planning everything up front. From Yao et al., 2022. It wins because most of the information you need is discovered during the task, not before it. Modern agents are essentially ReAct with better tools."], ["loop", "Agents", "Who decides when an agent is finished?", "The model does — the loop ends when it stops requesting tools. Nothing external decides the task is done, which is exactly why production harnesses add hard bounds: a max-turns cap, a token budget and a wall-clock timeout. An unbounded agent that cannot solve the task does not crash, it bills."], ["loop", "Agents", "How does an agent recover from an error?", "Errors are not exceptions, they are just more input — a failed command is appended to the context as text. That is the whole mechanism behind self-correction, and it is why the quality of your error messages matters: a stack trace is a more specific, more current instruction than anything you could have written in advance."], ["loop", "Agents", "Walk me through tool use, precisely.", "You send tool definitions — name, description, JSON Schema. The model emits a structured tool-use block instead of prose and generation stops. Your harness validates the arguments, decides whether it is permitted, executes, and captures the output. That output goes back as a tool-result message and the model runs again on the extended conversation. The model chooses; the harness executes."], ["loop", "Agents", "How would you design tools for an agent?", "Treat the description as part of the prompt, because that is what the model selects from. Keep the set small and non-overlapping — two tools that could both plausibly apply produce coin-flip selection. Make every error message actionable rather than an errno. Cap output size, since tool results are the main thing that eats the window. And keep destructive tools narrow, so the safe ones can be auto-approved and the general shell tool cannot."], ["loop", "Agents", "Why can you build guardrails around a probabilistic model at all?", "Because there is a deterministic seam. The model only ever emits a request; ordinary code decides whether to run it. Every permission prompt, sandbox and gate lives at that seam. I cannot stop a model from wanting to run a destructive command, but I fully control the process that would actually run it."], ["context", "Context", "What is context engineering?", "Deciding what occupies the finite window at each step of a long-running loop — which files, which tool results, which history — and what gets evicted. It replaced prompt engineering as the real skill for agents, because the prompt is written once and the context is rebuilt every single turn."], ["context", "Context", "Is a bigger context window always better?", "No. Quality degrades before the limit does — accuracy on retrieval tasks falls as input grows, and models attend better to the beginning and end than the middle. Every irrelevant token competes for attention with the relevant ones, so the goal is the smallest set of high-signal tokens that makes the next decision correct."], ["context", "Context", "Is attention quadratic?", "During prefill, yes — processing the prompt scales roughly with the square of its length, so doubling the prompt is more than double the work. Once generation starts, a KV cache makes each new token cost roughly linear in context. And prompt caching means the stable prefix often is not reprocessed at all. The window is still a hard constraint, but the binding reason is attention quality more than raw compute."], ["context", "Context", "What is compaction and what does it cost?", "When the window nears its limit, you summarise the transcript and continue from the summary plus the most recent turns. It is lossy by construction — whatever detail you drop is gone — so you pin the things that must survive: the task, the key decisions, the file paths."], ["context", "Context", "Why use sub-agents?", "Primarily for context isolation, not speed. A self-contained investigation can burn 40k tokens somewhere that is not my main context and return only the conclusion. The trade is that the parent never sees the detail, so it cannot second-guess the summary it was handed."], ["context", "Context", "Does an LLM have memory?", "Not between calls — models are stateless. Three different things get called memory: the current conversation, which is real but bounded; a persistent instruction file loaded every session, which is a standing brief rather than memory; and retrieved long-term facts. The hard part of the third is not storing, it is invalidating — a remembered fact about a file you have since refactored is a landmine."], ["context", "Context", "What is the single highest-leverage thing to write for a coding agent?", "The project instruction file — CLAUDE.md or AGENTS.md. Conventions, commands, architecture and the known traps. It is the one context that is always present, so it raises the baseline of every session, unlike a clever prompt you have to remember to type."], ["mcp", "MCP", "What is MCP and what problem does it solve?", "Model Context Protocol — an open standard from Anthropic, November 2024, for plugging external tools and data into an agent. Before it, M applications times N tools meant M times N bespoke connectors; with a shared protocol it is M plus N, since each app implements a client once and each tool ships one server. Same shape of argument as the Language Server Protocol."], ["mcp", "MCP", "How does MCP work mechanically?", "Client-server over JSON-RPC 2.0. The host application runs a client; each integration is a server. Two transports: stdio for a local server launched as a subprocess, and a streamable HTTP transport for remote ones. Servers expose three primitives — tools, which the model invokes; resources, which the application reads into context; and prompts, which the user invokes, like slash commands."], ["mcp", "MCP", "What are the security implications of connecting an MCP server?", "Every server is untrusted code holding your credentials and untrusted text entering your context. A compromised server can return content designed to steer the agent, and a legitimate one can leak data across boundaries — the classic case being an agent with access to both a private and a public repo being talked into moving content between them. Connect deliberately, scope tokens narrowly, and do not auto-approve tools from a server whose output you have not seen."], ["mcp", "Search", "RAG or grep for a codebase?", "For code, exact search usually wins, because code is full of unique identifiers and the structure is already navigable by following imports. For prose — docs, tickets, support history — embeddings win, because you are searching for meaning. The strong setups do both and let the model choose."], ["mcp", "Search", "Is the industry agreed on that?", "No, and saying so is better than picking a side. The CLI agents dropped their vector index — Claude Code's lead has said agentic search simply worked better, with none of the staleness, privacy or index-maintenance problems. Cursor went the other way, trained its own embedding model in late 2025 and reported roughly 12.5% higher accuracy on code questions, widening on repos over a thousand files. Both grep heavily; the disagreement is whether semantic search earns its keep on top."], ["mcp", "Multi-agent", "When does a multi-agent system help?", "When subtasks are genuinely independent and mostly read-only — search, research, audit, review from several angles — and each output compresses well into a summary. Anthropic reported a multi-agent research system beating a single-agent baseline by 90.2% on breadth-first research queries."], ["mcp", "Multi-agent", "What does multi-agent cost?", "Roughly 15 times the tokens of a chat interaction, against about 4 times for a single agent — so about 4 times a single agent, and quote the chat baseline, because the raw 15 gets misheard. You also lose debuggability: a failure now has to be traced across several transcripts instead of one. And it breaks down entirely on shared mutable state or tightly coupled steps."], ["eval", "Eval", "How would you know an agent is any good?", "Public benchmarks give you a floor, not a prediction. I would build a small suite of my own tasks from my own repo with known-good outcomes and re-run it whenever the model, the prompt or the tools change. Twenty representative tasks you trust beat any leaderboard."], ["eval", "Eval", "What is SWE-bench?", "Real GitHub issues from real Python repos, scored by whether the model's patch makes the repo's own fail-to-pass and pass-to-pass tests green. Verified is the human-validated subset. Scores went from single digits in 2023 to around 80% by late 2025 and into the mid-90s through 2026 — it is now effectively saturated, which is why evaluation has moved to harder sets."], ["eval", "Eval", "What is the problem with benchmark scores?", "Two things. The tests are withheld from the model at solve time but published, so contamination is a live concern. And what it measures — produces a patch that passes tests on issues resembling its training distribution — says nothing about design quality, matching your conventions, or knowing when to ask instead of guess. Saturation makes the point sharper: the benchmark stopped discriminating long before agents stopped failing on real repos."], ["eval", "Eval", "Outcome or trajectory evaluation?", "Both, for different risks. Outcome evaluation asks whether the tests passed — cheap and objective, but blind to a horrifying route to the right answer. Trajectory evaluation asks whether the steps were sensible, non-destructive and in scope. It is far more expensive to grade and it is where the real risk lives."], ["eval", "Eval", "When would you use an LLM as a judge?", "For things you cannot assert on — was the explanation accurate, is this diff in house style. It is fast and scales, but it inherits the failure modes of the thing it is grading, so it needs calibrating against a human-labelled sample before you trust its verdicts."], ["sec", "Security", "What is prompt injection?", "Instructions smuggled into content the model reads. The model sees one flat token sequence and has no reliable way to tell your instructions from data it fetched, so text in a web page, a GitHub issue or a dependency README can steer it. It is structural, not a bug awaiting a patch — which is why every real mitigation is architectural."], ["sec", "Security", "Direct versus indirect injection?", "Direct is user input altering the model's behaviour: in your own sandbox that is just jailbreaking, but in a multi-tenant product it is an attacker overriding your system prompt and guardrails — OWASP's LLM01. Indirect is the more insidious one: the payload arrives inside content the agent was asked to read, on behalf of a user who did nothing wrong."], ["sec", "Security", "What is the lethal trifecta?", "Simon Willison's framing: an agent with access to private data, exposure to untrusted content, and the ability to communicate externally. Any two is usually survivable; all three means whoever controls the untrusted content can read your data and get it out. The defence is to break the triangle — the agent that reads untrusted input does not get network egress, or does not hold the secrets."], ["sec", "Security", "What is slopsquatting?", "Models invent plausible package names; attackers register them and wait for the install. Research published in 2025 found roughly 20% of recommended packages did not exist across the models tested, and — the part that makes it exploitable — 43% of hallucinated names recurred in all ten reruns of the same prompt, so an attacker can predict and pre-register them. Rates are much lower on current frontier models. Defence is lockfiles, an allowlist or private registry, and a CI check that every new dependency was deliberate."], ["sec", "Security", "Where should secrets live?", "In the execution environment, never in the prompt. Anything in the context window can end up in a log, a summary or a request to the provider. The agent should call a tool that holds the key rather than be told the key."], ["sec", "Security", "Is AI-generated code secure?", "Not by default — the model writes what is common in its training data, and much of that is insecure. Veracode's 2025 report tested over 100 models across 80 tasks and found 45% of generated code introduced an OWASP Top 10 flaw, with XSS and log injection failing well over 80% of the time. It has no idea it is writing the auth path."], ["sec", "Security", "How would you stop an agent leaking data?", "Break the lethal trifecta first — never give one agent private data, untrusted content and network egress at once. Then least-privilege credentials scoped to the task, a sandbox or container, secrets in the environment rather than the prompt, and no auto-approval on any tool that can send data outward."], ["cost", "Cost", "Why do agent runs get expensive so fast?", "The whole growing transcript is re-sent every turn, so a 30-turn task re-sends an ever-larger prompt 30 times and spend grows super-linearly with task length. Output tokens also cost several times input — around 5 times at current frontier pricing — but agents are input-heavy, so the transcript is usually the bigger line."], ["cost", "Cost", "How does prompt caching change your design?", "It is a strict prefix match, so any changed byte invalidates everything after it. That gives you a concrete rule: stable content first — system prompt, tool definitions, project instructions — and changing content last. Reordering the system prompt per request quietly destroys the saving, and nothing warns you."], ["cost", "Cost", "What dominates latency?", "Output tokens, because generation is sequential — roughly one token at a time — so a verbose answer is slow almost in proportion to its length. A large input is comparatively cheap because prefill parallelises. That makes be concise a performance instruction, not a style one."], ["cost", "Cost", "How would you control agent cost in production?", "Route by difficulty — a small fast model for classification, formatting and mechanical edits, a frontier model for the reasoning. Cache aggressively with a stable prefix. And bound everything: max turns, token budget, wall-clock timeout. An unbounded loop that cannot solve the task does not crash, it invoices."], ["brelly", "Brelly", "How do you make sure the AI does not write bad code?", "Three layers, all re-running the same checks. The Stop hook runs tsc, lint and tests after every turn and blocks the agent from finishing on failure. Git hooks enforce commit and branch conventions. CI re-runs everything, because local gates run on a machine the developer controls. The honest qualifier: that makes the output verifiable, not correct."], ["brelly", "Brelly", "How does a hook actually block the agent?", "Exit 0 lets the turn end; exit code 2 blocks it unconditionally and the reason handed back to the agent is your stderr — so it receives the exact compiler error rather than a vague instruction to try again. There is also a JSON form on stdout carrying a decision, a reason and additionalContext, which is how SessionStart and PreToolUse inject text. My gate uses the exit code because a script that already exits non-zero on a failing tsc needs no extra plumbing."], ["brelly", "Brelly", "Why hooks instead of a better prompt?", "Because an LLM is probabilistic — the same prompt can produce different output and no wording makes compliance certain. A prompt is a request. Any rule that actually matters cannot live there, because the failure mode is silent and occasional. A hook is a shell script at a fixed lifecycle point whose exit code is not negotiable. Put the soft rules in the prompt and the hard rules in the exit code."], ["brelly", "Brelly", "Why re-run the same checks in CI?", "Because every local gate runs on a machine the developer controls and can edit or bypass — git hooks fall to --no-verify, and agent hooks are just a settings file. CI is the only layer where nobody gets a vote. Worth adding that .git/hooks is not part of the repository either, which is why mine live in a checked-in .githooks directory pointed at by core.hooksPath."], ["brelly", "Brelly", "What are skills and why not just a longer prompt?", "Scoped instruction files loaded when the task matches — progressive disclosure. A 4,000-word standing brief makes every rule in it slightly less likely to be followed, because instructions that are always present compete for attention. A skill arrives uncontested at the moment it is relevant. It is still persuasion, not enforcement — that is what hooks are for."], ["brelly", "Brelly", "How do you know the AI's tests are any good?", "The gate does not know. It proves tests ran and passed, not that they assert anything. An agent that writes both the code and the test can satisfy both with the same wrong assumption. That is exactly why I read the diff — and where it matters I write the test first myself, so the agent is coding against an assertion it did not choose."], ["brelly", "Brelly", "What does your setup not catch?", "Weak tests, confidently wrong architecture, scope creep, and anything uncovered. Nothing in tsc or lint objects to a design that works and is wrong for the codebase, and an agent that refactors three files it was not asked to touch passes every gate. The gates make the output verifiable, not correct — code review is still mine."], ["brelly", "Brelly", "What does the feedback loop cost?", "Friction. Every gate makes the loop slower, and a three-minute suite turns every agent turn into a three-minute wait. The answer is the same speed-versus-confidence trade as any test suite: keep the Stop-hook gate fast and push the slow checks to CI."], ["brelly", "Brelly", "Is this not a lot of ceremony for a weather app?", "Fair — the setup was the point rather than the app. But the transferable bit is small: three hooks and a CI job. It scales because the enforcement is in exit codes rather than a document people are asked to follow, which is the same reason we lint in CI instead of writing a style guide nobody reads."], ["brelly", "Brelly", "What would you change if you did it again?", "Bound the feedback loop — an agent that cannot fix a failure keeps trying, so I would add an iteration cap and a clean way for it to say it is stuck instead of burning tokens. And I would split the gate: a fast check every turn, the slow suite in CI."], ["brelly", "Brelly", "Have you used agents beyond autocomplete?", "Yes — lifecycle hooks for deterministic control, skills for scoped instructions, a Stop-hook feedback loop that self-corrects against real compiler output, and MCP connectors for external tools."], ["brelly", "Brelly", "How do you handle it when the agent is confidently wrong?", "Assume it always might be, and design so it costs little. Small units of work, one task per run, a gate it cannot talk its way past, and a willingness to discard the whole run rather than debug its output — regenerating is cheap, untangling someone else's confused reasoning is not."], ["brelly", "Brelly", "Does this make junior engineers unnecessary?", "No, but it moves the skill. The scarce ability is now judging code you did not write and knowing when a confident answer is wrong — which is exactly what you learn by writing code. The risk is not fewer juniors, it is juniors who never build that judgement because they never had to debug their own mistake."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b(tsc|eslint|npm|grep|stdio|JSON-RPC|CLAUDE\.md|AGENTS\.md|--no-verify|core\.hooksPath|exit 2|read_file|run_bash|run_tests|stderr|stdout|additionalContext|git worktree|SessionStart|PreToolUse|Stop hook)\b/g,
+  m => `<code class="k">${m}</code>`);
 
-<section id="s16">
-  <h2><span class="num">16</span> Skills — reusable, scoped instructions loaded on demand</h2>
-  <p>Five skills in <span class="hook">.claude/skills/</span>. Example: <span class="hook">implement-feature</span> defines my "definition of done" — zero lint warnings, a test for every new function.</p>
-  <p class="tag" style="margin-left:0">progressive disclosure — the agent pulls the right instructions only when the task matches, instead of one giant prompt</p>
-  <p>The reason this beats a longer system prompt is §7 in practice: instructions that are always present compete for attention with everything else, and a 4,000-word standing brief makes every rule in it slightly less likely to be followed. A skill is loaded when its description matches the task, so the relevant instructions arrive uncontested. <strong>It is still persuasion, not enforcement</strong> — that's what the hooks are for — but it's persuasion delivered at the moment it's relevant.</p>
-</section>
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
 
-<section id="s17">
-  <h2><span class="num">17</span> Defence in depth — I don't trust the agent's word</h2>
-  <p>Two layers, both backstopped by CI:</p>
-  <ul>
-    <li><strong>The code gate</strong> (tsc + lint + tests) runs in the <strong>Stop hook</strong> and again in <strong>CI</strong>.</li>
-    <li><strong>Convention checks</strong> (commit subject must start <span class="hook">feat/fix/chore</span>, branch names) run in <strong>git hooks</strong> (<span class="hook">.githooks/commit-msg</span>, <span class="hook">pre-push</span>) and are re-checked in <strong>CI</strong>.</li>
-  </ul>
-  <p><strong>Your line:</strong> "Local git hooks can be skipped with <span class="hook">--no-verify</span>, so CI re-runs everything — it never trusts them." → shows you know soft rules get bypassed, so real enforcement is machine-checked.</p>
-  <p>Worth adding the second half of that thought: git hooks also aren't distributed by default — <span class="hook">.git/hooks</span> isn't part of the repository, which is why mine live in a checked-in <span class="hook">.githooks/</span> directory pointed at by <span class="hook">core.hooksPath</span>. That's a small detail, and small details are what make a story sound lived-in rather than read.</p>
-</section>
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
 
-<section id="s18">
-  <h2><span class="num">18</span> Why hooks and not better prompts — the mechanism</h2>
-  <p>This is the follow-up that separates a demo from an engineering answer, so have the reasoning ready rather than the list.</p>
-  <p>An LLM is <strong>probabilistic</strong>: the same prompt can produce different output, and there is no instruction you can write that makes compliance certain. A prompt is a <em>request</em>. So any rule that actually matters — "never ship failing types", "always check the current docs" — cannot live in the prompt, because the failure mode is silent and occasional, which is the worst kind.</p>
-  <p>A hook is <strong>deterministic</strong>: it's a shell script the harness runs at a fixed lifecycle point, and its exit code is not negotiable. That's the whole design principle in one line — <strong>put the soft rules in the prompt and the hard rules in the exit code</strong>.</p>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th>Layer</th><th>Enforcement</th><th>What it can guarantee</th></tr></thead>
-    <tbody>
-      <tr><td>Prompt / CLAUDE.md</td><td>Persuasion</td><td>Nothing. It raises the probability of the right behaviour, which is useful but not a guarantee</td></tr>
-      <tr><td>Skill</td><td>Scoped instructions loaded on match</td><td>Still persuasion — but far more reliable, because the instructions arrive when they're relevant instead of competing with everything else in a giant prompt</td></tr>
-      <tr><td>Hook</td><td>Exit code</td><td>A hard stop. Exit 2 blocks the turn and returns stderr to the agent as the reason; the agent cannot decide to ignore it</td></tr>
-      <tr><td>CI</td><td>Exit code, on a machine the developer doesn't control</td><td>The real backstop. Every local gate runs on a machine the developer controls and can be edited or bypassed — git hooks in particular fall to <span class="hook">--no-verify</span>, and agent hooks are just a settings file. CI can't be</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <div class="say"><b>Say this</b>"The prompt is where I ask. The hook is where I insist. CI is where nobody gets a vote."</div>
-</section>
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
 
-<section id="s19">
-  <h2><span class="num">19</span> The feedback loop, concretely</h2>
-  <p>Worth walking step by step, because "it self-corrects" sounds like marketing until you describe the actual cycle:</p>
-  <ol>
-    <li>The agent finishes a turn and tries to hand control back to me.</li>
-    <li>The <strong>Stop hook</strong> fires first and runs <span class="hook">tsc</span>, lint and the test suite.</li>
-    <li>If anything fails, the script <strong>exits 2</strong> and writes the compiler and test output to stderr. (Exit 2 is the unconditional block; the JSON-on-stdout form would carry the reason in a decision field instead.)</li>
-    <li>The harness treats that as a block: the turn does not end, and stderr is fed back to the agent as the reason — so it now has the exact type error, not a vague instruction to try again.</li>
-    <li>It fixes and tries to stop again. The loop repeats until the gate passes, and only then do I see the result.</li>
-  </ol>
-  <p>Two things to point out about that loop, because they're the interesting engineering rather than the tooling. <strong>The error message is the prompt.</strong> A compiler error is a far better instruction than anything I could write in advance — it is specific, current, and grounded in the actual code. And <strong>the loop needs a bound.</strong> An agent that cannot fix the failure will keep trying, so in practice you want an iteration cap and a way to surface "I'm stuck" to a human rather than burning tokens in a circle.</p>
-</section>
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
 
-<section id="s20">
-  <h2><span class="num">20</span> Limits — say these before you're asked</h2>
-  <p>Volunteering the failure modes is what makes the rest credible. The system stops several classes of problem and is blind to others:</p>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th>Caught</th><th>Not caught</th></tr></thead>
-    <tbody>
-      <tr><td>Type errors, lint violations, failing tests</td><td><strong>Weak tests.</strong> A gate proves tests ran and passed; it cannot tell whether they assert anything meaningful. An agent that writes the test and the code can satisfy both with the same misunderstanding</td></tr>
-      <tr><td>Outdated API usage, where the doc-gate reminds it to check</td><td><strong>Confidently wrong architecture.</strong> Nothing in tsc or lint objects to a design that works and is wrong for the codebase</td></tr>
-      <tr><td>Convention drift in commits and branches</td><td><strong>Scope creep.</strong> The agent refactoring three files it wasn't asked to touch passes every gate</td></tr>
-      <tr><td>Obvious regressions in covered paths</td><td><strong>Anything uncovered.</strong> Coverage gates catch untested code, not untested behaviour</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p>The honest summary line: <strong>the gates make the agent's output verifiable, not correct — code review is still mine to do</strong>.</p>
-  <p>The wider cost worth naming if pressed: this setup is <strong>friction</strong>. Every gate makes the loop slower, and a suite that takes three minutes turns each agent turn into a three-minute wait. That's a real tax, and the reason to keep the Stop-hook gate fast and push the slower checks to CI — the same speed-versus-confidence trade as any test suite.</p>
-</section>
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
 
-<div class="partband">
-  <p class="lab">Part D</p>
-  <h2>Delivery — vocabulary and the questions you'll get</h2>
-  <p>Definitions short enough to say out loud, and the follow-ups worth rehearsing.</p>
-</div>
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
 
-<section id="s21">
-  <h2><span class="num">21</span> Concept vocabulary — define these plainly</h2>
-  <div class="tblwrap">
-  <table>
-    <thead><tr><th>Term</th><th>Your one-liner</th></tr></thead>
-    <tbody>
-      <tr><td>Vibe coding</td><td>Describe what you want in natural language, let the AI write the code. Coined by Andrej Karpathy (Feb 2025). <strong>Strict sense:</strong> you "accept all" and don't even read the diffs — his framing was that it's fine for throwaway projects. <strong>Say this:</strong> "What I do is the disciplined version — the AI writes, but my guardrails verify. I don't ship code I haven't gated."</td></tr>
-      <tr><td>Agent</td><td>An LLM that can <em>act</em> in a loop — call tools, see results, decide the next step — not just answer once. Model + tools + loop.</td></tr>
-      <tr><td>Workflow (vs. agent)</td><td>LLM calls orchestrated along predefined code paths. Cheaper, testable, reproducible. Prefer it unless the steps genuinely can't be known in advance.</td></tr>
-      <tr><td>Tools / tool use</td><td>Functions the agent can invoke, described to it as JSON Schema. The model emits a request; <em>your harness</em> executes it. That split is where every guardrail lives.</td></tr>
-      <tr><td>Harness / agent loop</td><td>The ordinary (non-AI) code around the model that runs tools, appends results, enforces permissions, and decides when to stop. Most of an agent's quality lives here, not in the model.</td></tr>
-      <tr><td>ReAct</td><td>Reason → act → observe → repeat, rather than plan-everything-then-execute (Yao et al., 2022). Works because most of what you need to know is discovered during the task.</td></tr>
-      <tr><td>Context window</td><td>The model's working memory — 1M tokens on most frontier models now, 200k on the cheaper tiers. Everything is re-sent every turn, so it's a budget, not a container.</td></tr>
-      <tr><td>Context engineering</td><td>Deciding what occupies that window at each step. Replaced "prompt engineering" as the real skill for agents, because the prompt is written once and the context is rebuilt every turn.</td></tr>
-      <tr><td>Context rot / lost in the middle</td><td>Accuracy degrades as input grows, and models attend better to the start and end than the middle. More context is not free — irrelevant tokens compete with relevant ones.</td></tr>
-      <tr><td>Compaction</td><td>Summarising the transcript when the window fills, then continuing from the summary. Lossy by design — pin what must survive.</td></tr>
-      <tr><td>Sub-agent</td><td>A fresh agent with its own clean context, handed a self-contained job, returning only a summary. A context-management tool first, a parallelism tool second.</td></tr>
-      <tr><td>Hooks</td><td>Deterministic scripts that fire at fixed lifecycle points. How you add hard rules to a probabilistic system — the rule lives in the exit code, not the wording.</td></tr>
-      <tr><td>MCP</td><td>Model Context Protocol — an open standard (Anthropic, Nov 2024; "a USB-C port for AI applications") for plugging external tools and data into an agent, over JSON-RPC. Turns M×N bespoke integrations into M+N. <strong>Say this:</strong> "Anthropic donated it to the Linux Foundation's Agentic AI Foundation in Dec 2025 — it's a genuine cross-vendor standard now, not one company's."</td></tr>
-      <tr><td>RAG</td><td>Retrieval-augmented generation: fetch relevant chunks (usually by embedding similarity) and put them in the prompt. Great for prose; often beaten by plain search on code, where identifiers are unique.</td></tr>
-      <tr><td>Prompt injection</td><td>Instructions smuggled into content the model reads. Structural, not a patchable bug — the model sees one flat token stream and can't reliably tell instructions from data.</td></tr>
-      <tr><td>Lethal trifecta</td><td>Private data + untrusted content + external communication in one agent. Any two is usually survivable; all three is exfiltration waiting to happen. Break the triangle.</td></tr>
-      <tr><td>Prompt caching</td><td>The provider caches a stable prompt prefix so re-sending it is far cheaper. Design consequence: stable content first, changing content last, or you lose the hit.</td></tr>
-      <tr><td>Guardrails</td><td>The checks that catch the agent's mistakes. Key insight: agents are confidently wrong, so you verify, not trust.</td></tr>
-      <tr><td>SWE-bench (Verified)</td><td>Real GitHub issues, scored by whether the patch passes the repo's own tests. A floor on capability, not a prediction about your codebase.</td></tr>
-    </tbody>
-  </table>
-  </div>
-</section>
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
 
-<section>
-  <h2>The one insight to repeat</h2>
-  <p class="insight">"AI is fast but confidently wrong — especially when its training is behind the current library version. My whole setup spends effort on the <strong>system around the agent</strong> — tests, doc-gates, feedback loops — rather than on perfect prompts. That's what turns it from a toy into something I'd ship."</p>
-</section>
-
-<section id="s22">
-  <h2><span class="num">22</span> Likely questions</h2>
-
-  <h3>On your project</h3>
-  <p class="q">"How do you make sure the AI doesn't write bad code?"</p>
-  <p>→ The three-layer verification story: Stop hook + git hooks + CI, all re-running tsc/lint/tests. Then the honest qualifier — it makes the output <em>verifiable</em>, not correct.</p>
-
-  <p class="q">"What's a limitation of these tools?"</p>
-  <p>→ Outdated knowledge (my Expo v57 example), confident hallucination, and that they can't tell whether a <em>test</em> is meaningful — a coverage gate stops uncovered code but not weak assertions.</p>
-
-  <p class="q">"Have you used agents beyond autocomplete?"</p>
-  <p>→ Yes: hooks, skills, a Stop-hook feedback loop that self-corrects, and MCP connectors.</p>
-
-  <p class="q">"How do you know the AI's tests are any good?"</p>
-  <p>→ The honest answer: the gate doesn't know. It proves tests ran and passed, not that they assert anything. That's exactly why I read the diff — an agent that writes both the code and the test can satisfy both with the same wrong assumption. Where it matters I write the test first myself, so the agent is coding against an assertion it didn't choose.</p>
-
-  <p class="q">"Isn't this a lot of ceremony for a weather app?"</p>
-  <p>→ Fair, and I'd say the setup was the point rather than the app. But the transferable bit is small: three hooks and a CI job. The reason it scales is that the enforcement is in exit codes rather than in a document people are asked to follow — the same reason we lint in CI instead of writing a style guide nobody reads.</p>
-
-  <p class="q">"What would you change if you did it again?"</p>
-  <p>→ Bound the feedback loop. An agent that can't fix a failure keeps trying, so I'd add an iteration cap and a clean way for it to say it's stuck. I'd also split the gate: a fast check on every turn, the slow suite in CI, because a three-minute gate makes every turn a three-minute wait.</p>
-
-  <h3>On the concepts</h3>
-  <p class="q">"Explain how an agent works to someone non-technical."</p>
-  <p>→ "It's a model in a loop. It can't do anything itself — it can only say 'please read this file' or 'please run the tests'. Ordinary code does the thing and hands back the result, and it decides what to do next with that. It stops when it answers instead of asking."</p>
-
-  <p class="q">"When would you <em>not</em> use an agent?"</p>
-  <p>→ When the steps are known in advance — then a deterministic workflow with an LLM at one node is cheaper, testable and reproducible. Also when verification is expensive: auth, payments, anything where "passes the tests" doesn't mean "correct". Autonomy should scale with how cheaply I can check the answer.</p>
-
-  <p class="q">"What's the hardest problem in building agents?"</p>
-  <p>→ Context, in both senses. Getting the right information in front of the model at the right step, and doing it without filling the window with noise — because quality degrades well before the limit is reached. Everything else (tools, loops, retries) is comparatively ordinary engineering.</p>
-
-  <p class="q">"How would you stop an agent leaking data?"</p>
-  <p>→ Break the lethal trifecta: never give one agent private data, untrusted content and network egress simultaneously. Then least-privilege credentials, a sandbox, keep secrets in the execution environment rather than the prompt, and no auto-approval on tools that can send data outward.</p>
-
-  <p class="q">"Which coding tool is best?"</p>
-  <p>→ Don't answer the product question. "They're converging on the same models, so I'd choose on three axes: how much autonomy I want, whether it can run my tests, and whether it edits my working tree or a sandbox." Then name what you've used and its actual weakness.</p>
-
-  <p class="q">"Does this make junior engineers unnecessary?"</p>
-  <p>→ No, but it moves the skill. The scarce ability is now judging code you didn't write and knowing when the confident answer is wrong — which is exactly what you learn by writing code. The risk isn't fewer juniors, it's juniors who never build the judgement because they never had to debug their own mistake. Worth answering thoughtfully; it's often a values question rather than a technical one.</p>
-
-  <p class="q">"How do you handle it when the agent is confidently wrong?"</p>
-  <p>→ Assume it always might be, and design so it costs little. Small units of work, one task per run, a gate it can't talk its way past, and a willingness to discard the whole run rather than debug its output — regenerating is cheap, untangling someone else's confused reasoning isn't.</p>
-</section>
-
-<footer>Vibe coding &amp; AI agents · Brelly case study · personal interview prep · print to PDF for a one-pager</footer>
-
-</div>
-</div>
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
 </body>
 </html>
