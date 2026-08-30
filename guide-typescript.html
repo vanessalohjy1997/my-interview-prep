@@ -196,8 +196,9 @@
     <a href="#utility"><span class="n">04</span> Utility types</a>
     <a href="#mapped"><span class="n">05</span> Mapped &amp; conditional</a>
     <a href="#react"><span class="n">06</span> Typing React</a>
-    <a href="#drills"><span class="n">07</span> Drills</a>
-    <a href="#bank"><span class="n">08</span> Q&amp;A bank</a>
+    <a href="#config"><span class="n">07</span> Strictness &amp; escape hatches</a>
+    <a href="#drills"><span class="n">08</span> Drills</a>
+    <a href="#bank"><span class="n">09</span> Q&amp;A bank</a>
   </nav>
   <main>
     <header class="hero">
@@ -218,6 +219,38 @@
         <li><strong>Structural (duck) typing</strong> — compatibility is by <em>shape</em>, not name. If an object has the required members, it fits the type, regardless of what it was declared as. Caveat: a <em>fresh object literal</em> also gets excess property checking, so extra properties error at the assignment site — assign the same value via a variable and it passes. Two identically-shaped types are interchangeable.</li>
         <li><strong>Types are erased at runtime</strong> — TypeScript compiles to plain JavaScript with the types stripped. There is no runtime type information, so you can't <code class="k">instanceof</code> an interface. Runtime validation of external data still needs guards or a schema library (Zod).</li>
       </ul>
+      <h3>Why structural, and what it costs you</h3>
+      <p>The choice follows from the language TypeScript is describing. JavaScript objects are bags of properties assembled at runtime — from literals, spreads, JSON, <code class="k">Object.assign</code> — and almost none of them come from a named class. A nominal system (Java, C#) would reject nearly all idiomatic JS, so TypeScript checks the only thing that's actually knowable: the shape.</p>
+      <p>The cost is that <strong>identical shapes are interchangeable even when they mean completely different things</strong>:</p>
+      <pre>type UserId  = string;
+type OrderId = string;
+function cancel(id: OrderId){}
+const u: UserId = 'u_123';
+cancel(u);   <span class="err">// compiles fine. Both are string. This is a real bug the compiler can't see.</span></pre>
+      <p>The fix is a <strong>branded type</strong> — deliberately adding a property that doesn't exist at runtime, purely to make two shapes structurally different:</p>
+      <pre>type Brand&lt;T, B&gt; = T &amp; { readonly __brand: B };
+type UserId  = Brand&lt;string, 'UserId'&gt;;
+type OrderId = Brand&lt;string, 'OrderId'&gt;;
+
+const asOrderId = (s: string) =&gt; s as OrderId;   <span class="cmt">// one blessed constructor</span>
+cancel(u);              <span class="err">// Error — UserId is not assignable to OrderId</span>
+cancel(asOrderId(u));   <span class="out">// explicit, greppable, intentional</span></pre>
+      <p>Worth reaching for when mixing up two strings has real consequences — ids, currency amounts (cents vs pounds), or a value that must be validated before use (<code class="k">Email</code> vs <code class="k">string</code>). Not worth it for everything: the brand is a lie the compiler maintains, so every crossing needs a cast, and overusing it makes ordinary code ceremonial.</p>
+      <h3>Excess property checking, and why it seems inconsistent</h3>
+      <pre>type Props = { id: string };
+foo({ id: 'a', extra: 1 });        <span class="err">// Error: 'extra' does not exist in type Props</span>
+
+const o = { id: 'a', extra: 1 };
+foo(o);                             <span class="out">// Fine! Same value, no error.</span></pre>
+      <p>This looks like a bug and is deliberate. Structurally, <code class="k">o</code> <em>is</em> a valid <code class="k">Props</code> — it has everything required — so passing it is sound. But a fresh literal written inline has nowhere else to go: the extra property can only be a typo or a misunderstanding, so TypeScript flags it as a courtesy. It's a heuristic on literals, not a rule about types, which is exactly why it disappears the moment you name the value.</p>
+      <h3>What erasure actually means for your code</h3>
+      <p>&ldquo;Types disappear&rdquo; sounds obvious until you list the consequences, which is what interviewers are probing:</p>
+      <ul class="body">
+        <li><strong>Nothing you write in types can defend against bad data.</strong> An API response typed as <code class="k">User</code> is an assertion, not a check — the compiler trusts you. If the backend renames a field, TypeScript reports nothing and you get <code class="k">undefined</code> at runtime. Boundaries (HTTP, <code class="k">localStorage</code>, URL params, <code class="k">postMessage</code>, third-party SDKs) need real validation. Zod and friends earn their place by producing <em>both</em> the runtime check and the static type from one schema, so they can't drift apart.</li>
+        <li><strong>You can't branch on a type.</strong> No <code class="k">instanceof SomeInterface</code>, no reflection over properties. Narrowing has to key off something that survives to runtime: a literal discriminant field, a class, <code class="k">typeof</code>, or the presence of a property.</li>
+        <li><strong>Generics are compile-time only.</strong> <code class="k">Array&lt;string&gt;</code> and <code class="k">Array&lt;number&gt;</code> are the same array at runtime — there's nothing to inspect.</li>
+        <li><strong>The exceptions prove the rule.</strong> <code class="k">enum</code> and legacy decorators emit real JavaScript. That's precisely why teams prefer <code class="k">as const</code> objects or union types over enums: everything else in the type layer is free, and an enum quietly isn't.</li>
+      </ul>
       <div class="note"><span class="lbl">Say this</span>&ldquo;TypeScript checks shapes at compile time and then disappears. It protects me from my own code, not from bad data at the boundary — that still needs runtime validation.&rdquo;</div>
     </section>
 
@@ -232,6 +265,22 @@ first([1, 2, 3]);        <span class="out">// T = number  -&gt; number | undefin
 function longest&lt;T extends { length: number }&gt;(a: T, b: T){
   return a.length &gt;= b.length ? a : b;
 }</pre>
+      <p><strong>&ldquo;Preserving the relationship&rdquo; is the whole point</strong>, and it's the sentence to lead with. Compare the two ways of writing the same function:</p>
+      <pre>function first(arr: unknown[]): unknown { ... }   <span class="err">// caller has to cast. Type lost.</span>
+function first&lt;T&gt;(arr: T[]): T | undefined { ... } <span class="out">// output tied to input. Type flows through.</span></pre>
+      <p>A generic isn't &ldquo;a type that accepts anything&rdquo; — <code class="k">any</code> already does that, badly. It's a <em>link</em> between positions: whatever went in is what comes out. If a type parameter appears in only one place in the signature, it isn't linking anything and shouldn't be a generic at all.</p>
+      <div class="note warn"><span class="lbl">The smell to name</span><code class="k">function log&lt;T&gt;(x: T): void</code> uses <code class="k">T</code> exactly once, so it links nothing — it's <code class="k">(x: unknown)</code> with extra ceremony. Same for a type parameter only used in a constraint. Rule of thumb: <strong>a type parameter must appear at least twice</strong>, or in both an input and the output, to be doing work. This is the most common way generics get cargo-culted into a codebase.</div>
+      <h3>Constraints buy you two things</h3>
+      <p><code class="k">T extends { length: number }</code> restricts what callers may pass, but it also <em>unlocks the body</em>: inside the function you can now read <code class="k">.length</code>, which a bare <code class="k">T</code> would forbid. That's the trade — narrow the callers, widen what you can do. The commonest real use is keying into an object safely:</p>
+      <pre>function get&lt;T, K extends keyof T&gt;(obj: T, key: K): T[K] {
+  return obj[key];
+}
+const u = { id: 1, name: 'Ada' };
+get(u, 'name');   <span class="out">// string — not `string | number`, the exact property type</span>
+get(u, 'nope');   <span class="err">// Error: "nope" is not assignable to "id" | "name"</span></pre>
+      <p>Two type parameters, each used twice, and the return type is computed from both. That's a generic that pays for itself.</p>
+      <h3>Inference, and when to help it</h3>
+      <p>You almost never pass type arguments explicitly — TypeScript infers them from the call site, which is why <code class="k">first([1,2,3])</code> just works. It's worth knowing where inference needs a hand: <strong>default type parameters</strong> (<code class="k">&lt;T = string&gt;</code>) when there's nothing to infer from, and explicit arguments when you want to <em>widen</em> deliberately — <code class="k">useState&lt;string | null&gt;(null)</code>, without which <code class="k">null</code> infers as <code class="k">null</code> and you can never set a string.</p>
       <p>Generics shine in <strong>components and hooks</strong>:</p>
       <pre>function useToggle&lt;T&gt;(a: T, b: T){ /* returns T */ }
 
@@ -243,6 +292,8 @@ function List&lt;T&gt;({ items, render }: ListProps&lt;T&gt;){
   return &lt;ul&gt;{items.map(render)}&lt;/ul&gt;;
 }
 &lt;List items={users} render={u =&gt; u.name} /&gt;  <span class="out">// T inferred as User</span></pre>
+      <p>Note what that buys the consumer: <code class="k">render</code>'s parameter is typed as <code class="k">User</code> automatically, with autocomplete, because <code class="k">T</code> was inferred from <code class="k">items</code>. Without the generic, <code class="k">items: unknown[]</code> would force a cast in every caller.</p>
+      <div class="note gold"><span class="lbl">The .tsx gotcha</span>In a <code class="k">.tsx</code> file, <code class="k">const f = &lt;T&gt;(x: T) =&gt; x</code> fails to parse — <code class="k">&lt;T&gt;</code> reads as a JSX tag. Write <code class="k">&lt;T,&gt;</code> with a trailing comma, or <code class="k">&lt;T extends unknown&gt;</code>, or just use a <code class="k">function</code> declaration. It's a small thing that trips people up live, and knowing why (parser ambiguity, not a type error) reads well.</div>
     </section>
 
     <section id="unions">
@@ -252,6 +303,8 @@ function List&lt;T&gt;({ items, render }: ListProps&lt;T&gt;){
         <li><strong>Union</strong> <code class="k">A | B</code> — a value is one of these. You may only access members common to all members until you narrow.</li>
         <li><strong>Intersection</strong> <code class="k">A &amp; B</code> — a value has <em>all</em> members of both.</li>
       </ul>
+      <h3>Why a union feels &ldquo;smaller&rdquo; than its parts</h3>
+      <p>This trips people up, so have the explanation ready. A union of object types has <em>fewer</em> accessible properties than either member, while an intersection has more. It's not a contradiction — think in terms of <strong>which values are allowed</strong> versus <strong>what you may safely do with them</strong>. <code class="k">Circle | Square</code> admits more values (either shape qualifies), and because any given value might be a square, only the properties present on <em>both</em> are safe to touch. <code class="k">Circle &amp; Square</code> admits fewer values (it must satisfy both) but guarantees every property from both.</p>
       <h3>Discriminated unions — the senior move</h3>
       <pre>type State&lt;T&gt; =
   | { status: 'loading' }
@@ -268,6 +321,9 @@ function view(s: State&lt;User&gt;){
       <p>The literal <code class="k">status</code> field is the <strong>discriminant</strong>: checking it narrows the union to one member, and TypeScript then knows exactly which fields exist. This makes <em>illegal states unrepresentable</em> — you can't have <code class="k">data</code> and <code class="k">error</code> at once. Add exhaustiveness with a <code class="k">never</code> default:</p>
       <pre>default: { const _exhaustive: never = s; return _exhaustive; }
 <span class="cmt">// adding a new status without handling it becomes a compile error</span></pre>
+      <p>The <code class="k">never</code> trick works because of what <code class="k">never</code> means: the type with no values. If you've handled every case, control flow analysis has eliminated every member by the <code class="k">default</code>, so <code class="k">s</code> is <code class="k">never</code> and the assignment is legal. Add a fourth status and one member survives to the default, so a real type is assigned to <code class="k">never</code> — which nothing is assignable to — and it fails to compile. <strong>You've converted &ldquo;remember to update every switch&rdquo; into a build error</strong>, which is the actual value: it turns a code-review discipline into a compiler guarantee.</p>
+      <p>For the discriminant to work it must be a <strong>literal type</strong> that exists at runtime — <code class="k">'loading'</code>, not <code class="k">string</code>. A common failure is building the object where TypeScript widens the field to <code class="k">string</code>, at which point narrowing silently stops working; <code class="k">as const</code> or an explicit annotation fixes it.</p>
+      <div class="note gold"><span class="lbl">Where this pattern pays off in a UI</span>Not just fetch state. Form modes (<code class="k">{ mode: 'create' } | { mode: 'edit'; id: string }</code>) stop you reading an id that doesn't exist in create mode. Mutually exclusive props (<code class="k">{ variant: 'link'; href: string } | { variant: 'button'; onClick(): void }</code>) make &ldquo;a link with an onClick and no href&rdquo; uncompilable. Any time a comment says &ldquo;only set when X&rdquo;, that's a union asking to be written.</div>
     </section>
 
     <section id="narrow">
@@ -280,6 +336,21 @@ function view(s: State&lt;User&gt;){
         <li><code class="k">'id' in x</code> — presence of a property.</li>
         <li>truthiness (<code class="k">if (x)</code>), equality, and discriminant checks (above).</li>
       </ul>
+      <p>What's doing the work is <strong>control flow analysis</strong>: the compiler walks your branches and tracks what must be true on each path, the same way you would reading the code. That framing predicts its limits — anywhere control flow becomes unknowable, narrowing is discarded.</p>
+      <h3>The three places narrowing evaporates</h3>
+      <pre><span class="cmt">// 1 — callbacks: TS can't know when (or if) this runs</span>
+if (user) {
+  setTimeout(() =&gt; console.log(user.name), 100);  <span class="err">// user is possibly null again</span>
+}
+
+<span class="cmt">// 2 — after await: anything could have mutated it meanwhile</span>
+if (this.conn) { await flush(); this.conn.send(); } <span class="err">// narrowing lost</span>
+
+<span class="cmt">// 3 — mutable properties, but not const locals</span>
+if (obj.value) { use(obj.value); }   <span class="err">// a function call in between can invalidate it</span>
+const v = obj.value;
+if (v) { use(v); }                    <span class="out">// copy to a const first — this always works</span></pre>
+      <p>All three have the same cause and the same fix: TypeScript only trusts narrowing for values it can prove nothing else touched. <strong>Copy to a <code class="k">const</code> local, then narrow.</strong> It's the single most useful reflex in day-to-day TypeScript, and the reason the &ldquo;possibly null&rdquo; error that looks wrong usually isn't.</p>
       <h3>User-defined type guards &amp; <code class="k">as const</code></h3>
       <pre>function isUser(x: unknown): x is User {
   return typeof x === 'object' &amp;&amp; x !== null &amp;&amp; 'name' in x;
@@ -290,6 +361,9 @@ const roles = ['admin', 'user'] as const;
 <span class="cmt">// type: readonly ["admin", "user"] — literal, not string[]</span>
 type Role = typeof roles[number];  <span class="out">// "admin" | "user"</span></pre>
       <p>The <code class="k">x is User</code> return type is a <strong>type predicate</strong>: it tells the compiler that a <code class="k">true</code> result means <code class="k">x</code> is a <code class="k">User</code> in the following block. <code class="k">as const</code> freezes a value to its most specific literal, readonly type — the bridge from runtime values to precise types.</p>
+      <div class="note warn"><span class="lbl">Type predicates are unchecked promises</span>Look again at <code class="k">isUser</code> above: it verifies an object with a <code class="k">name</code> property, and then asserts the value is a full <code class="k">User</code>. TypeScript does not verify that the body justifies the claim — <code class="k">return true</code> would compile identically. A predicate is an <code class="k">as</code> cast wearing a function's clothes, so every one is a place you've taken responsibility away from the compiler. Keep them few, keep them next to the type they guard, and for anything crossing a real boundary prefer a schema validator that derives the type from the check instead of the other way round. (TypeScript 5.5 infers predicates for simple cases, which removes some hand-written ones — but any you write by hand are still unverified.)</div>
+      <h3><code class="k">unknown</code> vs <code class="k">any</code> — and why it belongs here</h3>
+      <p>Both accept anything. The difference is what happens next: <code class="k">any</code> lets you do <em>anything</em> with the value and silently switches the checker off for everything it touches downstream — one <code class="k">any</code> from a badly typed library can hollow out a whole module. <code class="k">unknown</code> accepts anything but permits nothing until you narrow, which forces exactly one thing: a check at the boundary. That's why <code class="k">catch (e: unknown)</code> is the modern default (errors can be <em>any</em> thrown value, not just <code class="k">Error</code> — a rejected promise can carry a string), and why <code class="k">JSON.parse</code> returning <code class="k">any</code> is worth wrapping in something that returns <code class="k">unknown</code>.</p>
     </section>
 
     <section id="utility">
@@ -311,6 +385,26 @@ Parameters&lt;typeof make&gt;      <span class="out">// []</span>
 keyof User                   <span class="out">// "id" | "name" | "email"</span>
 User['email']                <span class="out">// string  (indexed access)</span></pre>
       <p><code class="k">keyof</code> gives the union of an object's keys; <code class="k">typeof value</code> lifts a runtime value into the type world; together <code class="k">typeof obj[keyof typeof obj]</code> is a common idiom for &ldquo;the union of a const object's values.&rdquo;</p>
+      <h3>The point isn't the list — it's deriving instead of duplicating</h3>
+      <p>Anyone can recite the table. The senior habit is that <strong>a type should be written once and everything else derived from it</strong>, so the compiler propagates a change instead of letting copies drift. Rename a field on <code class="k">User</code> and every derived type updates; hand-written duplicates silently don't, and you find out at runtime.</p>
+      <pre><span class="cmt">// duplicated — two things to remember to change</span>
+type UserForm = { name: string; email: string };
+
+<span class="cmt">// derived — one source of truth</span>
+type UserForm  = Pick&lt;User, 'name' | 'email'&gt;;
+type UserPatch = Partial&lt;Omit&lt;User, 'id'&gt;&gt;;   <span class="out">// PATCH body: everything but id, all optional</span>
+type Handlers  = { [K in keyof Events as `on${Capitalize&lt;K &amp; string&gt;}`]: (e: Events[K]) =&gt; void };</pre>
+      <div class="note warn"><span class="lbl">The Omit trap — a genuine footgun</span><code class="k">Pick</code> checks its keys; <strong><code class="k">Omit</code> does not.</strong> <code class="k">Omit&lt;User, 'emial'&gt;</code> compiles happily and silently omits nothing, because its signature is <code class="k">Omit&lt;T, K extends keyof any&gt;</code> — any string is allowed. So a typo, or a field later renamed, leaves you with a type that quietly includes something you meant to remove. When it matters, use <code class="k">Exclude&lt;keyof User, 'email'&gt;</code> via <code class="k">Pick</code>, or define a checked <code class="k">StrictOmit&lt;T, K extends keyof T&gt;</code>. Being able to name this is a reliable signal you've used the language in anger.</div>
+      <h3>The rest of the set worth knowing by name</h3>
+      <table class="tbl">
+        <tr><th>Type</th><th>Does</th><th>Reach for it when</th></tr>
+        <tr><td><code class="k">Record&lt;K, V&gt;</code></td><td>Object with keys K, values V</td><td>Lookup tables. <code class="k">Record&lt;Role, Permission[]&gt;</code> forces you to handle every role — a real exhaustiveness win over an index signature</td></tr>
+        <tr><td><code class="k">Exclude&lt;U, X&gt;</code> / <code class="k">Extract&lt;U, X&gt;</code></td><td>Filter a <em>union</em>, remove or keep</td><td>Subsetting states: <code class="k">Exclude&lt;Status, 'archived'&gt;</code></td></tr>
+        <tr><td><code class="k">NonNullable&lt;T&gt;</code></td><td>Strips <code class="k">null | undefined</code></td><td>After a filter or a guard, when the type still carries nullability</td></tr>
+        <tr><td><code class="k">Awaited&lt;T&gt;</code></td><td>Unwraps promises, recursively</td><td><code class="k">Awaited&lt;ReturnType&lt;typeof fetchUser&gt;&gt;</code> — the resolved value of an async function</td></tr>
+        <tr><td><code class="k">Parameters&lt;T&gt;</code></td><td>A function's args as a tuple</td><td>Wrapping or decorating a function without restating its signature</td></tr>
+      </table>
+      <p>Two distinctions people mix up: <code class="k">Pick</code>/<code class="k">Omit</code> operate on <strong>object keys</strong>, while <code class="k">Extract</code>/<code class="k">Exclude</code> operate on <strong>union members</strong> — different worlds, similar-sounding names. And <code class="k">Partial</code> is not free: making every field optional is right for a PATCH body and wrong for a form model, where it lets you forget a required field and only find out on submit. If a value must eventually be complete, model the partial and the complete states as two types.</p>
     </section>
 
     <section id="mapped">
@@ -323,6 +417,12 @@ type MyPartial&lt;T&gt; = { [K in keyof T]?: T[K] };
 <span class="cmt">// modifiers: ? adds optional, readonly adds immutability, - removes them</span>
 type Mutable&lt;T&gt; = { -readonly [K in keyof T]: T[K] };</pre>
       <p>A mapped type iterates the keys of <code class="k">T</code> (<code class="k">K in keyof T</code>) and produces a property per key. You can add/remove <code class="k">?</code> and <code class="k">readonly</code>, and remap keys with <code class="k">as</code>.</p>
+      <p>Read it as a <code class="k">for</code> loop over keys, because that's exactly what it is: <em>for each key K in T, produce a property named K whose type is T[K]</em>, with modifiers applied. Once you see the loop, the whole family decodes — every built-in utility except the conditional ones is a two-line mapped type. Key remapping with <code class="k">as</code> is the same loop with a computed name:</p>
+      <pre>type Getters&lt;T&gt; = { [K in keyof T as `get${Capitalize&lt;K &amp; string&gt;}`]: () =&gt; T[K] };
+Getters&lt;{ name: string }&gt;   <span class="out">// { getName: () =&gt; string }</span>
+
+<span class="cmt">// remap to `never` to DROP keys — the idiomatic filter</span>
+type OnlyStrings&lt;T&gt; = { [K in keyof T as T[K] extends string ? K : never]: T[K] };</pre>
       <h3>Conditional types</h3>
       <pre>type IsString&lt;T&gt; = T extends string ? true : false;
 IsString&lt;'hi'&gt;   <span class="out">// true</span>
@@ -332,6 +432,10 @@ IsString&lt;number&gt; <span class="out">// false</span>
 type ElementOf&lt;T&gt; = T extends (infer U)[] ? U : never;
 ElementOf&lt;string[]&gt;   <span class="out">// string</span></pre>
       <p><code class="k">T extends U ? X : Y</code> picks a branch based on assignability; <code class="k">infer</code> captures a type from within the checked shape (here, the array's element type).</p>
+      <p>Read <code class="k">extends</code> here as <strong>&ldquo;is assignable to&rdquo;</strong>, not &ldquo;inherits from&rdquo; — it's the same question the compiler asks at every assignment, just asked in the type language. And <code class="k">infer</code> is pattern matching: <em>match this shape, and give me a name for the part in that slot.</em> That's how <code class="k">ReturnType</code> is built — <code class="k">T extends (...a: any[]) =&gt; infer R ? R : never</code>, which is worth being able to write from memory because interviewers ask for exactly that one.</p>
+      <div class="note gold"><span class="lbl">Distributivity — the behaviour that surprises everyone</span>A conditional type over a <em>naked</em> type parameter <strong>distributes over unions</strong>: it's applied to each member separately and the results are re-unioned. So <code class="k">ElementOf&lt;string[] | number[]&gt;</code> is <code class="k">string | number</code>, not <code class="k">never</code>. Usually that's what you want — it's how <code class="k">Exclude</code> works at all. When you don't want it, wrap both sides in a tuple to defeat it: <code class="k">[T] extends [U] ? X : Y</code>. The classic symptom is a type that mysteriously returns <code class="k">never</code> for a union input, because <code class="k">never</code> is the empty union and distributing over it produces nothing.</div>
+      <h3>When to stop</h3>
+      <p>Worth saying out loud, because it's a judgement question as much as a knowledge one: type-level programming has a real cost. Deeply conditional types slow the compiler and your editor measurably, produce error messages that no one can read, and are harder to change than the code they describe. If a type takes longer to understand than the function it types, a simpler type plus a runtime check is usually the better engineering. Reach for this machinery when it removes duplication across many call sites — a library boundary, a generated API client, a design-system prop table — not to prove it can be done.</p>
     </section>
 
     <section id="react">
@@ -358,10 +462,53 @@ inputRef.current?.focus();</pre>
         <li>Refs are <code class="k">useRef&lt;T&gt;(null)</code>; <code class="k">.current</code> is <code class="k">T | null</code>, hence the optional chaining.</li>
         <li>Many teams prefer typing props directly over <code class="k">React.FC</code> because it complicates generic components. (In older <code class="k">@types/react</code> before v18 it also forced an implicit <code class="k">children</code> prop; that was removed in the React 18 types, so today you declare <code class="k">children</code> yourself or use <code class="k">PropsWithChildren</code>.)</li>
       </ul>
+      <h3>Why <code class="k">target</code> vs <code class="k">currentTarget</code> is typed the way it is</h3>
+      <p>It mirrors the DOM, and the reasoning is worth having ready because it looks like a types annoyance and isn't. <code class="k">currentTarget</code> is the element the handler is <em>attached to</em> — statically known, so React can type it as your element. <code class="k">target</code> is whatever was actually clicked, which thanks to bubbling could be any descendant, so it can only honestly be <code class="k">EventTarget</code>. <code class="k">ChangeEvent</code> gets away with re-typing <code class="k">target</code> because change events don't originate from children of an input. In a click handler, reach for <code class="k">currentTarget</code> — and if you truly need <code class="k">target</code>, narrow it (<code class="k">e.target instanceof HTMLElement</code>) rather than casting.</p>
+      <h3>Making impossible props impossible</h3>
+      <p>The highest-value use of TypeScript in a component library isn't typing <code class="k">string</code> vs <code class="k">number</code> — it's encoding the rules that currently live in a comment or a runtime <code class="k">invariant</code>:</p>
+      <pre><span class="cmt">// weak: every combination compiles, including the nonsense ones</span>
+type ButtonProps = { href?: string; onClick?: () =&gt; void; disabled?: boolean };
+
+<span class="cmt">// strong: a link needs an href, a button needs an onClick, and never both</span>
+type ButtonProps =
+  | { as: 'a';      href: string;  onClick?: never }
+  | { as: 'button'; onClick: () =&gt; void; href?: never };
+
+&lt;Button as="a" onClick={fn} /&gt;   <span class="err">// Error — caught at compile time, not in QA</span></pre>
+      <p>The <code class="k">?: never</code> members are what stop the union collapsing into &ldquo;anything goes&rdquo;: without them, an object with both properties is still structurally assignable to one member. Same technique for &ldquo;pass <code class="k">value</code> + <code class="k">onChange</code> (controlled) or <code class="k">defaultValue</code> (uncontrolled), never both&rdquo; — the most commonly violated contract in React component APIs.</p>
+      <h3>Two version-sensitive details</h3>
+      <ul class="body">
+        <li><strong>Ref typing changed in React 19.</strong> <code class="k">ref</code> is now a regular prop on function components, so <code class="k">forwardRef</code> is no longer required to accept one, and its <code class="k">ElementRef</code>-style helpers are being retired. If the codebase is on 18, <code class="k">forwardRef&lt;HTMLInputElement, Props&gt;</code> is still correct — note the argument order (ref type first) since it's a common slip.</li>
+        <li><strong>A ref callback may now return a cleanup function.</strong> Which means an arrow body like <code class="k">ref={el =&gt; (myRef.current = el)}</code> — an implicit return — is a type error in React 19. Use a block body.</li>
+      </ul>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;I use types to make invalid component states uncompilable rather than to annotate what's obvious. If a prop is only valid alongside another, that's a discriminated union, not a comment.&rdquo;</div>
+    </section>
+
+    <section id="config">
+      <div class="kicker">07 — The settings that decide how much it's worth</div>
+      <h2>Strictness &amp; the escape hatches</h2>
+      <p>Two codebases can both &ldquo;use TypeScript&rdquo; and get wildly different value from it. The difference is usually a handful of compiler flags and how disciplined the team is about the escape hatches — a very common interview thread, because it separates people who configured a project from people who inherited one.</p>
+      <table class="tbl">
+        <tr><th>Flag</th><th>What it catches</th><th>Notes</th></tr>
+        <tr><td><code class="k">strict</code></td><td>Umbrella for the rest — <code class="k">strictNullChecks</code>, <code class="k">noImplicitAny</code>, and friends</td><td>Non-negotiable on a new project. Without <code class="k">strictNullChecks</code>, <code class="k">null</code> is assignable to everything and the compiler cannot see your most common runtime crash</td></tr>
+        <tr><td><code class="k">noUncheckedIndexedAccess</code></td><td><code class="k">arr[i]</code> and <code class="k">record[key]</code> return <code class="k">T | undefined</code></td><td>Truthful — indexing can miss. Off by default even under <code class="k">strict</code>, because it's noisy. Worth it on data-heavy code</td></tr>
+        <tr><td><code class="k">exactOptionalPropertyTypes</code></td><td>Distinguishes &ldquo;absent&rdquo; from &ldquo;present and <code class="k">undefined</code>&rdquo;</td><td>Matters when a key's presence is meaningful — PATCH bodies, <code class="k">Object.keys</code> loops</td></tr>
+        <tr><td><code class="k">noImplicitOverride</code>, <code class="k">noFallthroughCasesInSwitch</code></td><td>Small, cheap classes of real bug</td><td>Free wins, no migration cost</td></tr>
+        <tr><td><code class="k">verbatimModuleSyntax</code></td><td>Forces <code class="k">import type</code> for type-only imports</td><td>Prevents type imports being emitted and dragging modules in at runtime</td></tr>
+      </table>
+      <p>The honest note about migration: turning <code class="k">strict</code> on in a large legacy codebase produces thousands of errors at once, which is why it doesn't happen. The workable path is per-file or per-directory — enable it for new code, fix modules as you touch them — rather than one heroic PR that nobody can review.</p>
+      <h3>The three escape hatches, ranked by how much they cost you</h3>
+      <ul class="body">
+        <li><strong><code class="k">as</code> (type assertion)</strong> — &ldquo;trust me, it's this type.&rdquo; No check happens; it's a lie you're allowed to tell. Sometimes necessary (branded types, the result of a validated parse), but each one is a place a refactor can break at runtime with no compiler error. The variant to avoid entirely is the double cast <code class="k">x as unknown as T</code>, which is you telling the compiler its objection is noted and overruled.</li>
+        <li><strong><code class="k">any</code></strong> — worse than <code class="k">as</code>, because it doesn't stay put. Any value derived from an <code class="k">any</code> is also <code class="k">any</code>, so one badly typed third-party call can disable checking across a whole module without a single visible annotation. Prefer <code class="k">unknown</code> and narrow. Turn on <code class="k">noImplicitAny</code> so the accidental ones surface, and lint against explicit ones.</li>
+        <li><strong><code class="k">@ts-ignore</code> / <code class="k">@ts-expect-error</code></strong> — suppresses whatever the next line complains about. Always prefer <code class="k">@ts-expect-error</code>: it <em>fails</em> if the error goes away, so it self-cleans after the upstream fix, whereas a <code class="k">@ts-ignore</code> lives forever and hides new errors that appear later on that line.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">The non-null assertion</span><code class="k">value!</code> is <code class="k">as NonNullable&lt;T&gt;</code> in one character, which makes it the easiest way to ship a &ldquo;cannot read property of undefined&rdquo; while the build is green. It's defensible where the invariant is genuinely outside the compiler's view — <code class="k">document.getElementById('root')!</code> in an entry file. It's not defensible as a way to make an error go away in business logic; there, narrow it or handle the null. If you can't explain why it can't be null, it can be null.</div>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;I'd rather have strict on and a handful of explicit, commented assertions than a loose config and a false sense of safety. The value of the type system is proportional to how rarely we lie to it.&rdquo;</div>
     </section>
 
     <section id="drills">
-      <div class="kicker">07 — Drill until reflex</div>
+      <div class="kicker">08 — Drill until reflex</div>
       <h2>&ldquo;What does this type resolve to?&rdquo; drills</h2>
 
       <div class="quizcard" data-quiz>
@@ -410,9 +557,51 @@ type R = ReturnType&lt;typeof load&gt;;</pre>
         <div class="answer">
           <p style="margin:0">Separate flags allow impossible combinations (loading && error && data), which every consumer must defensively handle. A discriminated union on <code class="k">status</code> makes illegal states unrepresentable and lets the compiler narrow to exactly the fields that exist in each state — fewer bugs, and exhaustiveness checking catches unhandled cases.</p></div>
       </div>
+    
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 — why does this compile?</div>
+        <pre>type UserId  = string;
+type OrderId = string;
+declare function cancel(id: OrderId): void;
+const u: UserId = 'u_123';
+cancel(u);   <span class="cmt">// ???</span></pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">It compiles — both are structurally just `string`</div>
+          <p style="margin:0">TypeScript is structural: a type alias creates a name, not a new type, so <code class="k">UserId</code> and <code class="k">OrderId</code> are indistinguishable. If mixing them up matters, brand them — <code class="k">type OrderId = string &amp; { readonly __brand: 'OrderId' }</code> — so they're structurally different and crossings need an explicit, greppable constructor.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 — the narrowing that vanishes</div>
+        <pre>function f(user: User | null){
+  if (user) {
+    setTimeout(() =&gt; console.log(user.name), 100);  <span class="cmt">// ???</span>
+  }
+}</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">Error: 'user' is possibly 'null' inside the callback</div>
+          <p style="margin:0">Narrowing is control-flow analysis, and the compiler can't know when a callback runs or what has happened to <code class="k">user</code> by then. Same thing happens after an <code class="k">await</code> and when narrowing a mutable object property. The universal fix is to copy to a <code class="k">const</code> first — <code class="k">const u = user; if (u) …</code> — because a <code class="k">const</code> local provably can't change. (In this specific case a parameter is never reassigned, but the analysis is deliberately conservative about closures.)</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 8 — the silent Omit</div>
+        <pre>type User = { id: number; name: string; email: string };
+type A = Omit&lt;User, 'emial'&gt;;   <span class="cmt">// note the typo</span></pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">No error — A is the full User, nothing omitted</div>
+          <p style="margin:0"><code class="k">Omit&lt;T, K&gt;</code> doesn't constrain <code class="k">K</code> to <code class="k">keyof T</code>, so any string is accepted and a typo silently omits nothing. <code class="k">Pick</code> does check. Use <code class="k">Pick&lt;User, Exclude&lt;keyof User, 'email'&gt;&gt;</code> or a <code class="k">StrictOmit&lt;T, K extends keyof T&gt;</code> helper where it matters — the same trap catches you when a field is later renamed.</p></div>
+      </div>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 9 — the never that isn't a bug</div>
+        <pre>type ElementOf&lt;T&gt; = T extends (infer U)[] ? U : never;
+type A = ElementOf&lt;string[] | number[]&gt;;</pre>
+        <button class="reveal-btn">Reveal answer</button>
+        <div class="answer"><div class="out-line">A = string | number (distributive), not never</div>
+          <p style="margin:0">A conditional type over a naked type parameter distributes over unions: it's applied to each member and the results re-unioned. That's how <code class="k">Exclude</code> works. To switch it off, wrap both sides in a tuple — <code class="k">[T] extends [(infer U)[]] ? U : never</code>. And note <code class="k">ElementOf&lt;never&gt;</code> is <code class="k">never</code>, because <code class="k">never</code> is the empty union and distributing over it yields nothing — the usual cause of a type mysteriously resolving to <code class="k">never</code>.</p></div>
+      </div>
     </section>
     <section id="bank">
-      <div class="kicker">08 — Rapid fire</div>
+      <div class="kicker">09 — Rapid fire</div>
       <h2>Interview Q&amp;A bank</h2>
       <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
       <div class="qtools" role="group" aria-label="Controls">
@@ -421,11 +610,13 @@ type R = ReturnType&lt;typeof load&gt;;</pre>
       </div>
       <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
         <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="intro">Structural</button>
         <button class="fchip" data-f="generics">Generics</button>
         <button class="fchip" data-f="unions">Unions</button>
         <button class="fchip" data-f="narrow">Narrowing</button>
         <button class="fchip" data-f="utility">Utility</button>
         <button class="fchip" data-f="mapped">Mapped/cond</button>
+        <button class="fchip" data-f="config">Config</button>
         <button class="fchip" data-f="react">React</button>
       </div>
       <div id="qbank"></div>
@@ -435,7 +626,7 @@ type R = ReturnType&lt;typeof load&gt;;</pre>
 <footer>Built for interview prep · make illegal states unrepresentable.</footer>
 
 <script>
-const QA = [["generics", "Generics", "What problem do generics solve?", "They let a function/type work over many types while preserving relationships between inputs and outputs, instead of falling back to any. A generic type parameter is filled in (often inferred) by the caller."], ["generics", "Generics", "What does T extends X do in a generic?", "It constrains the type parameter so callers can only supply types assignable to X, and lets the body safely use X's members. e.g. <T extends { length: number }> guarantees a length."], ["generics", "Generics", "How do you type a generic React component?", "Make the component function generic over the item type: function List<T>({ items, render }: { items: T[]; render: (i: T) => ReactNode }). T is inferred from the items prop at the call site."], ["unions", "Unions", "Union vs intersection?", "A | B means the value is one of the types (only common members accessible until narrowed). A & B means it has all members of both. Unions model choices; intersections combine capabilities."], ["unions", "Unions", "What is a discriminated union?", "A union whose members share a literal 'tag' field (the discriminant). Checking that field narrows to one member, so TypeScript knows exactly which properties exist — ideal for modelling loading/error/success state."], ["unions", "Unions", "How do you get exhaustiveness checking?", "In a switch over the discriminant, assign the value to a never in the default case. If a new union member is added but not handled, assigning it to never becomes a compile error."], ["unions", "Unions", "What does 'make illegal states unrepresentable' mean?", "Design types so invalid combinations can't be constructed — e.g. a discriminated union prevents having both data and error at once, unlike separate boolean flags. The compiler enforces valid shapes."], ["narrow", "Narrowing", "What is narrowing?", "Refining a broad type to a more specific one inside a branch, using typeof, instanceof, the in operator, truthiness, equality, or discriminant checks. Accessing member-specific fields is only allowed after narrowing."], ["narrow", "Narrowing", "What is a user-defined type guard?", "A function returning a type predicate x is T (e.g. isUser(x): x is User). When it returns true, TypeScript narrows x to T in the calling branch. Useful for validating unknown/external values."], ["narrow", "Narrowing", "What does as const do?", "It freezes a literal to its narrowest, readonly type — arrays become readonly tuples of literals, object properties become readonly literals. It bridges runtime values into precise types (e.g. deriving a union of values)."], ["utility", "Utility", "Partial vs Required vs Readonly?", "Partial<T> makes all properties optional; Required<T> makes them all required; Readonly<T> makes them all readonly. They're mapped types that toggle modifiers across every key."], ["utility", "Utility", "Pick vs Omit?", "Pick<T, K> keeps only the listed keys; Omit<T, K> removes the listed keys and keeps the rest. Complementary ways to derive a subset object type from an existing one."], ["utility", "Utility", "What do keyof and typeof do?", "keyof T gives the union of T's property keys. typeof value lifts a runtime value into its type. Combined, typeof obj[keyof typeof obj] yields the union of a const object's value types."], ["utility", "Utility", "What is Record<K, V>?", "A type for an object whose keys are K and values are V — e.g. Record<string, number> is { [key: string]: number }. Handy for dictionaries/lookup maps."], ["utility", "Utility", "What does ReturnType do?", "ReturnType<typeof fn> extracts the return type of a function type, so you can derive a type from a factory/selector rather than re-declaring it. Parameters<> similarly extracts the argument tuple."], ["mapped", "Mapped/cond", "What is a mapped type?", "A type that iterates over the keys of another type ([K in keyof T]) to build a new object type, optionally toggling ?/readonly modifiers and remapping keys with as. Partial and Readonly are mapped types."], ["mapped", "Mapped/cond", "What is a conditional type?", "T extends U ? X : Y — it selects a branch based on whether T is assignable to U. Combined with infer (which captures a type from a position), it can extract types, e.g. the element type of an array."], ["mapped", "Mapped/cond", "What does infer do?", "Inside a conditional type's extends clause, infer U introduces a type variable capturing part of the matched shape — e.g. T extends (infer U)[] ? U : never extracts an array's element type."], ["react", "React", "How do you type children?", "As React.ReactNode, which covers strings, numbers, elements, arrays, null/undefined — anything renderable. Prefer typing props directly over React.FC, which complicates generic components (and in @types/react before v18 also forced an implicit children prop; that was removed in React 18, so you now declare children yourself or use PropsWithChildren)."], ["react", "React", "How do you type an input change handler?", "(e: React.ChangeEvent<HTMLInputElement>) => void — the element type parameter gives e.target the correct type (e.g. .value). Similar generics exist for MouseEvent, FormEvent, KeyboardEvent."], ["react", "React", "How do you type a useRef to a DOM node?", "useRef<HTMLInputElement>(null). Its .current is HTMLInputElement | null, so you access it with optional chaining (ref.current?.focus()) since it's null before mount."], ["react", "React", "Are types available at runtime?", "No — types are erased during compilation. You can't check an interface with instanceof or reflect on types at runtime; validate external/unknown data with type guards or a schema library like Zod."]];
+const QA = [["generics", "Generics", "What problem do generics solve?", "They let a function/type work over many types while preserving relationships between inputs and outputs, instead of falling back to any. A generic type parameter is filled in (often inferred) by the caller."], ["generics", "Generics", "What does T extends X do in a generic?", "It constrains the type parameter so callers can only supply types assignable to X, and lets the body safely use X's members. e.g. <T extends { length: number }> guarantees a length."], ["generics", "Generics", "How do you type a generic React component?", "Make the component function generic over the item type: function List<T>({ items, render }: { items: T[]; render: (i: T) => ReactNode }). T is inferred from the items prop at the call site."], ["unions", "Unions", "Union vs intersection?", "A | B means the value is one of the types (only common members accessible until narrowed). A & B means it has all members of both. Unions model choices; intersections combine capabilities."], ["unions", "Unions", "What is a discriminated union?", "A union whose members share a literal 'tag' field (the discriminant). Checking that field narrows to one member, so TypeScript knows exactly which properties exist — ideal for modelling loading/error/success state."], ["unions", "Unions", "How do you get exhaustiveness checking?", "In a switch over the discriminant, assign the value to a never in the default case. If a new union member is added but not handled, assigning it to never becomes a compile error."], ["unions", "Unions", "What does 'make illegal states unrepresentable' mean?", "Design types so invalid combinations can't be constructed — e.g. a discriminated union prevents having both data and error at once, unlike separate boolean flags. The compiler enforces valid shapes."], ["narrow", "Narrowing", "What is narrowing?", "Refining a broad type to a more specific one inside a branch, using typeof, instanceof, the in operator, truthiness, equality, or discriminant checks. Accessing member-specific fields is only allowed after narrowing."], ["narrow", "Narrowing", "What is a user-defined type guard?", "A function returning a type predicate x is T (e.g. isUser(x): x is User). When it returns true, TypeScript narrows x to T in the calling branch. Useful for validating unknown/external values."], ["narrow", "Narrowing", "What does as const do?", "It freezes a literal to its narrowest, readonly type — arrays become readonly tuples of literals, object properties become readonly literals. It bridges runtime values into precise types (e.g. deriving a union of values)."], ["utility", "Utility", "Partial vs Required vs Readonly?", "Partial<T> makes all properties optional; Required<T> makes them all required; Readonly<T> makes them all readonly. They're mapped types that toggle modifiers across every key."], ["utility", "Utility", "Pick vs Omit?", "Pick<T, K> keeps only the listed keys; Omit<T, K> removes the listed keys and keeps the rest. Complementary ways to derive a subset object type from an existing one."], ["utility", "Utility", "What do keyof and typeof do?", "keyof T gives the union of T's property keys. typeof value lifts a runtime value into its type. Combined, typeof obj[keyof typeof obj] yields the union of a const object's value types."], ["utility", "Utility", "What is Record<K, V>?", "A type for an object whose keys are K and values are V — e.g. Record<string, number> is { [key: string]: number }. Handy for dictionaries/lookup maps."], ["utility", "Utility", "What does ReturnType do?", "ReturnType<typeof fn> extracts the return type of a function type, so you can derive a type from a factory/selector rather than re-declaring it. Parameters<> similarly extracts the argument tuple."], ["mapped", "Mapped/cond", "What is a mapped type?", "A type that iterates over the keys of another type ([K in keyof T]) to build a new object type, optionally toggling ?/readonly modifiers and remapping keys with as. Partial and Readonly are mapped types."], ["mapped", "Mapped/cond", "What is a conditional type?", "T extends U ? X : Y — it selects a branch based on whether T is assignable to U. Combined with infer (which captures a type from a position), it can extract types, e.g. the element type of an array."], ["mapped", "Mapped/cond", "What does infer do?", "Inside a conditional type's extends clause, infer U introduces a type variable capturing part of the matched shape — e.g. T extends (infer U)[] ? U : never extracts an array's element type."], ["react", "React", "How do you type children?", "As React.ReactNode, which covers strings, numbers, elements, arrays, null/undefined — anything renderable. Prefer typing props directly over React.FC, which complicates generic components (and in @types/react before v18 also forced an implicit children prop; that was removed in React 18, so you now declare children yourself or use PropsWithChildren)."], ["react", "React", "How do you type an input change handler?", "(e: React.ChangeEvent<HTMLInputElement>) => void — the element type parameter gives e.target the correct type (e.g. .value). Similar generics exist for MouseEvent, FormEvent, KeyboardEvent."], ["react", "React", "How do you type a useRef to a DOM node?", "useRef<HTMLInputElement>(null). Its .current is HTMLInputElement | null, so you access it with optional chaining (ref.current?.focus()) since it's null before mount."], ["react", "React", "Are types available at runtime?", "No — types are erased during compilation. You can't check an interface with instanceof or reflect on types at runtime; validate external/unknown data with type guards or a schema library like Zod."], ["intro", "Structural", "Why is TypeScript structural rather than nominal?", "Because JavaScript objects are assembled at runtime from literals, spreads and JSON, and almost none come from a named class. A nominal system would reject idiomatic JS, so TS checks the only knowable thing — shape. The cost is that two identical shapes with different meanings are interchangeable."], ["intro", "Structural", "How do you get nominal typing when you need it?", "Brand the type: string & { readonly __brand: 'OrderId' }. The brand doesn't exist at runtime; it just makes two shapes structurally different so a UserId can't be passed as an OrderId. Use it where mixing values up has real consequences — ids, currency units, validated values — and not everywhere, since each crossing needs a cast."], ["intro", "Structural", "Why does an inline object literal error on an extra property but a variable doesn't?", "Excess property checking is a heuristic on fresh literals: an extra property written inline can only be a typo, since the value has nowhere else to go. Once it's in a variable, it's structurally a valid instance of the target type, so passing it is sound. It's a courtesy check on literals, not a rule about types."], ["intro", "Structural", "Which TypeScript features actually emit runtime code?", "enum and legacy decorators. Everything else is erased. That's the main argument for `as const` objects or union types over enums — the rest of the type layer is free and an enum quietly isn't."], ["generics", "Generics", "When is a generic the wrong tool?", "When the type parameter appears only once in the signature — it's linking nothing, so it's `unknown` with ceremony. A generic exists to preserve a relationship between positions: what goes in determines what comes out. If there's no relationship, don't parameterise."], ["generics", "Generics", "What do constraints give you beyond restricting callers?", "They unlock the body. `T extends { length: number }` means you can read .length inside, which a bare T forbids. The canonical example is `get<T, K extends keyof T>(obj: T, key: K): T[K]` — the return type is computed from both parameters and an invalid key is a compile error."], ["generics", "Generics", "Why does `const f = <T>(x: T) => x` fail in a .tsx file?", "The parser reads <T> as a JSX tag. Write <T,> with a trailing comma, or <T extends unknown>, or use a function declaration. It's a parse ambiguity, not a type error."], ["generics", "Generics", "When do you pass a type argument explicitly?", "When there's nothing to infer from, or when you want to widen deliberately — useState<string | null>(null), otherwise null infers as null and you can never set a string."], ["unions", "Unions", "Why does a union of objects expose fewer properties than either member?", "Because any given value might be either one, so only properties present on all members are safe. Unions widen the set of allowed values and narrow what you may do; intersections do the reverse."], ["unions", "Unions", "How does the `never` exhaustiveness check actually work?", "never is the type with no values. If every case is handled, control flow analysis has eliminated every union member by the default branch, so the value is never and assigning it to a never variable is legal. Add an unhandled case and a real type reaches the default — nothing is assignable to never, so it fails to compile. It turns a review discipline into a build error."], ["unions", "Unions", "What breaks a discriminated union?", "The discriminant widening to string. It must be a literal type that exists at runtime, so if the object is built somewhere TypeScript infers `status: string`, narrowing silently stops working. `as const` or an explicit annotation fixes it."], ["narrow", "Narrowing", "Name three places narrowing is lost.", "Inside callbacks (the compiler can't know when they run), after an await (anything could have mutated it), and on mutable object properties across a function call. The fix in all three is the same: copy to a const local and narrow that."], ["narrow", "Narrowing", "What's unsound about a user-defined type guard?", "The compiler doesn't verify the body justifies the claim — `return true` would compile. `x is User` is an `as` cast in a function's clothing. Keep them few and next to the type they guard; at real boundaries prefer a schema validator that derives the type from the check."], ["narrow", "Narrowing", "unknown vs any — what's the practical difference?", "Both accept anything; any also permits anything, and spreads — values derived from an any are any, so one bad library type can disable checking across a module. unknown permits nothing until you narrow, forcing a check at the boundary. That's why catch (e: unknown) is the modern default: a throw can carry any value, not just an Error."], ["utility", "Utility", "What's the danger with Omit?", "It doesn't constrain its keys to keyof T, so Omit<User, 'emial'> compiles and omits nothing. Pick does check. Use Pick with Exclude, or a StrictOmit helper, when silently omitting nothing would be a bug — the same trap fires when a field is renamed."], ["utility", "Utility", "Pick/Omit vs Extract/Exclude?", "Pick and Omit filter the keys of an object type. Extract and Exclude filter the members of a union. Similar names, different worlds."], ["utility", "Utility", "Why derive types instead of writing them twice?", "So a change propagates. Pick<User,'name'|'email'> updates when User does; a hand-written duplicate silently drifts and you find out at runtime. The habit is one source of truth plus derivations — Partial<Omit<User,'id'>> for a PATCH body, ReturnType<typeof selector> for a selector's shape."], ["utility", "Utility", "When is Partial<T> the wrong choice?", "For a form model. Making every field optional means you can forget a required one and only discover it at submit. It's right for PATCH bodies and updates; if a value must eventually be complete, model the draft and the complete states as two types."], ["mapped", "Mapped/cond", "How do you read a mapped type?", "As a for loop over keys: for each K in keyof T, produce a property named K of type T[K], with ? or readonly modifiers added or removed (with -). Key remapping with `as` computes a new name; remapping to never drops the key, which is the idiomatic filter."], ["mapped", "Mapped/cond", "What does `extends` mean in a conditional type?", "'Is assignable to' — the same question the compiler asks at every assignment, asked in the type language. It's not inheritance. `infer` alongside it is pattern matching: match this shape and name the part in that slot. ReturnType is `T extends (...a: any[]) => infer R ? R : never`."], ["mapped", "Mapped/cond", "What is a distributive conditional type?", "A conditional over a naked type parameter is applied to each union member separately and the results re-unioned — so ElementOf<string[] | number[]> is string | number. It's how Exclude works. Defeat it by wrapping both sides in tuples: [T] extends [U]. A type resolving unexpectedly to never is usually distribution over never, the empty union."], ["mapped", "Mapped/cond", "When should you stop writing clever types?", "When the type is harder to understand or change than the code it describes. Deep conditionals slow the compiler and the editor and produce unreadable errors. They earn their place at boundaries that remove duplication across many call sites — a library, a generated client, a design-system prop table."], ["react", "React", "Why is e.target typed as EventTarget but e.currentTarget typed as your element?", "currentTarget is the element the handler is attached to, which is statically known. target is whatever was actually clicked, which via bubbling could be any descendant, so it can only honestly be EventTarget. ChangeEvent is the exception because change events don't originate from children of the input. Prefer currentTarget, or narrow target with instanceof."], ["react", "React", "How do you make mutually exclusive props uncompilable?", "A discriminated union of prop shapes, with `?: never` on the members that must be absent: { as:'a'; href:string; onClick?:never } | { as:'button'; onClick:()=>void; href?:never }. Without the never members the union collapses, since an object with both is still structurally assignable to one side."], ["react", "React", "What changed about refs in React 19?", "ref is a regular prop on function components, so forwardRef is no longer needed to receive one. Also, ref callbacks may return a cleanup function — which means an implicit-return arrow like ref={el => (r.current = el)} is now a type error. Use a block body."], ["config", "Config", "Which compiler flags actually change how much TypeScript is worth?", "strict above all — without strictNullChecks, null is assignable to everything and the compiler can't see your most common crash. Then noUncheckedIndexedAccess (arr[i] is T | undefined, truthful but noisy), exactOptionalPropertyTypes where key presence is meaningful, and verbatimModuleSyntax so type imports don't get emitted."], ["config", "Config", "How would you enable strict on a large legacy codebase?", "Not in one PR — it produces thousands of errors nobody can review. Per-directory or per-file: strict for new code, and fix modules as you touch them. The migration path matters more than the flag."], ["config", "Config", "@ts-ignore or @ts-expect-error?", "Always expect-error. It fails when the error disappears, so it self-cleans after an upstream fix. A ts-ignore lives forever and also hides new errors that appear on that line later."], ["config", "Config", "When is a non-null assertion (!) acceptable?", "When the invariant is genuinely outside the compiler's view — document.getElementById('root')! in an entry file. Not as a way to silence an error in business logic: it's `as NonNullable<T>` in one character and it's the easiest way to ship a runtime crash with a green build. If you can't explain why it can't be null, it can be null."]];
 const bank = document.getElementById('qbank');
 const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
 // light inline-code styling for tokens that look like code
