@@ -183,6 +183,58 @@
     .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
     .backdrop.open{display:block}
   }
+
+  /* ---------- responsive hardening (phones) ---------- */
+  /* Appended last on purpose: these override the earlier mobile block. */
+  html{-webkit-text-size-adjust:100%}
+  /* `1fr` floors at min-content, so one wide table stretched the whole column
+     and every section with it. minmax(0,1fr) lets the column actually shrink. */
+  .shell{grid-template-columns:270px minmax(0,1fr)}
+  main{min-width:0}
+  img,svg,canvas,video{max-width:100%;height:auto}
+  code.k{overflow-wrap:anywhere}
+  p,li,td,th,.lede,.ans,.qhead{overflow-wrap:break-word}
+
+  @media(max-width:880px){
+    .shell{grid-template-columns:minmax(0,1fr)}
+    nav.side{width:min(300px,84vw);height:100dvh;
+      padding:calc(22px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+    .menu-btn{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));
+      box-shadow:0 4px 16px rgba(0,0,0,.5)}
+    main{padding:66px 18px calc(90px + env(safe-area-inset-bottom))}
+    h1{font-size:clamp(28px,8.4vw,38px)}
+    h2{font-size:25px}
+    h3{font-size:18px;margin-top:28px}
+    .lede{font-size:17px}
+    .hero{margin-bottom:52px}
+    section{margin-bottom:56px}
+    /* a wide table scrolls in place; a narrow one still fits and never scrolls.
+       Cells opt out of break-word here: the container scrolls, so breaking
+       "localStorage" across two lines buys nothing and costs legibility. */
+    .tbl{display:block;overflow-x:auto;overscroll-behavior-x:contain}
+    .tbl th,.tbl td{min-width:112px;padding:10px 11px;overflow-wrap:normal;word-break:normal}
+    .tbl th{white-space:nowrap}
+    .tbl th:first-child,.tbl td:first-child{min-width:134px;white-space:normal}
+    pre{font-size:12.5px;padding:14px 15px;border-radius:10px;overscroll-behavior-x:contain}
+    .note{padding:13px 15px}
+    .diagram{padding:16px}
+    .statebox{flex:1 1 100%;min-width:0}
+    .qhead{padding:14px}
+    .ans{padding-left:16px}
+    .fchip,.qbtn,.reveal-btn{min-height:32px}
+    footer{padding:28px 18px calc(28px + env(safe-area-inset-bottom))}
+    /* event-loop simulator lanes */
+    .sim-body{grid-template-columns:minmax(0,1fr)}
+    .sim-code{overflow-x:auto}
+  }
+  @media(max-width:420px){
+    main{padding-left:15px;padding-right:15px}
+    .legend{gap:6px}
+    .chip{font-size:11px;padding:4px 10px 4px 9px}
+    .qtopic{display:none}
+    .tbl th,.tbl td{min-width:104px}
+    .tbl th:first-child,.tbl td:first-child{min-width:124px}
+  }
 </style>
 </head>
 <body>
