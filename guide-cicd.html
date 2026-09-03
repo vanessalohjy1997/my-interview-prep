@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="about:srcdoc">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD &amp; Pipelines — a senior FE course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1416;
+    --surface:#11201F;
+    --surface-2:#182D2B;
+    --border:#264240;
+    --border-soft:#1c3532;
+    --text:#E6F0EE;
+    --muted:#8AA6A2;
+    --faint:#5B7570;
+    /* semantic colours — each maps to a real concept */
+    --emerald:#7DD3FC;  /* fulfilled / resolve / brand */
+    --rose:#FF7A8A;     /* rejected / errors */
+    --amber:#F3BA2F;    /* pending / caution */
+    --violet:#A78BFA;   /* the chain / continuations */
+    --cyan:#34D3E6;     /* microtask timing */
+    --green:#5FD68A;    /* console output */
+    --display:'Space Grotesk',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--body);
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--emerald);color:#08110F}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+  nav.side{
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:linear-gradient(180deg,#091210,#0B1416);
+    border-right:1px solid var(--border);padding:26px 18px 40px;
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1.25;margin-bottom:4px}
+  .brand em{color:var(--emerald);font-style:normal}
+  .brand-sub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:26px}
+  nav.side a{
+    display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--muted);
+    font-size:13.5px;padding:8px 10px;border-radius:8px;margin-bottom:2px;transition:.15s;
+  }
+  nav.side a .n{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:18px}
+  nav.side a:hover{background:var(--surface);color:var(--text)}
+  nav.side a.active{background:var(--surface-2);color:var(--text)}
+  nav.side a.active .n{color:var(--emerald)}
+
+  main{max-width:820px;margin:0 auto;padding:64px 40px 120px;width:100%}
+
+  /* ---------- hero ---------- */
+  .hero{margin-bottom:72px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.03em;margin-bottom:20px}
+  h1 span{color:var(--emerald)}
+  .lede{font-size:19px;color:var(--muted);max-width:60ch}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+    background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px 12px 5px 10px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-pending{background:var(--amber)}.d-ful{background:var(--emerald)}.d-rej{background:var(--rose)}.d-chain{background:var(--violet)}
+
+  /* ---------- sections ---------- */
+  section{margin-bottom:76px;scroll-margin-top:24px}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--emerald);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker::before{content:"";width:22px;height:1px;background:var(--emerald);display:inline-block}
+  h2{font-family:var(--display);font-weight:600;font-size:31px;letter-spacing:-.02em;margin-bottom:18px;line-height:1.15}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;margin:34px 0 12px;letter-spacing:-.01em}
+  p{margin-bottom:16px;color:#CFE0DC}
+  main p strong{color:var(--text);font-weight:600}
+  a.inline{color:var(--emerald);text-decoration:none;border-bottom:1px solid rgba(125,211,252,.3)}
+  ul.body,ol.body{margin:0 0 16px 20px;color:#CFE0DC}
+  ul.body li,ol.body li{margin-bottom:9px}
+  code.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--border-soft);padding:1px 6px;border-radius:5px;color:#C5EBFE}
+
+  /* colour-coded key terms */
+  .t-pending{color:var(--amber);font-weight:600}
+  .t-ful{color:var(--emerald);font-weight:600}
+  .t-rej{color:var(--rose);font-weight:600}
+  .t-chain{color:var(--violet);font-weight:600}
+  .t-micro{color:var(--cyan);font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{border-left:3px solid var(--emerald);background:linear-gradient(90deg,rgba(125,211,252,.07),transparent);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0;font-size:15px}
+  .note .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--emerald);display:block;margin-bottom:5px}
+  .note.warn{border-color:var(--rose);background:linear-gradient(90deg,rgba(255,122,138,.07),transparent)}
+  .note.warn .lbl{color:var(--rose)}
+  .note.gold{border-color:var(--amber);background:linear-gradient(90deg,rgba(243,186,47,.08),transparent)}
+  .note.gold .lbl{color:var(--amber)}
+
+  /* ---------- code blocks ---------- */
+  pre{background:#070E0D;border:1px solid var(--border);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:18px 0;
+    font-family:var(--mono);font-size:13.5px;line-height:1.75;position:relative}
+  pre .cmt{color:var(--faint)}
+  pre .out{color:var(--green)}
+  pre .kw{color:var(--emerald)}
+  pre .err{color:var(--rose)}
+  .filelabel{font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 -10px}
+
+  /* ---------- state diagram ---------- */
+  .states{display:flex;flex-wrap:wrap;gap:14px;margin:24px 0}
+  .statebox{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .statebox .st-name{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700}
+  .statebox.pending .st-name{color:var(--amber)}
+  .statebox.ful .st-name{color:var(--emerald)}
+  .statebox.rej .st-name{color:var(--rose)}
+  .statebox p{font-size:13.5px;margin:0;color:var(--muted)}
+
+  /* ---------- table ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+  .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .tbl td{color:#CFE0DC}
+  .tbl td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:nowrap}
+
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin:24px 0}
+
+  /* ---------- predict / reveal ---------- */
+  .quizcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:18px 0}
+  .quizcard .q{font-weight:600;color:var(--text);margin-bottom:6px}
+  .reveal-btn{font-family:var(--mono);font-size:12px;background:transparent;border:1px dashed var(--faint);color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;margin-top:6px;transition:.15s}
+  .reveal-btn:hover{border-color:var(--emerald);color:var(--emerald)}
+  .answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none}
+  .answer.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:scale(1);opacity:1}}
+  .answer .out-line{font-family:var(--mono);font-size:13px;color:var(--green);background:#070E0D;border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+
+  /* ---------- Q&A bank ---------- */
+  .qtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 20px}
+  .qtools .count{font-family:var(--mono);font-size:12px;color:var(--faint);margin-right:auto}
+  .qbtn{font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--emerald);color:var(--emerald);
+    background:transparent;padding:7px 13px;border-radius:8px;transition:.15s}
+  .qbtn:hover{background:var(--emerald);color:#08110F}
+  .fchip{font-family:var(--mono);font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    padding:5px 11px;border-radius:100px;transition:.15s}
+  .fchip:hover{border-color:var(--emerald);color:var(--emerald)}
+  .fchip.on{background:var(--text);color:#08110F;border-color:var(--text)}
+  .qcard{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden;transition:border-color .18s}
+  .qcard.open{border-color:var(--emerald)}
+  .qcard.hide{display:none}
+  .qhead{width:100%;text-align:left;cursor:pointer;border:0;background:none;color:var(--text);
+    display:flex;gap:12px;align-items:flex-start;padding:15px 16px;font-family:var(--body);font-size:14.5px;font-weight:500;line-height:1.45}
+  .qhead:hover{background:var(--surface-2)}
+  .qmark{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald);flex:none;margin-top:1px;transition:transform .24s}
+  .qcard.open .qmark{transform:rotate(90deg)}
+  .qtopic{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);flex:none;margin-top:3px;
+    border:1px solid var(--border);border-radius:5px;padding:1px 6px}
+  .qtext{flex:1}
+  .qbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .qcard.open .qbody{grid-template-rows:1fr}
+  .qbody>.inner{overflow:hidden}
+  .ans{border-top:1px solid var(--border-soft);padding:14px 16px 16px 40px;font-size:14px;color:var(--muted)}
+  .ans code.k{color:#C5EBFE}
+
+  footer{border-top:1px solid var(--border);padding:34px 40px;text-align:center;color:var(--faint);font-size:13px;font-family:var(--mono)}
+
+  /* ---------- mobile ---------- */
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{position:fixed;z-index:50;width:270px;transform:translateX(-100%);transition:transform .25s ease}
+    nav.side.open{transform:translateX(0)}
+    .menu-btn{display:flex;position:fixed;top:14px;right:14px;z-index:60;background:var(--emerald);color:#08110F;
+      border:none;width:44px;height:44px;border-radius:11px;font-size:20px;cursor:pointer;align-items:center;justify-content:center;font-family:var(--mono)}
+    main{padding:56px 22px 100px}
+    h1{font-size:38px}
+    .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+    .backdrop.open{display:block}
+  }
+
+  /* ---------- responsive hardening (phones) ---------- */
+  /* Appended last on purpose: these override the earlier mobile block. */
+  html{-webkit-text-size-adjust:100%}
+  /* `1fr` floors at min-content, so one wide table stretched the whole column
+     and every section with it. minmax(0,1fr) lets the column actually shrink. */
+  .shell{grid-template-columns:270px minmax(0,1fr)}
+  main{min-width:0}
+  img,svg,canvas,video{max-width:100%;height:auto}
+  code.k{overflow-wrap:anywhere}
+  p,li,td,th,.lede,.ans,.qhead{overflow-wrap:break-word}
+
+  @media(max-width:880px){
+    .shell{grid-template-columns:minmax(0,1fr)}
+    nav.side{width:min(300px,84vw);height:100dvh;
+      padding:calc(22px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+    .menu-btn{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));
+      box-shadow:0 4px 16px rgba(0,0,0,.5)}
+    main{padding:66px 18px calc(90px + env(safe-area-inset-bottom))}
+    h1{font-size:clamp(28px,8.4vw,38px)}
+    h2{font-size:25px}
+    h3{font-size:18px;margin-top:28px}
+    .lede{font-size:17px}
+    .hero{margin-bottom:52px}
+    section{margin-bottom:56px}
+    /* a wide table scrolls in place; a narrow one still fits and never scrolls.
+       Cells opt out of break-word here: the container scrolls, so breaking
+       "localStorage" across two lines buys nothing and costs legibility. */
+    .tbl{display:block;overflow-x:auto;overscroll-behavior-x:contain}
+    .tbl th,.tbl td{min-width:112px;padding:10px 11px;overflow-wrap:normal;word-break:normal}
+    .tbl th{white-space:nowrap}
+    .tbl th:first-child,.tbl td:first-child{min-width:134px;white-space:normal}
+    pre{font-size:12.5px;padding:14px 15px;border-radius:10px;overscroll-behavior-x:contain}
+    .note{padding:13px 15px}
+    .diagram{padding:16px}
+    .statebox{flex:1 1 100%;min-width:0}
+    .qhead{padding:14px}
+    .ans{padding-left:16px}
+    .fchip,.qbtn,.reveal-btn{min-height:32px}
+    footer{padding:28px 18px calc(28px + env(safe-area-inset-bottom))}
+    /* event-loop simulator lanes */
+    .sim-body{grid-template-columns:minmax(0,1fr)}
+    .sim-code{overflow-x:auto}
+  }
+  @media(max-width:420px){
+    main{padding-left:15px;padding-right:15px}
+    .legend{gap:6px}
+    .chip{font-size:11px;padding:4px 10px 4px 9px}
+    .qtopic{display:none}
+    .tbl th,.tbl td{min-width:104px}
+    .tbl th:first-child,.tbl td:first-child{min-width:124px}
+  }
+</style>
+<body>
+<button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">&#8801;</button>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="brand">CI/CD &amp; <em>Pipelines</em></div>
+    <div class="brand-sub">Senior FE &middot; deep dive</div>
+    <a href="#intro"><span class="n">00</span> What CI/CD is</a>
+    <a href="#anatomy"><span class="n">01</span> Anatomy of a pipeline</a>
+    <a href="#models"><span class="n">02</span> CI vs CD vs CD</a>
+    <a href="#branching"><span class="n">03</span> Branching & merging</a>
+    <a href="#speed"><span class="n">04</span> Making it fast</a>
+    <a href="#artifact"><span class="n">05</span> Build once, promote</a>
+    <a href="#gates"><span class="n">06</span> Quality gates</a>
+    <a href="#flaky"><span class="n">07</span> Flaky tests</a>
+    <a href="#envs"><span class="n">08</span> Environments</a>
+    <a href="#deploy"><span class="n">09</span> The deploy step</a>
+    <a href="#security"><span class="n">10</span> Secrets & supply chain</a>
+    <a href="#metrics"><span class="n">11</span> Measuring the pipeline</a>
+    <a href="#pitfalls"><span class="n">12</span> Pitfalls</a>
+    <a href="#drills"><span class="n">13</span> Drills</a>
+    <a href="#bank"><span class="n">14</span> Q&amp;A bank</a>
+  </nav>
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Frontend interview prep</div>
+      <h1>A pipeline is a promise about <span>every commit.</span></h1>
+      <p class="lede">CI/CD questions look like tooling trivia and are not. What is being tested is whether you can describe the path from a push to production, name what each stage protects against, and say what you would cut when it takes forty minutes. Learn the shape of the pipeline and the tool names become interchangeable.</p>
+      <div class="legend">
+        <span class="chip"><span class="dot d-ful"></span>Integrate</span>
+        <span class="chip"><span class="dot d-pending"></span>Verify</span>
+        <span class="chip"><span class="dot d-chain"></span>Promote</span>
+        <span class="chip"><span class="dot d-rej"></span>Recover</span>
+      </div>
+    </header>
+    <section id="intro">
+      <div class="kicker">00 &mdash; The frame that makes every follow-up easy</div>
+      <h2>Continuous integration is a habit, not a tool</h2>
+
+      <p><strong>Continuous integration</strong> is the practice of merging everyone's work into a shared trunk many times a day, with an automated build and test run proving that the merged result still works. The server that runs it is incidental. The practice is the thing: integrate small, integrate often, and let a machine tell you within minutes if you broke it.</p>
+      <p>That definition matters in an interview because it explains every other answer. Why keep branches short? Because a five-day branch is five days of un-integrated work, and the conflicts you get are not just textual — they are behavioural. Why keep the pipeline fast? Because a check that takes forty minutes stops being feedback and becomes a queue. Why is a red trunk an emergency? Because a broken trunk blocks everyone else's integration, which is the one thing CI exists to enable.</p>
+      <div class="states">
+        <div class="statebox"><div class="st-name">Integrate</div><p>Small change lands on trunk many times a day, behind a flag if unfinished.</p></div>
+        <div class="statebox pending"><div class="st-name">Verify</div><p>Automated gates prove the merged result builds, type-checks and passes.</p></div>
+        <div class="statebox ful"><div class="st-name">Promote</div><p>One built artifact moves through environments unchanged.</p></div>
+        <div class="statebox rej"><div class="st-name">Recover</div><p>When it breaks, restoring service is fast and rehearsed.</p></div>
+      </div>
+      <h3>The narrative they want to hear</h3>
+      <p>Almost every CI/CD question is a slice of one story. Have it ready end to end, with rough times attached, and you can answer the specific question from inside a structure rather than reciting facts.</p>
+      <ul class="body">
+        <li><strong>Push.</strong> A branch with one day&rsquo;s work goes up; a pull request opens.</li>
+        <li><strong>Fast checks (~3 min).</strong> Install with the cache warm, then lint, type-check and unit tests, all running concurrently. These are cheap and catch most mistakes.</li>
+        <li><strong>Build (~3 min, alongside the fast checks).</strong> Produce the artifact once. Bundle-size budgets are asserted against it.</li>
+        <li><strong>Slow checks (~6 min).</strong> Integration and end-to-end tests, sharded across runners, run against a preview deploy of that artifact. Nine minutes of wall clock, not twelve, because the build overlaps the fast checks.</li>
+        <li><strong>Review.</strong> A human reads the diff while the machine reads the behaviour. Both are required to merge.</li>
+        <li><strong>Merge queue.</strong> The PR is re-tested against the current trunk before it lands, not against the trunk of yesterday.</li>
+        <li><strong>Promote.</strong> The <em>same</em> artifact is deployed to staging and then production. Nothing is rebuilt.</li>
+        <li><strong>Verify in production.</strong> Smoke tests on the critical path, then error rate and Core Web Vitals watched against the release marker.</li>
+        <li><strong>Recover if needed.</strong> Flag off in seconds, or re-point to the previous artifact in a minute.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">The opening line</span>&ldquo;I think of the pipeline as a series of gates that each buy a specific kind of confidence, ordered cheapest-first so failures come back fast. The build happens once and that artifact is promoted unchanged through environments &mdash; and I care as much about how quickly we can recover from a bad deploy as about how thoroughly we check before one.&rdquo;</div>
+      <div class="note"><span class="lbl">Where this guide stops</span>Everything after the deploy &mdash; canaries, percentage rollouts, feature flags, A/B tests &mdash; is the <em>release</em> topic and lives in its own guide. Deploy and release are deliberately separate ideas: this guide gets a verified artifact onto the infrastructure; that one decides which users are exposed to it.</div>
+    </section>
+    <section id="anatomy">
+      <div class="kicker">01 &mdash; Push to production, stage by stage</div>
+      <h2>What actually runs when you push</h2>
+
+      <p>A pipeline is a directed graph of jobs, not a straight line. Jobs that do not depend on each other run at the same time; jobs that consume another job&rsquo;s output wait for it. Understanding it as a graph is what lets you answer &ldquo;make this faster&rdquo; sensibly, because the wall-clock time is the <em>longest path through the graph</em>, not the sum of the jobs.</p>
+      <table class="tbl">
+        <tr><th>Stage</th><th>Typical</th><th>What it buys you</th></tr>
+        <tr><td>Checkout</td><td>5&ndash;20 s</td><td>The code. <code class="k">actions/checkout</code> is already shallow by default (<code class="k">fetch-depth: 1</code>), so the thing to watch is jobs that set <code class="k">fetch-depth: 0</code> for history &mdash; affected-graph tools, changesets, <code class="k">git describe</code> &mdash; because a large monorepo&rsquo;s full history can take minutes.</td></tr>
+        <tr><td>Install</td><td>15 s cached<br>60&ndash;120 s cold</td><td>Reproducible dependencies. <code class="k">npm ci</code>, not <code class="k">npm install</code> &mdash; it wipes <code class="k">node_modules</code>, installs exactly what the lockfile says, and fails if the lockfile and <code class="k">package.json</code> disagree.</td></tr>
+        <tr><td>Lint</td><td>20&ndash;60 s</td><td>Consistency and a class of real bugs (unused variables, missing hook dependencies). Cheap, so it runs first.</td></tr>
+        <tr><td>Type-check</td><td>30&ndash;120 s</td><td>Whole-program consistency that no single test covers. <code class="k">tsc --noEmit</code>, because your bundler transpiles without checking types.</td></tr>
+        <tr><td>Unit tests</td><td>1&ndash;4 min</td><td>Logic correctness at the function and component level. The bulk of your assertions live here.</td></tr>
+        <tr><td>Build</td><td>2&ndash;5 min</td><td>The artifact. Also the first place a broken import or a missing environment variable shows up.</td></tr>
+        <tr><td>E2E</td><td>5&ndash;20 min</td><td>Proof the assembled system works in a real browser. The most valuable and most expensive stage &mdash; and the flakiest.</td></tr>
+        <tr><td>Deploy</td><td>1&ndash;3 min</td><td>Upload plus cache invalidation. Short relative to the test stages, which surprises people who expect shipping to be the risky-feeling part.</td></tr>
+      </table>
+      <h3>Fail fast is an ordering decision</h3>
+      <p>The ordering above is not aesthetic. If a typo fails the type-check at 90 seconds, you never spend eight minutes of runner time on end-to-end tests that were doomed anyway. Put the cheapest, highest-yield checks first, and let independent ones run in parallel so a lint failure and a type error surface in the same run rather than one after the other over two pushes.</p>
+      <p>Worked example. Suppose lint takes 1 min, type-check 2 min, unit tests 3 min, build 3 min, E2E 8 min, and E2E is the only one that needs the build.</p>
+      <ul class="body">
+        <li><strong>Strictly sequential:</strong> 1 + 2 + 3 + 3 + 8 = <strong>17 min</strong>.</li>
+        <li><strong>Graph-aware:</strong> lint, type-check and unit tests run concurrently (3 min, the slowest of the three), build runs concurrently with them (3 min), then E2E (8 min) &rarr; <strong>11 min</strong>.</li>
+        <li><strong>Plus four-way E2E sharding:</strong> the build&rsquo;s 3 min, then each shard re-pays its own checkout, install and browser startup, so a quartered 8-minute suite lands nearer 3 min per shard than a clean 2 &rarr; <strong>~6 min</strong>. Just over a third of the original, with no test deleted.</li>
+      </ul>
+      <div class="note"><span class="lbl">The number worth quoting</span>Aim for pull-request feedback in <strong>under ten minutes</strong>. It is not a magic threshold, it is an attention threshold: past roughly ten minutes people start another task, and the cost of a red build becomes a context switch rather than a quick fix. Optimise the PR path hard; the post-merge path can afford to be slower and more thorough.</div>
+      <h3>When fail-fast is the wrong instinct</h3>
+      <p>Stopping at the first failure is right for a routine push and irritating for a big refactor, where you want the whole list of problems at once. Be precise about the mechanism, because candidates routinely are not. Independent top-level jobs already run to completion when a sibling fails &mdash; each reports separately by default, so parallelising the gates is not a mitigation, it is what you get. What does cancel work is a matrix&rsquo;s <code class="k">strategy.fail-fast</code>, which defaults to <code class="k">true</code> and kills the remaining legs of <em>that matrix</em> on the first failing one; set it to <code class="k">false</code> when you want every browser or Node version reported. <code class="k">continue-on-error</code> is a different tool and not interchangeable: it stops a job failing the run at all, which means it stops gating the merge. Use it for a deliberately non-blocking experimental job, never as a way to see more results, and never anywhere on the deploy path &mdash; there the first failure genuinely should stop everything.</p>
+      <div class="note warn"><span class="lbl">The trap</span>&ldquo;Just run everything on every push&rdquo; is the answer that ends the conversation badly. It is not that it is expensive &mdash; it is that a slow pipeline changes behaviour. People batch commits to avoid waiting, batching makes changes bigger, bigger changes are riskier and harder to review, and the risk the pipeline was built to reduce goes back up. Pipeline latency is a code-quality input, not just an infrastructure cost.</div>
+    </section>
+    <section id="models">
+      <div class="kicker">02 &mdash; The three terms people use interchangeably</div>
+      <h2>Integration, delivery, deployment</h2>
+
+      <p>Three terms, two of them sharing an abbreviation. Interviewers ask this to check you are precise about something most candidates blur, and the distinction is genuinely about <em>who decides</em>, not about tooling.</p>
+      <table class="tbl">
+        <tr><th>Term</th><th>Definition</th><th>Where it stops</th></tr>
+        <tr><td>Continuous integration</td><td>Everyone merges to trunk many times a day; every merge is automatically built and tested.</td><td>At a verified artifact. Nothing has shipped.</td></tr>
+        <tr><td>Continuous delivery</td><td>Every commit that passes is <em>automatically made deployable</em> &mdash; the artifact is built, promoted through environments and sitting ready.</td><td>At a human clicking deploy. The gate is a decision, not a task.</td></tr>
+        <tr><td>Continuous deployment</td><td>Every commit that passes goes to production with no human step.</td><td>It does not stop. Production is the end of the pipeline.</td></tr>
+      </table>
+      <p>The load-bearing sentence: <strong>continuous delivery means you always could deploy; continuous deployment means you always do.</strong> The gap is mostly organisational &mdash; the same pipeline, minus the approval &mdash; but taking the last step usually buys you technical work too, because there is no longer a human in the loop to catch a bad artifact: automated post-deploy verification and a rehearsed, automated rollback stop being nice to have.</p>
+      <h3>Which one should you argue for?</h3>
+      <p>Continuous deployment is the stronger position, but only when three things are true: your automated gates are trusted enough that a human approval adds no real information; you can separate deploy from release, so shipping code is not the same as exposing behaviour; and recovery is fast and rehearsed. Without those, removing the human is not maturity, it is removing the last check while keeping the same risk.</p>
+      <p>The counter-case is worth saying out loud, because it shows judgement. Continuous deployment is a poor fit where a release is externally coordinated &mdash; a mobile app store review, a regulated change window, a marketing launch with a legal sign-off, an on-premise product customers install themselves. In those, continuous <em>delivery</em> is the honest target: the artifact is always ready, the timing is someone else&rsquo;s call.</p>
+      <div class="note"><span class="lbl">Say this</span>&ldquo;We practise continuous delivery: every green commit produces a promotable artifact. We deploy to production several times a day, but the deploy is still an explicit step because our release windows are coordinated with support. The feature flags are what make that acceptable &mdash; the code ships continuously, the exposure is the decision.&rdquo;</div>
+    </section>
+    <section id="branching">
+      <div class="kicker">03 &mdash; Where the integration in CI comes from</div>
+      <h2>Trunk-based development and merge queues</h2>
+
+      <p>Branching strategy is a CI question in disguise. The <em>integration</em> in continuous integration has to happen somewhere, and your branching model decides whether it happens continuously in small pieces or all at once in a painful one.</p>
+      <table class="tbl">
+        <tr><th>Model</th><th>How it works</th><th>Cost</th></tr>
+        <tr><td>Trunk-based</td><td>Short-lived branches, hours to a day, merged to <code class="k">main</code> behind flags. <code class="k">main</code> is always releasable.</td><td>Requires flags, strong gates and the discipline to keep changes small. This is what most product teams should do.</td></tr>
+        <tr><td>GitHub Flow</td><td>Branch per feature, PR, merge, deploy from <code class="k">main</code>. Trunk-based with a review step formalised.</td><td>Degrades into long-lived branches the moment a feature takes two weeks and nobody flags it.</td></tr>
+        <tr><td>Git Flow</td><td>Separate <code class="k">develop</code>, <code class="k">release/*</code> and <code class="k">hotfix/*</code> branches with scheduled merges.</td><td>Built for versioned, shipped-to-customers software. On a continuously deployed web app it adds days of un-integrated divergence and an entire class of merge pain for no benefit.</td></tr>
+      </table>
+      <h3>Why long branches hurt more than they look</h3>
+      <p>Textual merge conflicts are the visible cost and the smaller one. The expensive failure is the <strong>semantic conflict</strong>: two branches that merge cleanly and are individually green, but are broken together. Someone renames a hook&rsquo;s return field while someone else adds a caller of the old shape; git sees two edits to different files and merges them happily; the type-check on trunk goes red after the merge, not before it.</p>
+      <p>This is precisely why the merge, not the branch, is the thing to test. A pull request whose checks passed against a three-day-old base has proved something about a commit that no longer exists.</p>
+      <h3>Merge queues</h3>
+      <p>A merge queue takes approved PRs in order and re-runs the checks against <em>trunk plus everything already queued ahead of them</em> &mdash; one entry or a whole batch at a time, depending on configuration; GitHub&rsquo;s queue groups several PRs into one <code class="k">merge_group</code> by default. Only if that speculative merge is green does the PR actually land. It is the mechanism that closes the semantic-conflict gap without asking everyone to rebase constantly.</p>
+      <ul class="body">
+        <li><strong>The trade:</strong> latency. A queue serialises merges, so with a 12-minute check suite and ten PRs a day the last one waits a long time. Queues answer this by testing several entries speculatively in parallel &mdash; batch A, A+B, A+B+C &mdash; and discarding the branches invalidated when one fails.</li>
+        <li><strong>When you do not need one:</strong> a small team on a small codebase merging a handful of PRs a day. The window in which trunk moves under you is minutes, so the conflict rate does not justify the wait. Introduce a queue when you can point at broken-trunk incidents, not pre-emptively.</li>
+        <li><strong>Squash on merge</strong> keeps trunk history one-commit-per-change, which makes <code class="k">git bisect</code> and revert meaningful. The counter-case is a genuinely multi-part change where the individual commits carry information &mdash; then a merge commit is better than flattening it.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">The stale-base trap</span>&ldquo;Require branches to be up to date before merging&rdquo; sounds like the fix and does not scale: every merge invalidates every other open PR, so with meaningful volume the team spends its day rebasing and re-running CI to chase a moving target. A merge queue gets you the same guarantee without the thundering herd.</div>
+    </section>
+    <section id="speed">
+      <div class="kicker">04 &mdash; The single most common interview task</div>
+      <h2>Caching, parallelism and the affected graph</h2>
+
+      <p>&ldquo;Our pipeline takes forty minutes. Make it faster.&rdquo; This is the most common practical CI/CD interview prompt, and it has a structured answer. Do not start naming tools &mdash; start by saying you would <strong>measure per-job duration and find the critical path</strong>, because optimising a job that is not on it changes nothing.</p>
+      <h3>1. Cache dependencies properly</h3>
+      <p>The mechanism: a cache is a tarball keyed by a string, restored before the install runs. Get the key right and it is the single biggest win available &mdash; a cold <code class="k">npm ci</code> on a real app is 60&ndash;120 seconds, and with the package store cached it is more like 15&ndash;30, because the network fetch disappears and only the local unpack remains.</p>
+      <ul class="body">
+        <li><strong>Key on the lockfile hash</strong>, e.g. <code class="k">node-${{ hashFiles('**/package-lock.json') }}</code>. The lockfile is the exact input to the install, so a change to it must produce a different key.</li>
+        <li><strong>Never key on the branch name or a fixed string.</strong> That is the loose-key failure: a key that does not change when the input does serves a stale <code class="k">node_modules</code>, and you get a green build of dependencies nobody has &mdash; or a red build that reproduces nowhere.</li>
+        <li><strong>Cache the package manager&rsquo;s store, not <code class="k">node_modules</code></strong> &mdash; <code class="k">~/.npm</code>, the pnpm store, the Yarn cache. This is the detail people get wrong. <code class="k">npm ci</code> deletes <code class="k">node_modules</code> before it starts, so a restored <code class="k">node_modules</code> is thrown away unless you also skip the install on an exact cache hit, and <code class="k">actions/setup-node</code>&rsquo;s built-in <code class="k">cache: npm</code> deliberately caches the store rather than the tree. A warm store means the install skips the network, not the install.</li>
+        <li><strong>Use restore-keys as a prefix fallback.</strong> Keys are matched as prefixes, most recent first, so a changed lockfile still restores the nearest previous store and only the new packages are fetched. That partial-hit behaviour is exactly why the store is the right thing to cache &mdash; a partially restored <code class="k">node_modules</code> could not be used at all.</li>
+        <li><strong>Know the eviction rules.</strong> On GitHub Actions the cache defaults to 10 GB per repository with least-recently-used eviction, and entries untouched for 7 days are removed; both limits are now configurable by an admin, with storage above the free 10 GB billed. A repo that caches a 2 GB Docker context per branch will quietly evict the dependency cache it actually needed.</li>
+      </ul>
+      <h3>2. Cache the build, not just the install</h3>
+      <p>Dependency caching is table stakes; build caching is where large repos win. A build cache is content-addressed: hash the inputs to a task &mdash; source files, config, dependency versions, environment &mdash; and if that hash has been built before, replay the stored output instead of running it. Turborepo and Nx both do this, and both can share the cache remotely so a hit on CI can come from a colleague&rsquo;s laptop, or vice versa.</p>
+      <p>The correctness requirement is that hashed inputs must genuinely determine the output. A task that reads an unhashed environment variable, the current time, or a network resource will serve a wrong cached result &mdash; and it will look like a mystery bug, not a cache problem.</p>
+      <h3>3. Only build what changed</h3>
+      <p>In a monorepo, most pull requests touch one package. <code class="k">nx affected -t test --base=origin/main</code> and <code class="k">turbo run test --filter=...[origin/main]</code> compute the set of projects reachable in the dependency graph from the changed files, and run tasks only for those. A 30-package repo where a typical PR touches one package plus its two dependants goes from 30 test runs to 3.</p>
+      <p>The counter-case matters here: affected-graph builds are only as correct as the graph. Implicit dependencies the tool cannot see &mdash; a shared JSON fixture read at runtime, a global CSS import, an environment variable, a generated type &mdash; produce a PR that skips the test that would have caught the break. Keep a scheduled full run (nightly, or on merge to trunk) so the graph&rsquo;s blind spots are found by a machine rather than by a user.</p>
+      <h3>4. Shard the slow suite</h3>
+      <p>End-to-end tests are usually the critical path and they parallelise almost linearly because each test is independent. Playwright takes <code class="k">--shard=1/4</code> and friends; four runners turn a 20-minute suite into roughly 5&ndash;6 minutes plus the per-runner fixed cost of checkout, install and browser download.</p>
+      <p>That fixed cost is the limit. If setup is 90 seconds, sharding a 20-minute suite eight ways gives 90 s + 150 s &asymp; 4 minutes, and sixteen ways gives 90 s + 75 s &asymp; 2.75 minutes for double the money. Past a point you are paying for runner startup, not for tests. Balance shards by recorded duration rather than by file count, or one shard with all the slow specs becomes the critical path on its own.</p>
+      <h3>5. Stop doing work you do not need</h3>
+      <ul class="body">
+        <li><strong>Cancel superseded runs.</strong> A concurrency group keyed on the branch, with cancel-in-progress, kills the run for a commit nobody is waiting on any more. Free, and on a repo where people push often to open PRs it cuts runner consumption substantially.</li>
+        <li><strong>Path filters.</strong> A docs-only change does not need the E2E suite. Be careful making these a required check &mdash; a required check that is skipped can block a merge forever unless the platform treats skipped as passed.</li>
+        <li><strong>Split PR checks from post-merge checks.</strong> Cross-browser matrices, visual regression across ten viewports and full accessibility sweeps can run after merge or nightly. The PR gate should be the fast, high-signal subset.</li>
+        <li><strong>Right-size the runner.</strong> GitHub&rsquo;s standard hosted runner is small &mdash; 2 vCPU on private repositories &mdash; and a type-check or a bundler run is CPU-bound. A larger runner is billed at a higher per-minute rate but can be cheaper in absolute terms if it more than halves the duration, and it is always cheaper in engineer-minutes.</li>
+      </ul>
+      <div class="note"><span class="lbl">Answer in this order</span>Measure first &rarr; parallelise the graph &rarr; cache installs &rarr; cache builds &rarr; run only what is affected &rarr; shard the slow suite &rarr; move non-blocking work off the PR path. Saying &ldquo;measure first&rdquo; and then giving a prioritised list is most of the mark.</div>
+      <div class="note warn"><span class="lbl">The cut you must declare</span>If you make the pipeline faster by dropping coverage &mdash; running E2E only on merge, skipping browsers, sampling tests &mdash; say so explicitly and say what compensates. Silent coverage cuts read as &ldquo;we tested everything&rdquo; while the risk quietly moved into production. &ldquo;We moved cross-browser E2E to a post-merge run and accept that a Safari-only regression is caught after merge rather than before it&rdquo; is a senior sentence.</div>
+    </section>
+    <section id="artifact">
+      <div class="kicker">05 &mdash; The invariant that keeps environments honest</div>
+      <h2>One artifact, many environments</h2>
+
+      <p>The rule: <strong>build once, promote the same artifact</strong>. Whatever comes out of the build job is what goes to staging, and the identical bytes are what go to production. If each environment rebuilds from source, the thing you tested is not the thing you shipped &mdash; a dependency resolved differently, a base image moved, a transient install failure produced a subtly different bundle &mdash; and the class of bug you get is &ldquo;works on staging&rdquo;, which is expensive to chase precisely because it is not reproducible.</p>
+      <p>Mechanically this means the build job uploads an artifact (the <code class="k">dist/</code> directory, a container image, a tarball) tagged with the commit SHA, and every later job downloads that artifact rather than running the build again. It also makes rollback trivial: the previous artifact still exists, addressed by its SHA, so reverting is a re-point rather than a rebuild of a commit you hope still builds.</p>
+      <h3>The frontend&rsquo;s awkward problem: build-time environment variables</h3>
+      <p>Backends read configuration at process start, so one image genuinely runs anywhere. A frontend bundle does not have a process start you control &mdash; the bundler <em>inlines</em> environment variables as string literals at build time. <code class="k">import.meta.env.VITE_API_URL</code>, <code class="k">process.env.NEXT_PUBLIC_*</code> and the old <code class="k">REACT_APP_*</code> are all substituted into the output, then minified, and the resulting JS is a constant. Bake in the staging API URL and the artifact is a staging artifact forever.</p>
+      <p>Be precise about the boundary, because an interviewer may push on it: what is frozen is the <em>browser</em> bundle. A framework with a server &mdash; Next.js, Remix, Nuxt &mdash; still reads unprefixed variables at runtime in server code, which is exactly why one Docker image can be promoted through environments. The constraint is on config the browser needs, and that is the config this section is about.</p>
+      <p>So &ldquo;build once&rdquo; and &ldquo;configure per environment&rdquo; are in direct tension on the frontend. Four ways out, in the order I would reach for them:</p>
+      <table class="tbl">
+        <tr><th>Approach</th><th>How</th><th>Trade-off</th></tr>
+        <tr><td>Runtime config endpoint</td><td>App fetches <code class="k">/config.json</code> before boot, or the server injects <code class="k">window.__CONFIG__</code> into the HTML it serves.</td><td>Truly one artifact. Costs a request or a server-render step, and boot must handle the config failing.</td></tr>
+        <tr><td>Relative paths</td><td>Call <code class="k">/api/...</code> and let each environment&rsquo;s edge or proxy route it.</td><td>The simplest thing that works, and it removes the variable entirely. Only viable when the API is same-origin.</td></tr>
+        <tr><td>Placeholder substitution</td><td>Build with a sentinel string, replace it in the artifact at deploy time.</td><td>Keeps one build but mutates the artifact, so the bytes you tested are not quite the bytes you ship. Verify the substitution actually happened.</td></tr>
+        <tr><td>Build per environment</td><td>Rebuild with each environment&rsquo;s variables.</td><td>The common default and the weakest. Accept it only for values that genuinely cannot be runtime &mdash; and then re-run the smoke tests per environment, because you no longer have one tested artifact.</td></tr>
+      </table>
+      <div class="note warn"><span class="lbl">Nothing in the bundle is secret</span>Whatever a bundler inlines ships to the browser as readable text. <code class="k">NEXT_PUBLIC_</code> and <code class="k">VITE_</code> prefixes are not security features, they are a naming convention that makes the exposure obvious &mdash; and a reminder that the frontend has no secrets at all. Anything that must stay private lives behind an endpoint you control. This is the single most common way a real key leaks: someone adds <code class="k">VITE_STRIPE_SECRET_KEY</code> because the public one was already there.</div>
+      <h3>Reproducibility</h3>
+      <ul class="body">
+        <li><strong>Commit the lockfile and install from it.</strong> <code class="k">npm ci</code>, <code class="k">pnpm install --frozen-lockfile</code>, <code class="k">yarn install --immutable</code> (Yarn 2+; on Yarn 1 the flag is <code class="k">--frozen-lockfile</code>, and Yarn 1 ignores unknown flags silently, so the wrong one gives you a non-frozen install that looks like it worked). Without this the same commit installs different code on different days, and CI &ldquo;randomly&rdquo; breaks on a commit that has not changed.</li>
+        <li><strong>Pin the toolchain.</strong> Node version in <code class="k">.nvmrc</code> or <code class="k">engines</code>, read by CI. A minor Node bump has changed both build output and test behaviour before.</li>
+        <li><strong>Stamp the build.</strong> Put the commit SHA in the artifact and report it with every error and analytics event. Without it, &ldquo;is this bug in the current build?&rdquo; is unanswerable, and a rollback is guesswork.</li>
+        <li><strong>Keep old artifacts.</strong> They are immutable and small; retaining a few weeks costs almost nothing and is what makes both rollback and bisecting a production regression possible.</li>
+      </ul>
+    </section>
+    <section id="gates">
+      <div class="kicker">06 &mdash; What blocks a merge, and what should not</div>
+      <h2>Gates: lint, types, tests, budgets</h2>
+
+      <p>Each gate exists to catch a class of defect that the others structurally cannot. Being able to say <em>what a gate protects against</em> &mdash; rather than listing the tools &mdash; is what the question is testing.</p>
+      <table class="tbl">
+        <tr><th>Gate</th><th>Catches</th><th>Blind to</th></tr>
+        <tr><td>Format (Prettier)</td><td>Diff noise and style arguments.</td><td>Everything else. Never fail a build on it if you can auto-fix it instead.</td></tr>
+        <tr><td>Lint (ESLint)</td><td>Real bug patterns: missing hook dependencies, unhandled promises, accidental globals.</td><td>Anything requiring types or execution.</td></tr>
+        <tr><td>Types (<code class="k">tsc --noEmit</code>)</td><td>Whole-program contract breaks &mdash; the caller of a renamed field in a file nobody tested.</td><td>Logic. A well-typed function can still be wrong, and <code class="k">any</code> silently disables the gate.</td></tr>
+        <tr><td>Unit tests</td><td>Logic in isolation, fast and precisely located.</td><td>Integration. Every unit passing says nothing about whether they work together.</td></tr>
+        <tr><td>Integration / component tests</td><td>Real wiring &mdash; a component with its store, router and mocked network.</td><td>The real backend, real network conditions, real browser differences.</td></tr>
+        <tr><td>E2E</td><td>The critical path in a real browser: it loads, auth works, checkout completes.</td><td>Scale, and anything not on the few paths you wrote. Slow and flaky, so keep it to a small high-value set.</td></tr>
+        <tr><td>Bundle budget</td><td>Gradual size regression &mdash; the import of a 300 KB date library for one <code class="k">format</code> call.</td><td>Runtime cost. A small bundle can still be slow.</td></tr>
+        <tr><td>Lighthouse CI</td><td>Performance and accessibility regressions on key routes, as a trend.</td><td>Real-user conditions. Lab numbers are noisy and are not your p75 field data.</td></tr>
+        <tr><td>Dependency audit</td><td>Known CVEs in what you ship.</td><td>Unknown vulnerabilities, and your own code.</td></tr>
+      </table>
+      <h3>Branch protection makes a gate a gate</h3>
+      <p>A check that reports but does not block is documentation. Required status checks, at least one approving review, and a restriction on force-pushing to trunk are what turn the pipeline into a constraint. Add <code class="k">CODEOWNERS</code> when specific areas need specific reviewers &mdash; and be aware it slows those PRs down, so scope it to code that genuinely needs it.</p>
+      <h3>Coverage thresholds, honestly</h3>
+      <p>A global coverage threshold is a weak gate. It measures lines executed, not assertions made &mdash; a test that renders a component and asserts nothing scores identically to one that checks behaviour &mdash; and once it is a target, people write tests to raise it. The 80% figure is a convention, not a finding.</p>
+      <p>What works better is <strong>diff coverage</strong>: require that the lines this PR changed are covered, and let the global number drift. It puts the pressure on new code, where it is cheap to write the test, instead of on a legacy file nobody is touching. Pair it with a ratchet &mdash; the global number may not go down &mdash; and you get the property people actually wanted from the threshold.</p>
+      <h3>Performance and size budgets</h3>
+      <ul class="body">
+        <li><strong>Fail on the delta, not the absolute.</strong> &ldquo;This PR adds more than 5 KB gzipped to the main entry&rdquo; is actionable in review. &ldquo;The bundle is over 250 KB&rdquo; fails on the unlucky PR that crossed the line and blames the wrong person.</li>
+        <li><strong>Measure compressed size</strong> &mdash; gzip or brotli &mdash; because that is what crosses the network, and raw size overstates the cost of repetitive code by a lot. Keep an eye on the uncompressed figure too: parse, compile and execute scale with the decompressed bytes, so a 40 KB gzipped file that unpacks to 400 KB still costs real main-thread time on a mid-range phone.</li>
+        <li><strong>Lighthouse in CI is noisy.</strong> A shared runner&rsquo;s CPU contention moves scores by several points run to run. Take the median of three to five runs, assert on the metrics you care about rather than the composite score, and treat it as a trend line with a generous threshold. Otherwise you have built a flaky test with a chart.</li>
+        <li><strong>Be precise about what automated accessibility checks cover.</strong> Deque&rsquo;s own study puts axe-core at about a third of the WCAG 2.1 AA success criteria but roughly 57% of actual issue <em>instances</em> &mdash; the auto-detectable failures (contrast, labels, alt text, ARIA) are also the most common ones. Note that the vendor behind axe produced both numbers. Either way the residue is the part that matters: focus order, keyboard traps, whether a custom widget is usable at all. Run it as a gate, and never describe passing it as the page being accessible.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">Say this</span>&ldquo;I want each gate to answer a different question, and I want the fast ones blocking on the PR. Types and unit tests block; E2E blocks on the critical path only; bundle-size and Lighthouse comment with a delta and block only on a threshold we agreed. Anything noisy that blocks will be ignored or bypassed within a fortnight, which is worse than not having it.&rdquo;</div>
+    </section>
+    <section id="flaky">
+      <div class="kicker">07 &mdash; The failure mode that kills a pipeline</div>
+      <h2>Flakiness and the trust budget</h2>
+
+      <p>A flaky test is one that passes and fails on the same code. It is not a testing detail &mdash; it is the failure mode that destroys a pipeline, because the damage is to <em>trust</em>. The first time a red build is spurious, someone re-runs it. Once re-running is the reflex, a real failure gets re-run too, and the pipeline has stopped being a gate while still costing everyone forty minutes a day.</p>
+      <p>The arithmetic is unforgiving. If each test has a 0.1% chance of failing spuriously and they fail independently, a 500-test suite fails about 39% of runs (1 &minus; 0.999<sup>500</sup>) &mdash; two pull requests in five go red for no reason at all. It takes only about 700 such tests to cross 50%. Per-test flakiness that sounds negligible compounds into a suite nobody believes.</p>
+      <h3>Where the non-determinism comes from</h3>
+      <ul class="body">
+        <li><strong>Time and waiting.</strong> A fixed <code class="k">waitForTimeout(500)</code> passes on a warm laptop and fails on a loaded CI runner with 2 vCPU. Wait for a condition &mdash; an element, a network response, a state &mdash; never for a duration.</li>
+        <li><strong>Shared state.</strong> Tests that write the same database row, localStorage key or module-level variable pass in isolation and fail when run in parallel, or in a different order. The tell: it only fails in CI, where the parallelism is different.</li>
+        <li><strong>Order dependence.</strong> Test B relies on state test A left behind. Randomising order surfaces these deliberately; most runners can do it with a seed you can replay.</li>
+        <li><strong>Real network.</strong> Any test that hits an external service inherits its availability. Mock at the network boundary.</li>
+        <li><strong>Animation and transitions.</strong> An element that is present but still moving fails a click. Disable animations in the test environment.</li>
+        <li><strong>Clock and locale.</strong> Tests that break at month end, during a daylight-saving change, or on a runner set to UTC when you are not. Freeze the clock; pin the timezone and locale in the runner config.</li>
+      </ul>
+      <h3>What to do about them</h3>
+      <p>The instinct is to retry. Retrying is a legitimate <em>mitigation</em> and a terrible policy, and the difference is whether the retry is recorded. Silent <code class="k">retries: 3</code> converts a real race condition &mdash; the kind that also affects users &mdash; into a green build. Retry once, and report every test that passed only on retry, so flakiness stays visible as a number rather than becoming invisible.</p>
+      <p>The pattern that works:</p>
+      <ul class="body">
+        <li><strong>Detect.</strong> Re-run the suite against unchanged code on a schedule, and record every retry-pass. This is the only way to distinguish a flaky test from a genuinely broken one.</li>
+        <li><strong>Quarantine.</strong> Move a confirmed flaky test out of the blocking suite immediately, into a run that still executes and reports but does not block. This protects trust in the gate.</li>
+        <li><strong>Own and expire.</strong> Quarantine with a ticket and a deadline. Without one, quarantine is a graveyard &mdash; and a quarantined test is worse than a deleted one, because it looks like coverage that no longer exists.</li>
+        <li><strong>Fix the cause, not the symptom.</strong> A flaky test frequently reflects a real race in the product. &ldquo;The test is flaky&rdquo; and &ldquo;the app occasionally does the wrong thing&rdquo; are often the same sentence.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">The trap</span>Answering &ldquo;add retries&rdquo; and stopping is the failing answer. Answering &ldquo;retry once, report retry-passes, quarantine confirmed flakes with an owner and a deadline, and treat repeat offenders as product races&rdquo; is the passing one. Same first word, entirely different level.</div>
+    </section>
+    <section id="envs">
+      <div class="kicker">08 &mdash; Preview deploys and what staging is for</div>
+      <h2>Environments and preview deploys</h2>
+
+      <p>An environment is a place the artifact can run, plus the configuration and data that make it distinct. The interesting question is not how many you have &mdash; it is what each one is <em>for</em>, because an environment nobody trusts is pure cost.</p>
+      <table class="tbl">
+        <tr><th>Environment</th><th>Purpose</th><th>Honest limitation</th></tr>
+        <tr><td>Preview (per PR)</td><td>A real URL for this branch, so reviewers, designers and QA can click the change instead of imagining it.</td><td>Usually points at shared staging data, so it proves the UI works, not that the integration does.</td></tr>
+        <tr><td>Staging</td><td>Production-shaped rehearsal: same infrastructure, same deploy mechanism, seeded data.</td><td>Never has production&rsquo;s data volume, traffic shape or third-party behaviour. Staging being green is weak evidence.</td></tr>
+        <tr><td>Production</td><td>Where the truth is. Canaries, flags and real monitoring live here.</td><td>Mistakes are visible. Which is why deploy and release are separated.</td></tr>
+      </table>
+      <h3>Preview deploys are the frontend&rsquo;s best CI feature</h3>
+      <p>Every PR gets its own deployed URL, posted back as a comment. The mechanics are simple &mdash; build the artifact, upload to a unique path or subdomain, comment the link &mdash; and the effect on review quality is large, because a reviewer reading a diff of CSS is guessing and a reviewer clicking the page is not. It is also where your E2E suite should run: against a deployed build rather than a dev server, which catches build-only failures like a mis-set base path or a broken production-only code path.</p>
+      <ul class="body">
+        <li><strong>Do not index them.</strong> Preview URLs need <code class="k">X-Robots-Tag: noindex</code> or authentication. Deployed previews of a public marketing site have been indexed and outranked the real page before.</li>
+        <li><strong>Clean them up.</strong> Tear down on PR close, or you accumulate hundreds of live deployments, which is both a cost and a security surface.</li>
+        <li><strong>Never point them at production data.</strong> A preview is an unreviewed build with a public URL; treat it as untrusted.</li>
+      </ul>
+      <h3>Is staging worth it?</h3>
+      <p>Have the argument ready, because a good interviewer will push. The case against: staging costs real money and attention, its data never matches production, and teams routinely ship things that passed staging and broke anyway &mdash; which teaches people that the signal is weak. The case for: some things genuinely cannot be tested anywhere else, principally destructive migrations, third-party integrations in sandbox mode, and infrastructure changes.</p>
+      <p>The senior position is that staging is for <em>rehearsing changes you cannot safely rehearse in production</em>, and that everything else is better verified in production behind a flag, with a canary and real monitoring. If your staging environment is mostly a slower way to find out what a preview deploy already told you, it is a habit rather than a control.</p>
+      <div class="note"><span class="lbl">Database migrations, briefly</span>The reason deploys and schema changes are hard together is that for a moment old code and new schema coexist. The pattern is <strong>expand and contract</strong>: add the new column, deploy code that writes to both, backfill the existing rows, <em>then</em> deploy code that reads the new column, and only drop the old one in a later release. The order matters &mdash; switching reads before the backfill points new code at a column that is NULL for every pre-existing row, which is the outage the pattern exists to prevent. Done in that order every step is independently reversible, and no step requires old and new code to disagree about the schema. A single migration that renames a column is what turns a routine deploy into an outage.</div>
+    </section>
+    <section id="deploy">
+      <div class="kicker">09 &mdash; Frontend-specific mechanics</div>
+      <h2>Deploying a frontend safely</h2>
+
+      <p>The deploy step itself is usually the shortest job in the pipeline, and the frontend-specific parts are worth knowing precisely because they are where the sharp edges are. The full treatment of exposure &mdash; canaries, percentage rollouts, flags &mdash; is the release guide; this is the mechanics of getting bytes in place without breaking the users already on the site.</p>
+      <ul class="body">
+        <li><strong>Upload assets before switching the document.</strong> Hashed assets first, entry HTML last. The reverse order leaves a window where the HTML references files that 404 &mdash; brief, but on a busy site &ldquo;brief&rdquo; is thousands of people.</li>
+        <li><strong>Cache headers do the rest.</strong> Content-hashed files get a long <code class="k">max-age</code> because a change produces a new URL; the entry document gets <code class="k">no-cache</code> so it always revalidates. Invalidate the CDN for the document only.</li>
+        <li><strong>Keep the previous build&rsquo;s chunks.</strong> A user who loaded the page before the deploy will request a lazy chunk afterwards. If it is gone they get a <code class="k">ChunkLoadError</code> and a blank screen. Retain a few builds and catch chunk-load failures in the app to prompt a reload.</li>
+        <li><strong>Smoke test after deploying.</strong> Three to five checks against the real environment: the page loads, auth works, the primary flow completes. This is what catches configuration and environment failures &mdash; a missing variable, a wrong API URL, a misconfigured redirect &mdash; that no test running before the deploy can see.</li>
+        <li><strong>Make the smoke test gate the promotion.</strong> If it fails on staging, the pipeline stops rather than continuing to production. A smoke test whose failure nobody acts on is a notification.</li>
+      </ul>
+      <h3>Rollback is a first-class pipeline feature</h3>
+      <p>Design it deliberately, do not assume it. &ldquo;Re-point the alias to the previous artifact&rdquo; should be one command or one button, and it should have been tested. The frontend caveat is that rollback is not symmetric with deploy: you can restore the previous files instantly, but browsers already holding the new HTML keep it until it revalidates, and sessions in flight may hold references to either build. That asymmetry is exactly why a flag flip &mdash; which changes behaviour without changing which files anyone holds &mdash; is the faster kill switch, and why merging behind flags pays for itself here.</p>
+      <div class="note warn"><span class="lbl">Roll back or roll forward?</span>Roll back when the impact is user-visible and the cause is not yet understood &mdash; restore known-good first, diagnose second. Roll forward when the fix is small, understood and verified, or when reverting is itself risky, which is usually the case once a migration has run. Saying &ldquo;always roll back&rdquo; is the answer of someone who has not had to reverse a data change.</div>
+    </section>
+    <section id="security">
+      <div class="kicker">10 &mdash; The senior differentiator in this topic</div>
+      <h2>Securing the pipeline itself</h2>
+
+      <p>This is where a strong candidate separates from an average one, because most people prepare the happy path and stop. A CI pipeline is a machine with write access to production and a credential store, that executes code from pull requests. Treat it as production infrastructure.</p>
+      <h3>Secrets</h3>
+      <ul class="body">
+        <li><strong>Prefer OIDC to stored keys.</strong> Instead of a long-lived cloud access key sitting in CI, the runner requests a short-lived signed token describing the run &mdash; repository, branch, workflow &mdash; and exchanges it with the cloud provider for temporary credentials. The trust policy on the cloud side restricts which repository and branch may assume the role. Nothing long-lived exists to leak, and revocation is a policy edit rather than a key rotation.</li>
+        <li><strong>Scope tightly and rotate.</strong> A deploy credential should be able to deploy and nothing else. The default token in a workflow should be read-only, with write permissions granted per job that needs them.</li>
+        <li><strong>Masking is not containment.</strong> CI redacts known secret values in logs, but a base64-encoded or otherwise transformed secret is not matched. Assume anything printed can leak.</li>
+        <li><strong>Never expose secrets to fork pull requests.</strong> On a <code class="k">pull_request</code> run from a fork, GitHub withholds them entirely and issues a read-only token &mdash; there is no setting that grants them. That restriction is protecting you; the danger is always a workflow that routes around it.</li>
+      </ul>
+      <h3>The workflow-level vulnerabilities worth naming</h3>
+      <ul class="body">
+        <li><strong>Untrusted checkout with privileges.</strong> GitHub&rsquo;s <code class="k">pull_request_target</code> trigger runs the workflow definition from the repository&rsquo;s <em>default</em> branch &mdash; not the pull request&rsquo;s &mdash; with secrets available and, unless the default token has been restricted to read-only, a write-capable <code class="k">GITHUB_TOKEN</code>. Checking out and executing the pull request&rsquo;s code inside it hands an attacker your credentials from any fork. If you need that trigger, do not run the pull request&rsquo;s build scripts under it.</li>
+        <li><strong>Script injection.</strong> Interpolating <code class="k">${{ github.event.pull_request.title }}</code> into a shell <code class="k">run:</code> step substitutes attacker-controlled text into the script before the shell sees it, so a crafted title executes commands. Pass untrusted values through environment variables and quote them, rather than interpolating into the command.</li>
+        <li><strong>Mutable third-party actions.</strong> A version tag is a pointer someone else can move. The March 2025 compromise of <code class="k">tj-actions/changed-files</code> worked exactly this way: existing tags were repointed at code that read the runner process&rsquo;s memory and printed the result into the workflow log. Get the blast radius right if you cite it &mdash; around 23,000 repositories referenced the action, but roughly 218 actually leaked secrets, mostly short-lived job tokens, and only where the logs were public. Pin third-party actions to a full commit SHA, which is the only genuinely immutable reference.</li>
+        <li><strong>Cache poisoning.</strong> A cache is a writable, shared artifact whose contents get executed. GitHub scopes them by branch: a run can read its own scope, the default branch&rsquo;s and, for a pull request, the base branch&rsquo;s, while an ordinary <code class="k">pull_request</code> run writes only to its own. The gap was the privileged triggers &mdash; <code class="k">pull_request_target</code> and friends ran in the default branch&rsquo;s cache scope <em>with a write token</em>, which is the documented poisoning route; GitHub made cache tokens read-only for untrusted triggers in June 2026. The transferable lesson is that scoping is a boundary you must not design around, not a guarantee that a cache is trustworthy.</li>
+      </ul>
+      <h3>Dependencies and the supply chain</h3>
+      <ul class="body">
+        <li><strong>Lockfile plus frozen installs</strong> is the base layer: it removes the ability of a transitive dependency to change under you between the PR run and the deploy run.</li>
+        <li><strong><code class="k">npm audit</code> is noisy on frontend projects</strong> because it reports vulnerabilities in build-time dependencies that never reach a browser and are not reachable in your usage. Gate on high and critical severity for production dependencies, and triage the rest rather than failing every build.</li>
+        <li><strong>Install scripts are arbitrary code execution</strong> at install time, on your runner, with your credentials in the environment. <code class="k">--ignore-scripts</code> where your dependencies tolerate it is a real hardening step.</li>
+        <li><strong>Automate updates with review.</strong> Renovate or Dependabot with grouped, scheduled PRs keeps drift small; auto-merging patch updates for dev dependencies once CI is green is reasonable, auto-merging anything that reaches production is not.</li>
+        <li><strong>Provenance and SBOM</strong> are the current direction: <code class="k">npm publish --provenance</code> from CI produces a signed, verifiable link between a published package and the exact workflow run and commit that built it, and an SBOM lists what actually went into the artifact. Expect to be asked what they are, not to have built one.</li>
+      </ul>
+      <div class="note gold"><span class="lbl">Say this</span>&ldquo;The pipeline has production credentials and runs code from pull requests, so I treat it as production. Short-lived OIDC credentials rather than stored keys, least privilege on the default token, third-party actions pinned to a SHA, and no untrusted code executed in a privileged context. Most CI compromises I have read about are one of those four things.&rdquo;</div>
+    </section>
+    <section id="metrics">
+      <div class="kicker">11 &mdash; How you argue for investment</div>
+      <h2>DORA and what to actually watch</h2>
+
+      <p>&ldquo;How do you know your pipeline is good?&rdquo; is a question about whether you can reason with evidence instead of taste. The standard vocabulary is the <strong>DORA</strong> set of four delivery metrics, and knowing why they come in a set of four is the point.</p>
+      <table class="tbl">
+        <tr><th>Metric</th><th>What it is</th><th>Why it is in the set</th></tr>
+        <tr><td>Deployment frequency</td><td>How often you deploy to production.</td><td>Throughput. High frequency forces small batches, which is the underlying good thing.</td></tr>
+        <tr><td>Lead time for changes</td><td>Commit to running in production.</td><td>Latency. Exposes queues, manual approvals and slow gates.</td></tr>
+        <tr><td>Change failure rate</td><td>Share of deploys causing a degradation needing remediation.</td><td>Quality. This is the brake on the first two.</td></tr>
+        <tr><td>Failed-deployment recovery time</td><td>How long to restore service when a deploy breaks it. Earlier reports called it time to restore service.</td><td>Resilience. Fast recovery is what makes frequent deploys safe.</td></tr>
+      </table>
+      <p>The four are a system, and the pairing is the insight: <strong>speed metrics without stability metrics reward recklessness, and stability metrics without speed metrics reward paralysis.</strong> A team that deploys once a quarter has a superb change failure rate and is not doing well. DORA&rsquo;s long-running finding is that speed and stability are not opposed &mdash; the fastest cluster also leads on stability, with a change failure rate around 5% against roughly 40% for the slowest &mdash; because small changes are easier to verify, review and reverse. State it with the caveat, though: it is not a clean monotonic line, change failure rate has always been the noisiest of the four, and recent reports on AI-assisted development show throughput rising while stability falls. What the data does not support is &ldquo;we deploy rarely because we are careful&rdquo;.</p>
+      <h3>The pipeline&rsquo;s own health</h3>
+      <ul class="body">
+        <li><strong>PR feedback time (p50 and p95).</strong> The number you actually optimise. Use p95, not the mean &mdash; the mean hides the queued run that took 40 minutes.</li>
+        <li><strong>Trunk red time.</strong> How long <code class="k">main</code> spends broken. If it is more than minutes, either the gates are missing or nobody treats a red trunk as an emergency.</li>
+        <li><strong>Flaky rate.</strong> Percentage of runs failing spuriously, and the count of retry-passes. The leading indicator for the pipeline losing its authority.</li>
+        <li><strong>Runner minutes and cost.</strong> The argument for caching and cancellation. GitHub bills Linux runners by the minute on private repositories, so cancelling superseded runs and caching installs shows up directly on an invoice, which is a language budget holders understand.</li>
+      </ul>
+      <div class="note warn"><span class="lbl">The Goodhart caveat</span>Say it before they do: each of these is gameable in isolation. Deployment frequency rises if you deploy nothing in ten pieces; change failure rate falls if you stop calling things failures; coverage rises with assertion-free tests. They work as a set precisely because gaming one degrades another, which is why quoting a single one as a target is a bad sign rather than a good one.</div>
+    </section>
+    <section id="pitfalls">
+      <div class="kicker">12 &mdash; Recognise these on sight</div>
+      <h2>Pitfalls and anti-patterns</h2>
+
+      <ul class="body">
+        <li><strong>Rebuilding per environment.</strong> The artifact you tested is not the artifact you shipped, and &ldquo;works on staging&rdquo; becomes unfalsifiable. Build once, promote.</li>
+        <li><strong>Secrets inlined into the bundle.</strong> Anything a bundler substitutes at build time is readable text in the browser. The <code class="k">PUBLIC</code> prefix is a warning label, not a boundary.</li>
+        <li><strong>A cache key that does not change with its input.</strong> Silent staleness: green builds of code nobody has, or failures that reproduce nowhere. Key on the lockfile hash and nothing looser.</li>
+        <li><strong>Auto-retrying flaky tests invisibly.</strong> Converts real race conditions into green builds. Retry once and report every retry-pass.</li>
+        <li><strong>Gates that report but do not block.</strong> Without branch protection a check is a suggestion, and suggestions lose to deadlines.</li>
+        <li><strong>Testing a PR against a stale trunk.</strong> Two individually green PRs can be broken together. That is a merge queue&rsquo;s entire reason to exist.</li>
+        <li><strong>A forty-minute pipeline.</strong> The second-order effect is worse than the wait: people batch commits, batches get big, big changes are riskier &mdash; the pipeline makes the code worse.</li>
+        <li><strong>No rollback path.</strong> &ldquo;We would revert the commit and redeploy&rdquo; is a fifteen-minute recovery through the same pipeline that is currently the problem. Keep the previous artifact and a one-step way back.</li>
+        <li><strong>Long-lived branches with a CI badge.</strong> A green build on a branch that has not seen trunk for a week is confidence in something that no longer exists.</li>
+        <li><strong>Deploying by hand &ldquo;just this once&rdquo;.</strong> Now production contains a state no commit describes. Every subsequent debugging session starts from a false premise.</li>
+        <li><strong>Third-party actions pinned to a moving tag.</strong> You have delegated write access to your pipeline to whoever can move that tag.</li>
+        <li><strong>Treating CI as the tests&rsquo; problem.</strong> Type errors, lint, size budgets, migrations, secrets and rollback are all pipeline concerns. &ldquo;CI runs our tests&rdquo; is a small answer to a big question.</li>
+      </ul>
+    </section>
+    <section id="drills">
+      <div class="kicker">13 &mdash; Drill until reflex</div>
+      <h2>Scenario drills</h2>
+
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 1 &mdash; forty minutes</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Our CI takes 40 minutes and engineers are complaining. Where do you start?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Measure before changing anything: per-job duration across the last few hundred runs, then find the critical path &mdash; the longest chain of dependent jobs &mdash; because work off that path is free to shorten and changes nothing. Then, in order: run independent jobs concurrently rather than sequentially; cache the install keyed on the lockfile hash, with a prefix restore-key; cache the build with a content-addressed remote cache; in a monorepo, run only affected projects against the merge base; shard the E2E suite by recorded duration, accepting that per-runner setup cost sets the floor; and cancel superseded runs with a concurrency group. Finally, split the gate: fast high-signal checks block the PR, while cross-browser matrices, visual regression and full accessibility sweeps move to post-merge or nightly. I would say explicitly which coverage moved off the PR path and what risk that accepts &mdash; a faster pipeline that quietly tests less is not a win.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 2 &mdash; works on staging</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;A feature works on staging and breaks in production. It has happened three times this quarter. What do you change?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">First check whether staging and production are running the same artifact. If each environment rebuilds, they are not the same bytes &mdash; dependency resolution, base images and environment inlining all differ &mdash; and the fix is to build once and promote. If it is genuinely one artifact, the difference is configuration or data: diff the environment variables, add a startup assertion that every required config value is present and well-formed so a missing one fails the deploy rather than a user&rsquo;s page, and add a post-deploy smoke test on the critical path so production tells you within a minute instead of a customer telling you in an hour. Then accept the structural point: staging never has production&rsquo;s data volume, traffic or third-party behaviour, so some things can only be verified in production &mdash; which means a canary and a fast rollback matter more than a better staging environment.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 3 &mdash; spot the vulnerability</div>
+        <pre>on: pull_request_target
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: npm ci &amp;&amp; npm run build
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}</pre>
+        <button class="reveal-btn">Reveal answer &amp; reasoning</button>
+        <div class="answer"><div class="out-line">pull_request_target + untrusted checkout = credential disclosure from any fork</div>
+          <p style="margin:0"><code class='k'>pull_request_target</code> runs the workflow from the repository&rsquo;s default branch with the base repository&rsquo;s secrets available &mdash; and a write-capable token unless the default has been restricted &mdash; unlike <code class='k'>pull_request</code>, which withholds secrets from forks entirely. This workflow then explicitly checks out the pull request&rsquo;s head commit and runs <code class='k'>npm ci &amp;&amp; npm run build</code> on it &mdash; so anyone who opens a PR from a fork can execute arbitrary code, via a modified build script or a malicious <code class='k'>postinstall</code>, in a context holding <code class='k'>DEPLOY_KEY</code>. The fix: use <code class='k'>pull_request</code>, which runs without secrets for forks. If you need <code class='k'>pull_request_target</code> for something like labelling, keep it to code from the default branch, never check out the pull request head under it, and split any build into a separate unprivileged workflow. Also pin third-party actions to a full commit SHA rather than <code class='k'>@v4</code>. One currency check worth adding if you are asked: since mid-2026 <code class='k'>actions/checkout</code> refuses this fetch by default, so the modern shape of this bug is a workflow that sets <code class='k'>allow-unsafe-pr-checkout: true</code>, or one that fetches the head with raw <code class='k'>git</code> and bypasses the action entirely.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 4 &mdash; the flaky suite</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;About one in five CI runs fails for no reason and everyone just re-runs it. Fix it.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Treat it as an outage of the gate, because that is what it is &mdash; once re-running is the reflex, real failures get re-run too. Start by making flakiness measurable: retry once, and report every test that passed only on retry, so you have a ranked list rather than an anecdote. Quarantine the top offenders into a non-blocking run immediately, each with an owner and a deadline, so the blocking suite is trustworthy again today. Then fix causes rather than symptoms: replace fixed timeouts with condition-based waits, isolate shared state per test, randomise test order to surface order dependence deliberately, mock at the network boundary, disable animations, and pin clock, timezone and locale. Expect a meaningful share of them to be genuine races in the product &mdash; a test that is flaky because the app is occasionally wrong is a bug report, not a test problem.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 5 &mdash; two green PRs, one red trunk</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Two PRs each passed CI. Both merged. Trunk is broken. How did that happen and how do you prevent it?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">A semantic conflict. Each PR was tested against the base as it was when the run started, not against the other. One renamed or changed the contract of something the other started calling &mdash; git merges them cleanly because the edits are in different files, so no textual conflict appears, and neither run ever saw the combined code. Requiring branches to be up to date before merging technically prevents it but does not scale: every merge invalidates every other open PR and the team spends the day rebasing. The right mechanism is a merge queue, which re-runs the checks on trunk-plus-the-queued-changes and only lands the PR if that speculative merge is green, testing several batches in parallel to keep the wait down. Alongside that: keep branches short so the window is small, and make sure the type-check runs on the merge result &mdash; it catches most conflicts of this shape for a fraction of the cost of the test suite.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 6 &mdash; one artifact, three environments</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;You want to build once and promote, but the app needs a different API URL per environment and Vite inlines it at build time. Resolve that.&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Name the tension first: the bundler substitutes <code class='k'>import.meta.env.*</code> as string literals during the build, so a bundle with the staging URL baked in is a staging bundle for ever, and build-once is impossible while configuration lives at build time. Move it to runtime. Best is not to need it &mdash; call a relative <code class='k'>/api</code> path and let each environment&rsquo;s edge or proxy route it, which deletes the variable. If the API is on another origin, fetch a small <code class='k'>/config.json</code> before boot or have the server inject <code class='k'>window.__CONFIG__</code> into the HTML, and handle the failure case so a config outage is not a white screen. Placeholder substitution at deploy time is the pragmatic middle: one build, patched per environment &mdash; but it mutates the artifact you tested, so verify the substitution ran. Rebuilding per environment is the fallback, and if you take it you must re-run the smoke tests per environment, because you no longer have a single tested artifact.</p></div>
+      </div>
+      <div class="quizcard" data-quiz>
+        <div class="q">Drill 7 &mdash; the coverage gate</div>
+        <div class="q" style="font-weight:400;color:var(--muted);font-size:15px">&ldquo;Leadership wants an 80% coverage gate on every build. What do you say?&rdquo;</div>
+        <button class="reveal-btn">Reveal a strong answer</button>
+        <div class="answer"><p style="margin:0">Agree with the goal, push back on the instrument. Line coverage measures which lines executed, not whether anything was asserted &mdash; a test that renders a component and asserts nothing scores the same as one that checks behaviour &mdash; so as a target it reliably produces assertion-free tests and a number that means less each quarter. A global threshold also puts the pressure in the wrong place: it fails the PR that touched a legacy file, not the PR that added untested code. Propose two mechanisms instead: <strong>diff coverage</strong>, requiring the lines this PR changed to be covered, which is cheap to satisfy at the moment the code is written; and a <strong>ratchet</strong>, so the global figure may not fall. That gives leadership the trend they want and puts the cost where the new risk is. Then offer the metric that actually correlates with quality &mdash; change failure rate &mdash; as the thing to report upward.</p></div>
+      </div>
+    </section>
+    <section id="bank">
+      <div class="kicker">14 &mdash; Rapid fire</div>
+      <h2>Interview Q&amp;A bank</h2>
+      <p>Cover the answer, say yours out loud, then reveal. Filter by topic to drill a weak area.</p>
+      <div class="qtools" role="group" aria-label="Controls">
+        <span class="count" id="count"></span>
+        <button class="qbtn" id="toggleAll" aria-pressed="false">Reveal all</button>
+      </div>
+      <div class="qtools" id="chips" role="group" aria-label="Filter by topic">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="basics">Basics</button>
+        <button class="fchip" data-f="pipeline">Pipeline</button>
+        <button class="fchip" data-f="speed">Speed</button>
+        <button class="fchip" data-f="gates">Gates</button>
+        <button class="fchip" data-f="tests">Tests</button>
+        <button class="fchip" data-f="artifact">Artifacts</button>
+        <button class="fchip" data-f="deploy">Deploy</button>
+        <button class="fchip" data-f="sec">Security</button>
+        <button class="fchip" data-f="ops">Ops</button>
+      </div>
+      <div id="qbank"></div>
+    </section>
+  </main>
+</div>
+<footer>Built for interview prep &middot; every commit, the same promise</footer>
+
+<script>
+const QA = [["basics", "Basics", "What is continuous integration?", "The practice of merging everyone's work into a shared trunk many times a day, with an automated build and test run proving the merged result still works. The server is incidental — the practice is integrating small and often, so that conflicts and breakages are found in minutes rather than at the end of a long-lived branch."], ["basics", "Basics", "Continuous delivery versus continuous deployment?", "Continuous delivery means every green commit is automatically made deployable and sits ready; a human decides when to ship. Continuous deployment removes that human step and ships every green commit. The pipeline is identical — the difference is organisational, and delivery is the honest target wherever release timing is coordinated externally, like an app store review or a regulated change window."], ["basics", "Basics", "Why does batch size matter so much in CI?", "Because verification and review cost scale worse than linearly with change size, while the ability to reverse a change scales inversely with it. A small change is easy to review, easy to test and easy to revert; a two-week branch is none of those. Almost every CI practice — short branches, fast feedback, merge queues — exists to keep batches small."], ["basics", "Basics", "What makes a red trunk an emergency?", "Trunk is the integration point for everyone. While it is broken, nobody else can get a trustworthy signal from their own build, so one person's failure blocks the whole team's ability to integrate — which is the single thing CI exists to provide. Fixing or reverting takes priority over whatever you were doing."], ["basics", "Basics", "What branching model would you pick for a web app and why?", "Trunk-based: short-lived branches merged to main within a day, unfinished work hidden behind flags, main always releasable. Git Flow's develop and release branches are built for versioned software shipped to customers; on a continuously deployed web app they add days of un-integrated divergence and a class of merge pain for no benefit."], ["pipeline", "Pipeline", "Walk me through your pipeline from push to production.", "Push opens a PR. Fast checks run in parallel — install from cache, lint, type-check, unit tests, about two minutes. Build produces one artifact and asserts bundle budgets. E2E runs sharded against a preview deploy of that artifact. Review plus required checks gate the merge, and a merge queue re-tests against current trunk. The same artifact is promoted to staging then production, smoke-tested on the critical path, then watched via error rate and Core Web Vitals against the release marker, with a flag flip or artifact re-point available for recovery."], ["pipeline", "Pipeline", "Why order the stages cheapest-first?", "So a failure costs the least runner time and the least wall-clock before you hear about it. A type error caught at 90 seconds saves an eight-minute E2E run that was doomed anyway. Independent gates should still run concurrently so one failure does not hide the others."], ["pipeline", "Pipeline", "What determines a pipeline's wall-clock time?", "The longest path through the job graph, not the sum of the jobs. That is why the first step in speeding up a pipeline is finding the critical path — shortening a job that runs concurrently with something slower changes nothing at all."], ["pipeline", "Pipeline", "What is a good target for PR feedback time?", "Under about ten minutes. It is an attention threshold rather than a magic number: past it people start another task, so a red build costs a context switch instead of a quick fix. Optimise the PR path hard and let the post-merge path be slower and more thorough."], ["pipeline", "Pipeline", "When is fail-fast the wrong default?", "On a large refactor, where you want the complete list of problems rather than the first one. Run independent gates in parallel so each reports separately, and use fail-fast: false on matrices whose results you want in aggregate. Never apply it to the deploy path, where the first failure genuinely should stop everything."], ["pipeline", "Pipeline", "What is a merge queue and what problem does it solve?", "It takes approved PRs and re-runs the checks against trunk plus everything already queued ahead, landing the PR only if that speculative merge is green. It solves the semantic conflict: two PRs that are individually green and merge without textual conflict, but are broken together. The cost is latency, which queues mitigate by testing several batches speculatively in parallel."], ["pipeline", "Pipeline", "What is a semantic conflict?", "A merge that git resolves cleanly but that is behaviourally broken — one branch renames a function's return field while another adds a caller of the old shape. The edits are in different files, so no textual conflict appears, and neither branch's CI run ever saw the combined code. It is the argument for testing the merge result rather than the branch."], ["pipeline", "Pipeline", "Why not just require branches to be up to date before merging?", "It gives the right guarantee and does not scale. Every merge invalidates every other open PR, so with real volume the team spends its day rebasing and re-running CI against a moving target. A merge queue achieves the same thing without the thundering herd."], ["speed", "Speed", "How do you cache dependencies in CI correctly?", "Key the cache on a hash of the lockfile, since the lockfile is the exact input to the install, and add a prefix restore-key so a lockfile change restores the nearest previous cache and installs only the delta. Never key on a branch name or a fixed string: a key that does not change when the input does serves a stale node_modules, which produces green builds of code nobody has."], ["speed", "Speed", "What are the limits of the CI cache?", "On GitHub Actions it is 10 GB per repository, least-recently-used eviction, and entries untouched for seven days are deleted. Caching something large per branch will quietly evict the caches you actually depend on, so cache deliberately rather than everything."], ["speed", "Speed", "What is a build cache and how does it differ from a dependency cache?", "A build cache is content-addressed: hash a task's inputs — sources, config, dependency versions, environment — and replay stored output if that hash was built before. Turborepo and Nx do this and can share it remotely across machines. It only stays correct if the hashed inputs genuinely determine the output; a task reading an unhashed environment variable or the clock will serve a wrong result that looks like a mystery bug."], ["speed", "Speed", "How do affected-graph builds work, and when do they betray you?", "The tool diffs against the merge base, maps changed files to projects and walks the dependency graph to find everything reachable, then runs tasks only for those. A 30-package repo where a PR touches one package and its two dependants runs 3 tasks instead of 30. It fails on implicit dependencies the graph cannot see — a runtime-read fixture, a global CSS import, an environment variable, a generated type — so keep a scheduled full run to find the blind spots."], ["speed", "Speed", "How far should you shard an E2E suite?", "Until the per-runner fixed cost dominates. With 90 seconds of checkout, install and browser download, a 20-minute suite sharded eight ways is about four minutes and sixteen ways is about 2.75 minutes for double the money. Balance shards by recorded test duration rather than file count, or one shard collects the slow specs and becomes the critical path by itself."], ["speed", "Speed", "Name a free pipeline speed-up most teams miss.", "A concurrency group with cancel-in-progress, keyed on the branch, so pushing a new commit kills the run for the commit nobody is waiting on. On an active repository it can halve runner consumption without touching a single test."], ["speed", "Speed", "Is a bigger CI runner worth the cost?", "Often yes. Type-checking and bundling are CPU-bound, and the standard hosted runner is small — two vCPU on private repositories. A larger runner has a higher per-minute rate, so it is cheaper in absolute terms only if it more than halves the duration, but it is essentially always cheaper in engineer-minutes waiting."], ["speed", "Speed", "How do you speed up a pipeline without silently reducing coverage?", "Exhaust the free wins first — parallelism, install and build caching, affected-graph scoping, sharding, cancelling superseded runs. When you do move work off the PR path, say so explicitly and name the risk: 'cross-browser E2E now runs post-merge, so a Safari-only regression is caught after merge, not before.' A silent coverage cut reads as full coverage while the risk has moved into production."], ["gates", "Gates", "What does each pipeline gate actually protect against?", "Lint catches bug patterns like missing hook dependencies; type-checking catches whole-program contract breaks such as the untested caller of a renamed field; unit tests catch logic; integration tests catch wiring; E2E catches the assembled critical path in a real browser; bundle budgets catch gradual size regression; dependency audits catch known CVEs. Each is blind to what the next one covers, which is why the answer is a set rather than a favourite."], ["gates", "Gates", "Why run tsc --noEmit in CI when the bundler already compiles TypeScript?", "Because bundlers strip types rather than check them — esbuild and SWC transpile per file with no cross-file type information at all. A build that succeeds proves nothing about type correctness, so the type-check is a separate gate."], ["gates", "Gates", "What makes a check a gate rather than a comment?", "Branch protection: required status checks, a required approving review, and no force-pushing to trunk. Without it the check is a suggestion, and suggestions lose to deadlines."], ["gates", "Gates", "What is wrong with a global coverage threshold?", "It counts lines executed, not assertions made, so a test that renders and asserts nothing scores like one that checks behaviour. As a target it produces assertion-free tests, and it applies pressure to whoever touches a legacy file rather than to whoever adds untested code. Prefer diff coverage on changed lines plus a ratchet that stops the global figure falling."], ["gates", "Gates", "How should a bundle-size budget be configured?", "Fail on the delta rather than the absolute — 'this PR adds more than 5 KB gzipped to the main entry' is actionable in review, whereas an absolute ceiling fails whichever unlucky PR crosses it and blames the wrong person. Measure compressed size, since that is what crosses the network; raw size badly overstates the cost of repetitive code."], ["gates", "Gates", "Is Lighthouse CI reliable as a blocking gate?", "Only if you treat it as noisy. CPU contention on a shared runner moves scores by several points run to run, so take a median of three to five runs, assert on specific metrics rather than the composite score, and use a generous threshold. Otherwise you have built a flaky test with a chart, and people will start bypassing it."], ["gates", "Gates", "How much do automated accessibility checks actually catch?", "Deque's own study puts axe-core at about a third of the WCAG 2.1 AA success criteria and roughly 57% of actual issue instances — the auto-detectable failures like contrast, labels and ARIA are also the most common ones, and the vendor behind axe produced both figures. What it cannot tell you is that the focus order is nonsense or that a custom widget is unusable by keyboard. Run it as a gate, and never describe passing it as the page being accessible."], ["tests", "Tests", "What is a flaky test and why is it so damaging?", "A test that passes and fails on unchanged code. The damage is to trust: once re-running a red build is the reflex, real failures get re-run too, and the pipeline has stopped being a gate while still consuming everyone's time. At 0.1% flakiness per test, assuming independence, a 500-test suite fails about 39% of runs — two PRs in five go red for no reason, and about 700 such tests would put it over half."], ["tests", "Tests", "What causes flakiness in practice?", "Fixed timeouts that pass on a laptop and fail on a loaded two-core runner; shared state across tests that only collides under CI's parallelism; order dependence; hitting real network services; animations making an element present but not yet clickable; and unfrozen clocks, timezones and locales. Wait on conditions rather than durations, isolate state per test, mock at the network boundary, disable animations, and pin time and locale."], ["tests", "Tests", "Should CI retry failing tests?", "Retry once as a mitigation, and report every test that passed only on retry so flakiness stays visible as a number. Silent retries of three convert a genuine race condition — one that also affects users — into a green build, which is the worst possible outcome because it removes the evidence."], ["tests", "Tests", "What do you do with a confirmed flaky test?", "Quarantine it immediately into a run that still executes and reports but does not block, so the blocking suite is trustworthy again today. Attach an owner and a deadline, because an un-expiring quarantine is worse than deleting the test: it looks like coverage that no longer exists. Then fix the cause, which is frequently a real race in the product rather than a test defect."], ["tests", "Tests", "Where should E2E tests run — dev server or deployed build?", "Against a deployed preview build of the actual artifact. Running them against a dev server misses build-only failures: a wrong base path, a production-only code path, a mis-set environment variable, a broken asset URL. It also means the thing you tested is the thing you will promote."], ["artifact", "Artifacts", "What does build once, promote everywhere mean and why does it matter?", "The build job produces one artifact tagged with the commit SHA, and every later environment deploys those identical bytes rather than rebuilding. Rebuilding per environment means the thing you tested is not the thing you shipped — dependency resolution, base images and inlined configuration can all differ — and the resulting 'works on staging' bugs are expensive precisely because they are not reproducible."], ["artifact", "Artifacts", "Why is build-once harder on the frontend than the backend?", "A backend reads configuration at process start, so one image runs anywhere. A frontend bundler inlines environment variables as string literals at build time — VITE_, NEXT_PUBLIC_, REACT_APP_ — and then minifies them, so the output is a constant. Bake in the staging API URL and you have a staging artifact for ever."], ["artifact", "Artifacts", "How do you get per-environment config without rebuilding?", "Best is to remove the variable: call a relative /api path and let each environment's edge route it. Otherwise fetch a small /config.json before boot or have the server inject window.__CONFIG__ into the HTML, handling the failure case so a config outage is not a white screen. Placeholder substitution at deploy time keeps one build but mutates the tested artifact, so verify it ran. Rebuilding per environment is the fallback and obliges you to re-run smoke tests per environment."], ["artifact", "Artifacts", "Are NEXT_PUBLIC_ and VITE_ prefixes a security feature?", "No. They are a naming convention that makes exposure obvious. Anything the bundler inlines ships to the browser as readable text, so the frontend has no secrets at all — the prefix is there so that adding a genuine secret next to a public one looks wrong. Real secrets live behind an endpoint you control."], ["artifact", "Artifacts", "Why npm ci rather than npm install in CI?", "npm ci wipes node_modules, installs exactly what the lockfile specifies, and fails outright if the lockfile and package.json disagree. npm install may resolve new versions and rewrite the lockfile, so the same commit can install different code on different days — which shows up as CI 'randomly' breaking on a commit that has not changed. pnpm's --frozen-lockfile and yarn's --immutable are the equivalents."], ["artifact", "Artifacts", "What else belongs in a reproducible build?", "Pin the toolchain — Node version in .nvmrc or engines, read by CI — because a minor Node bump has changed both build output and test behaviour before. Stamp the commit SHA into the artifact and report it with every error and analytics event, or 'is this bug in the current build?' is unanswerable. And retain old artifacts, since they are immutable, small, and what makes rollback and bisecting a production regression possible."], ["deploy", "Deploy", "What order do you upload a frontend deploy in?", "Hashed assets first, entry document last. The reverse leaves a window where the HTML references files that 404 — brief, but on a busy site that is thousands of people. Then invalidate the CDN for the document only; hashed assets never need invalidation because a change produces a new URL."], ["deploy", "Deploy", "What is a preview deploy and why is it worth the cost?", "A deployed URL per pull request, posted back as a comment. A reviewer reading a CSS diff is guessing; a reviewer clicking the page is not. It also gives E2E a real deployed target. Keep them noindex or authenticated, tear them down on PR close, and never point them at production data — a preview is an unreviewed build on a public URL."], ["deploy", "Deploy", "What is staging actually for?", "Rehearsing changes you cannot safely rehearse in production: destructive migrations, third-party integrations in sandbox mode, infrastructure changes. It never has production's data volume, traffic shape or third-party behaviour, so 'staging was green' is weak evidence for anything else. If staging is mostly a slower way to learn what a preview deploy already told you, it is a habit rather than a control."], ["deploy", "Deploy", "How do you deploy a schema change safely?", "Expand and contract. Add the new column, deploy code that writes to both, backfill the existing rows, then deploy code that reads the new column, and only in a later release drop the old one. The order matters — switching reads before the backfill points new code at a column that is NULL for every existing row. Done properly every step is independently reversible and no step requires old and new code to disagree about the schema. A single migration that renames a column is what turns a routine deploy into an outage."], ["deploy", "Deploy", "What belongs in a post-deploy smoke test?", "Three to five checks against the real environment on the critical path: the page loads, auth works, the primary flow completes. They catch configuration and environment failures — a missing variable, a wrong API URL, a bad redirect — that no pre-deploy test can structurally see. Make failure gate the promotion to the next environment, or it is only a notification."], ["deploy", "Deploy", "Why is rollback on the frontend not symmetric with deploy?", "You can restore the previous files in seconds, but the running version lives in every open tab and you cannot reach into them. Browsers holding the new HTML keep it until it revalidates, and sessions in flight may request chunks from either build. That asymmetry is why a feature-flag flip, which changes behaviour without changing which files anyone holds, is the faster kill switch."], ["deploy", "Deploy", "Roll back or roll forward?", "Roll back when the impact is user-visible and the cause is not yet understood — restore known-good first, diagnose second. Roll forward when the fix is small, understood and verified, or when reverting is itself risky, which is usually true once a migration has run. 'Always roll back' is the answer of someone who has not had to reverse a data change."], ["sec", "Security", "Why is OIDC preferred to storing cloud keys in CI?", "The runner requests a short-lived signed token describing the run — repository, branch, workflow — and exchanges it for temporary cloud credentials, with a trust policy restricting which repository and branch may assume the role. Nothing long-lived exists to leak, revocation is a policy edit rather than a key rotation, and the credential is scoped to a specific workflow rather than to anyone who can read the secret store."], ["sec", "Security", "What is the pull_request_target footgun?", "That trigger runs the workflow definition from the repository's default branch, with secrets available and a write-capable token unless the default has been restricted — unlike pull_request, which withholds secrets from forks entirely. Checking out and executing the PR's code under it means anyone opening a fork PR can run arbitrary code, via a build script or a postinstall hook, in a context holding your credentials. If you need the trigger, never check out or execute the PR head under it. Since mid-2026 actions/checkout refuses that fetch by default, so the live version of the bug is a workflow that opts back in with allow-unsafe-pr-checkout, or fetches the head with raw git."], ["sec", "Security", "How does script injection work in a CI workflow?", "Interpolating untrusted context such as a pull request title directly into a shell run: step substitutes attacker-controlled text into the script before the shell parses it, so a crafted title executes commands on the runner. Pass untrusted values in through environment variables and quote them rather than interpolating them into the command."], ["sec", "Security", "Why pin third-party actions to a commit SHA?", "Because a version tag is a pointer someone else can move. The March 2025 tj-actions/changed-files compromise worked exactly that way: existing tags were repointed at code that read the runner process's memory and printed it into the workflow log. Around 23,000 repositories referenced the action, though roughly 218 actually leaked secrets, mostly short-lived job tokens and only where logs were public — cite the real number rather than 'thousands'. A full commit SHA is immutable, so an upstream compromise cannot reach you without a deliberate update."], ["sec", "Security", "Is secret masking in CI logs enough?", "No. Masking matches known secret values, so a secret that has been base64-encoded, split or otherwise transformed passes straight through. Treat anything printed as potentially leaked, and rely on scoping and short lifetimes rather than on redaction."], ["sec", "Security", "Why is npm audit noisy on frontend projects?", "It reports vulnerabilities across the whole dependency tree, including build-time tooling that never reaches a browser and code paths your usage does not reach. Gate on high and critical severity in production dependencies and triage the rest — a gate that fails every build is one people learn to bypass."], ["sec", "Security", "What risk do install scripts pose in CI?", "A postinstall script is arbitrary code executing on your runner, at install time, with whatever credentials are in that job's environment. It is the classic supply-chain execution point, which is why --ignore-scripts, where your dependencies tolerate it, is a real hardening step rather than a formality."], ["sec", "Security", "What is npm provenance?", "A signed, verifiable attestation produced when publishing from CI with --provenance, linking a published package version to the exact repository, commit and workflow run that built it. It lets a consumer check that a package came from the source it claims, rather than from someone with a stolen publish token."], ["ops", "Ops", "What are the four DORA metrics?", "Deployment frequency and lead time for changes measure speed; change failure rate and failed-deployment recovery time — earlier called time to restore service — measure stability. They are a set on purpose: speed metrics alone reward recklessness, stability metrics alone reward paralysis. DORA's finding is that the two are not opposed — the fastest cluster also leads on stability, roughly 5% change failure rate against 40% for the slowest — because small changes are easier to verify and reverse. Say it with the caveat that it is not a clean monotonic line and change failure rate is the noisiest of the four."], ["ops", "Ops", "Which pipeline metrics would you actually watch day to day?", "PR feedback time at p95, not the mean, since the mean hides the queued 40-minute run; how long trunk spends red; the flaky rate and the count of retry-passes; and runner minutes, which turns caching and cancellation into an argument a budget holder understands."], ["ops", "Ops", "How do you argue for time to invest in the pipeline?", "In their units. Feedback latency times PRs per week is engineer-hours; runner minutes are money; change failure rate and recovery time are incidents. 'Caching the install saves four minutes on 60 runs a week' is a concrete claim, where 'our CI is slow' is a complaint."], ["ops", "Ops", "What is the risk of targeting any of these metrics individually?", "Goodhart's law: each is gameable alone. Deployment frequency rises if you deploy nothing in ten pieces, change failure rate falls if you stop calling things failures, coverage rises with assertion-free tests. They work as a set because gaming one degrades another, so quoting a single metric as a target is a warning sign rather than a good sign."], ["ops", "Ops", "How do you catch a bad deploy that passed every gate?", "Monitor the field, segmented by release. Attach the build SHA to every error and analytics event, watch client error rate, Core Web Vitals and the critical-path business metric against the deploy marker, and alert on a step change at that boundary. Pair it with synthetic checks on the critical path so you find out in a minute rather than from a support ticket in an hour."], ["ops", "Ops", "What do you do about a pipeline nobody trusts?", "Treat it as an outage of the gate and fix trust before adding anything. Make flakiness measurable, quarantine the worst offenders so the blocking suite is honest again, and remove or downgrade any gate that is noisy enough that people routinely bypass it. A gate people work around is worse than no gate, because it produces the appearance of a check without the effect."]];
+const bank = document.getElementById('qbank');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+// light inline-code styling for tokens that look like code
+const codeify = s => esc(s).replace(/\b([A-Za-z.]+\([^)]*\)|Promise\.[a-zA-Z]+|\.then|\.catch|\.finally|async|await|for…of|setTimeout|AbortController|AggregateError|unhandledrejection|allSettled|forEach)\b/g,
+  m => `<code class="k">${m}</code>`);
+
+QA.forEach((q,i)=>{
+  const [topic,label,ques,ans] = q;
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.dataset.topic = topic;
+  card.innerHTML =
+    `<button class="qhead" aria-expanded="false">
+       <span class="qmark">▸</span>
+       <span class="qtopic">${label}</span>
+       <span class="qtext">${i+1}. ${esc(ques)}</span>
+     </button>
+     <div class="qbody"><div class="inner"><div class="ans"><p style="margin:0">${codeify(ans)}</p></div></div></div>`;
+  bank.appendChild(card);
+});
+
+const cards = [...document.querySelectorAll('.qcard')];
+cards.forEach(c=>{
+  const head = c.querySelector('.qhead');
+  head.addEventListener('click',()=>{
+    const open = c.classList.toggle('open');
+    head.setAttribute('aria-expanded', open);
+    syncToggleLabel();
+  });
+});
+
+const toggleAll = document.getElementById('toggleAll');
+function visibleCards(){ return cards.filter(c=>!c.classList.contains('hide')); }
+function syncToggleLabel(){
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  toggleAll.textContent = allOpen ? 'Hide all' : 'Reveal all';
+  toggleAll.setAttribute('aria-pressed', allOpen);
+}
+toggleAll.addEventListener('click',()=>{
+  const vis = visibleCards();
+  const allOpen = vis.length && vis.every(c=>c.classList.contains('open'));
+  vis.forEach(c=>{
+    c.classList.toggle('open', !allOpen);
+    c.querySelector('.qhead').setAttribute('aria-expanded', !allOpen);
+  });
+  syncToggleLabel();
+});
+
+const chips = [...document.querySelectorAll('.fchip')];
+const countEl = document.getElementById('count');
+function applyFilter(f){
+  cards.forEach(c=> c.classList.toggle('hide', f!=='all' && c.dataset.topic!==f));
+  const n = visibleCards().length;
+  countEl.textContent = `${n} question${n!==1?'s':''}`;
+  syncToggleLabel();
+}
+chips.forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.remove('on'));
+    chip.classList.add('on');
+    applyFilter(chip.dataset.f);
+  });
+});
+applyFilter('all');
+
+/* ---------------- quiz reveals ---------------- */
+document.querySelectorAll('[data-quiz]').forEach(card=>{
+  const btn = card.querySelector('.reveal-btn');
+  const ans = card.querySelector('.answer');
+  const orig = btn.textContent;
+  btn.addEventListener('click',()=>{
+    const open = ans.classList.toggle('show');
+    btn.textContent = open ? 'Hide answer' : orig;
+  });
+});
+
+/* ---------------- nav scroll-spy ---------------- */
+const links = [...document.querySelectorAll('nav.side a')];
+const secs = links.map(a=>document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id='#'+e.target.id;
+      links.forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+    }
+  });
+},{rootMargin:'-30% 0px -60% 0px'});
+secs.forEach(s=>s&&obs.observe(s));
+
+/* mobile menu */
+const side=document.getElementById('side'), backdrop=document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click',()=>{side.classList.toggle('open');backdrop.classList.toggle('open');});
+backdrop.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');});
+links.forEach(a=>a.addEventListener('click',()=>{side.classList.remove('open');backdrop.classList.remove('open');}));
+
+</script>
+<script id="fe-prep-keys">/* forward the deck's shortcuts up: keys inside an iframe never reach the parent */
+window.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();parent.postMessage({fePrep:'palette'},'*');}
+  else if(e.key==='Escape'){parent.postMessage({fePrep:'close'},'*');}
+});</script>
+</body>
+</html>
