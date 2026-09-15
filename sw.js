@@ -9,7 +9,18 @@
  *   Google Fonts     -> cache-first; opaque cross-origin responses are fine here
  *                       because we only ever replay them, never read their bytes
  */
-const CACHE = 'fe-prep-v1';
+const CACHE = 'fe-prep-v2';
+
+/* Every distinct Google Fonts stylesheet used anywhere in the deck. There are
+   two, and missing the second one is what forced a manual "open each guide
+   while online" warm-up: index.html asks for Space Grotesk + JetBrains Mono,
+   but the guides also pull Inter and extra JetBrains weights, so their
+   stylesheet is a different URL that install never touched.
+   Regenerate by grepping index.html plus every decoded b64 guide. */
+const FONT_CSS = [
+  'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap',
+  'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap',
+];
 
 /* The shell. If any of these fail to fetch, install fails and we keep the old
    worker — better a stale-but-working deck than a half-cached one. */
@@ -53,11 +64,36 @@ const EXTRAS = [
 const isFontHost = url =>
   url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
 
+/* Fetch each stylesheet, then follow the url(...) inside it and cache the woff2
+   files too — the CSS alone is useless offline. Google varies that CSS by
+   User-Agent, and this runs in the real browser, so we cache exactly the format
+   this device will ask for. Best effort throughout: no font is worth failing
+   the install over, since the deck still reads fine in fallback type. */
+async function warmFonts(cache) {
+  await Promise.all(FONT_CSS.map(async href => {
+    try {
+      const res = await fetch(href, { mode: 'cors', credentials: 'omit' });
+      if (!res.ok) return;
+      const css = await res.clone().text();
+      await cache.put(href, res);
+      const files = [...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)]
+        .map(m => m[1]);
+      await Promise.all([...new Set(files)].map(async u => {
+        try {
+          const f = await fetch(u, { mode: 'cors', credentials: 'omit' });
+          if (f.ok) await cache.put(u, f);
+        } catch {}
+      }));
+    } catch {}
+  }));
+}
+
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE);
     await cache.addAll(SHELL);                                  // must all succeed
     await Promise.all(EXTRAS.map(u => cache.add(u).catch(() => {})));  // best effort
+    await warmFonts(cache);
     self.skipWaiting();
   })());
 });
@@ -97,8 +133,11 @@ self.addEventListener('fetch', e => {
      offline instead of falling back to system sans/mono. */
   if (isFontHost(url)) {
     e.respondWith((async () => {
-      const cache  = await caches.open(CACHE);
-      const cached = await cache.match(req);
+      const cache = await caches.open(CACHE);
+      /* ignoreVary matters: install stores these from a cors fetch, but the
+         page asks for the stylesheet no-cors. Without it the Vary header can
+         make an entry we definitely have look like a miss. */
+      const cached = await cache.match(req, { ignoreVary: true });
       if (cached) return cached;
       try {
         const res = await fetch(req);
