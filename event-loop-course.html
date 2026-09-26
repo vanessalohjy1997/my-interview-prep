@@ -273,16 +273,18 @@
     <section id="intro">
       <div class="kicker">00 — The mental model</div>
       <h2>Why the event loop has to exist</h2>
-      <p>Start from three facts that are all true at once:</p>
+      <p><strong>The event loop exists so single-threaded JS can wait for slow things without freezing the page.</strong></p>
       <ul class="body">
-        <li>JavaScript has <strong>one call stack</strong>. It can only do one thing at a time.</li>
-        <li>Work like <code class="k">fetch()</code>, <code class="k">setTimeout()</code>, or a user click takes <strong>unknown, possibly long</strong> amounts of time.</li>
-        <li>The page must <strong>stay responsive</strong> the whole time.</li>
+        <li>JS runs one thing at a time, on one call stack.</li>
+        <li><code class="k">fetch()</code>, timers and clicks take an unknown amount of time.</li>
+        <li>Waiting on the main thread would freeze the tab: no scrolling, no clicks, no repaints.</li>
       </ul>
-      <p>If JS blocked the thread waiting for a network response, the entire tab would freeze — no scrolling, no clicks, nothing. So the language leans on its <strong>host environment</strong> (the browser, or Node) to do the waiting <em>off-thread</em>, and uses a scheduling mechanism to run your callback later, when the stack is free. That mechanism is the <span class="t-loop">event loop</span>.</p>
+      <p><strong>How it works.</strong> JS doesn't wait. It hands slow work to the host (the browser or Node), which does the waiting off the main thread. When the work finishes, the host drops your callback into a queue. The <span class="t-loop">event loop</span> checks that queue every time the call stack is empty, and runs the next callback. So &ldquo;later&rdquo; in async JS means &ldquo;the next time the stack is free&rdquo;, not a fixed delay.</p>
+      <p><strong>Example.</strong> <code class="k">setTimeout(fn, 0)</code> doesn't run <code class="k">fn</code> immediately. It queues <code class="k">fn</code>, and <code class="k">fn</code> runs only after the current code finishes. If that code takes 200ms, <code class="k">fn</code> waits 200ms.</p>
+      <p><strong>Where it bites.</strong> A callback can only run when the stack is empty. A long synchronous loop blocks every callback behind it, including clicks and fetch results. That's why a heavy calculation on the main thread freezes the UI even though &ldquo;it's async&rdquo;.</p>
 
       <h3>What's actually in the room</h3>
-      <p>People say "the JavaScript engine" as if it does everything. It doesn't. There are distinct pieces:</p>
+      <p><strong>&ldquo;The JavaScript engine&rdquo; does not do everything. The engine and the host are distinct pieces.</strong></p>
       <div class="diagram">
         <table class="tbl" style="margin:0">
           <tr><th>Piece</th><th>Who owns it</th><th>Job</th></tr>
@@ -294,24 +296,26 @@
           <tr><td>Event loop</td><td>Host</td><td>Moves ready callbacks onto the stack when it's empty.</td></tr>
         </table>
       </div>
-      <p>The key insight for a senior answer: <strong>the engine (V8) does not contain the event loop or <code class="k">setTimeout</code></strong>. Those are provided by the host. V8 just runs whatever is on the stack. This is why the same JS behaves differently in a browser vs Node — different host, different queues, different timing.</p>
-      <p>One precision worth having ready, because it's the follow-up: the <em>microtask</em> queue is the one piece the engine does own. Promise jobs and <code class="k">queueMicrotask</code> go into V8's queue; the host only decides when to run the checkpoint that drains it. Node's docs say it outright — the microtask queue &ldquo;is managed by V8&rdquo;, while the <code class="k">process.nextTick</code> queue &ldquo;is managed by Node.js&rdquo;. So: stack and microtask queue are engine; task queues, timers, I/O and rendering are host.</p>
+      <p><strong>The senior insight.</strong> <strong>The engine (V8) does not contain the event loop or <code class="k">setTimeout</code></strong>. The host provides both. V8 just runs whatever is on the stack. That is why the same JS behaves differently in a browser and in Node: different host, different queues, different timing.</p>
+      <p><strong>The follow-up.</strong> The <em>microtask</em> queue is the one piece the engine does own. Promise jobs and <code class="k">queueMicrotask</code> go into V8's queue. The host only decides when to run the checkpoint that drains it. Node's docs say it outright: the microtask queue &ldquo;is managed by V8&rdquo;, while the <code class="k">process.nextTick</code> queue &ldquo;is managed by Node.js&rdquo;.</p>
+      <p><strong>Say this.</strong> Stack and microtask queue are engine. Task queues, timers, I/O and rendering are host.</p>
     </section>
 
     <!-- 01 -->
     <section id="stack">
       <div class="kicker">01 — Synchronous execution</div>
       <h2>The call stack</h2>
-      <p>The <span class="t-stack">call stack</span> is a LIFO stack of frames. Calling a function <em>pushes</em> a frame; returning <em>pops</em> it. Nothing asynchronous happens while there are frames on the stack — that's the whole point of "run-to-completion": <strong>a task runs uninterrupted until the stack is empty.</strong></p>
+      <p><strong>The call stack is where synchronous code runs, and a task runs uninterrupted until the stack is empty.</strong></p>
+      <p><strong>How it works.</strong> The <span class="t-stack">call stack</span> is a LIFO stack of frames. Calling a function <em>pushes</em> a frame. Returning <em>pops</em> it. Nothing asynchronous happens while there are frames on the stack. That is the whole point of &ldquo;run-to-completion&rdquo;.</p>
       <pre><span class="cmt">// each call pushes a frame; each return pops one</span>
 function third(){ return 3; }
 function second(){ return third() + 2; }
 function first(){ return second() + 1; }
 first();
 <span class="cmt">// stack grows: first → second → third, then unwinds</span></pre>
-      <p>Two consequences matter for interviews:</p>
+      <p><strong>Where it bites.</strong> Two consequences matter for interviews:</p>
       <ul class="body">
-        <li><strong>Blocking is real.</strong> A <code class="k">while(true){}</code> or a heavy synchronous loop keeps the stack busy, so <em>no</em> queued callback — not a click handler, not a timer — can run. The page is frozen because the loop can't take anything off a queue while the stack is occupied.</li>
+        <li><strong>Blocking is real.</strong> A <code class="k">while(true){}</code> or a heavy synchronous loop keeps the stack busy. So <em>no</em> queued callback can run: not a click handler, not a timer. The page is frozen because the loop can't take anything off a queue while the stack is occupied.</li>
         <li><strong>Stack overflow</strong> is just the stack exceeding its size limit, usually from unbounded recursion. It has nothing to do with the queues.</li>
       </ul>
       <div class="note">
@@ -324,7 +328,8 @@ first();
     <section id="loop">
       <div class="kicker">02 — The algorithm</div>
       <h2>The loop, as an algorithm</h2>
-      <p>Strip away the jargon and the event loop is a tiny, endless routine. Here it is in the browser, close to how the HTML spec frames it:</p>
+      <p><strong>The event loop is a tiny, endless routine: one macrotask, then every microtask, then maybe a render.</strong></p>
+      <p><strong>How it works.</strong> Strip away the jargon and here it is in the browser, close to how the HTML spec frames it:</p>
       <pre><span class="kw">while</span> (true) {
   task = macrotaskQueue.<span class="kw">pop</span>()        <span class="cmt">// take ONE macrotask</span>
   <span class="kw">run</span>(task)                           <span class="cmt">// run it to completion</span>
@@ -335,16 +340,16 @@ first();
   <span class="kw">if</span> (needsRender)
     render()                          <span class="cmt">// rAF callbacks, style, layout, paint</span>
 }</pre>
-      <p>Read that loop carefully, because almost every trick question lives inside it:</p>
+      <p><strong>Read it carefully.</strong> Almost every trick question lives inside it:</p>
       <ol class="body">
         <li>Take <strong>exactly one</strong> <span class="t-macro">macrotask</span> and run it to completion.</li>
-        <li>Then <strong>drain the entire</strong> <span class="t-micro">microtask</span> queue — not one, <em>all</em> of them, including any that get added while you're draining.</li>
+        <li>Then <strong>drain the entire</strong> <span class="t-micro">microtask</span> queue. Not one, <em>all</em> of them, including any that get added while you're draining.</li>
         <li>Then, if it's time, the browser may render.</li>
         <li>Repeat.</li>
       </ol>
       <div class="note">
         <span class="lbl">Read the <code class="k">if (needsRender)</code> honestly</span>
-        Rendering is <em>not</em> a step after every task. The HTML spec calls it a <strong>rendering opportunity</strong>, decided by &ldquo;hardware refresh rate constraints and user agent throttling&rdquo; — so at 60Hz the browser runs as many tasks as it can in ~16.7ms and paints once. The guarantee is only one-directional: a paint can never happen <em>inside</em> a task or between a task and its microtasks. It can, and usually does, skip many task boundaries.
+        Rendering is <em>not</em> a step after every task. The HTML spec calls it a <strong>rendering opportunity</strong>, decided by &ldquo;hardware refresh rate constraints and user agent throttling&rdquo;. So at 60Hz the browser runs as many tasks as it can in ~16.7ms and paints once. The guarantee is only one-directional: a paint can never happen <em>inside</em> a task or between a task and its microtasks. It can, and usually does, skip many task boundaries.
       </div>
       <div class="note warn">
         <span class="lbl">The single most tested fact</span>
@@ -356,7 +361,7 @@ first();
     <section id="tasks">
       <div class="kicker">03 — Two queues, two priorities</div>
       <h2>Macrotasks vs microtasks</h2>
-      <p>There are two queues, and the difference in when they drain is the entire game.</p>
+      <p><strong>There are two queues, and the difference in when they drain is the entire game.</strong></p>
       <table class="tbl">
         <tr><th>Property</th><th class="t-macro">Macrotask (task)</th><th class="t-micro">Microtask</th></tr>
         <tr><td>Sources</td><td><code class="k">setTimeout</code>, <code class="k">setInterval</code>, <code class="k">setImmediate</code> (Node), I/O, UI events, <code class="k">postMessage</code> / <code class="k">MessageChannel</code>, <code class="k">scheduler.postTask</code></td><td><code class="k">.then/.catch/.finally</code>, <code class="k">await</code> continuations, <code class="k">queueMicrotask</code>, <code class="k">MutationObserver</code></td></tr>
@@ -364,14 +369,20 @@ first();
         <tr><td>Can it delay rendering?</td><td>Not indefinitely — render comes next, but a long one delays the frame</td><td>Yes — render waits until the queue is empty</td></tr>
         <tr><td>Priority</td><td>Lower</td><td>Higher (always drained before the next macrotask)</td></tr>
       </table>
-      <p>Two details about the microtask column that a follow-up will reach for. <strong><code class="k">MutationObserver</code> is a microtask, but a coalesced one</strong>: the DOM spec keeps a single &ldquo;mutation observer microtask queued&rdquo; flag per agent, so a thousand synchronous DOM writes queue <em>one</em> microtask and your callback receives all the records in one batch — it is not one callback per mutation. And <strong><code class="k">queueMicrotask</code> is not just sugar for <code class="k">Promise.resolve().then</code></strong>: an exception thrown inside it is reported as an ordinary uncaught error, whereas the promise version turns it into an unhandled rejection, and it skips allocating a promise at all.</p>
-      <p>The mental shortcut: <strong>a microtask is "finish this before doing anything else"; a macrotask is "get to it on the next turn."</strong> Promises resolve via microtasks precisely so a chain of <code class="k">.then</code>s completes as one coherent unit before the browser does timers or repaints.</p>
+      <p><strong>Two details in the microtask column.</strong> A follow-up will reach for either one.</p>
+      <ul class="body">
+        <li><strong><code class="k">MutationObserver</code> is a microtask, but a coalesced one.</strong> The DOM spec keeps a single &ldquo;mutation observer microtask queued&rdquo; flag per agent. So a thousand synchronous DOM writes queue <em>one</em> microtask, and your callback receives all the records in one batch. It is not one callback per mutation.</li>
+        <li><strong><code class="k">queueMicrotask</code> is not just sugar for <code class="k">Promise.resolve().then</code>.</strong> An exception thrown inside it is reported as an ordinary uncaught error. The promise version turns it into an unhandled rejection. And <code class="k">queueMicrotask</code> skips allocating a promise at all.</li>
+      </ul>
+      <p><strong>Say this.</strong> <strong>A microtask is &ldquo;finish this before doing anything else&rdquo;; a macrotask is &ldquo;get to it on the next turn.&rdquo;</strong> Promises resolve via microtasks precisely so a chain of <code class="k">.then</code>s completes as one coherent unit before the browser does timers or repaints.</p>
       <h3>Why two queues exist at all</h3>
-      <p>This is the &ldquo;why&rdquo; behind the table, and it's a genuinely good design story. Before promises, async callbacks were all macrotasks, which created a real problem: <strong>state could change underneath you between scheduling a callback and running it.</strong> Another task — a click handler, a timer, a network callback — could run in between and mutate the world your callback assumed.</p>
-      <p>Microtasks close that window. Because the queue is drained completely before the next macrotask and before rendering, a promise chain runs as an <em>atomic unit</em> with respect to everything else in the page: no user event, no timer, and no repaint can interleave into the middle of it. That's the guarantee that makes <code class="k">.then</code> chains safe to reason about, and it's why <code class="k">await</code> continuations are microtasks rather than tasks.</p>
-      <p>The price is exactly the starvation problem in §08: a queue that must be fully drained is a queue you can fill forever. The design trades &ldquo;can't be interrupted&rdquo; for &ldquo;can't be escaped&rdquo;, and knowing that both sides come from the same decision is what makes the answer sound considered rather than memorised.</p>
+      <p><strong>Microtasks exist so a promise chain can run as an atomic unit, with nothing else interleaving.</strong></p>
+      <p><strong>The problem.</strong> This is the &ldquo;why&rdquo; behind the table, and it's a genuinely good design story. Before promises, async callbacks were all macrotasks. That created a real problem: <strong>state could change underneath you between scheduling a callback and running it.</strong> Another task could run in between and mutate the world your callback assumed: a click handler, a timer, a network callback.</p>
+      <p><strong>How it works.</strong> Microtasks close that window. The queue is drained completely before the next macrotask and before rendering. So a promise chain runs as an <em>atomic unit</em> with respect to everything else in the page. No user event, no timer and no repaint can interleave into the middle of it. That guarantee makes <code class="k">.then</code> chains safe to reason about, and it's why <code class="k">await</code> continuations are microtasks rather than tasks.</p>
+      <p><strong>What it costs.</strong> The price is exactly the starvation problem in §08: a queue that must be fully drained is a queue you can fill forever. The design trades &ldquo;can't be interrupted&rdquo; for &ldquo;can't be escaped&rdquo;. Knowing that both sides come from the same decision is what makes the answer sound considered rather than memorised.</p>
       <h3>Where each queue comes from — engine vs host</h3>
-      <p>A distinction interviewers use to separate levels: <strong>the JavaScript engine (V8) provides none of this.</strong> The spec defines a job queue for promises, but <code class="k">setTimeout</code>, <code class="k">setInterval</code>, DOM events, I/O and the render step are all supplied by the <em>host environment</em> — the browser or Node. That's why the same language has a different event loop in each: one has a render step and animation frames, the other has phases and <code class="k">setImmediate</code>. And it's why <code class="k">setTimeout</code> is not in the ECMAScript specification at all.</p>
+      <p><strong>The JavaScript engine (V8) provides none of this. Timers, events, I/O and rendering all come from the host.</strong></p>
+      <p><strong>How it works.</strong> This is a distinction interviewers use to separate levels. The spec defines a job queue for promises. But <code class="k">setTimeout</code>, <code class="k">setInterval</code>, DOM events, I/O and the render step are all supplied by the <em>host environment</em>: the browser or Node. That's why the same language has a different event loop in each. One has a render step and animation frames. The other has phases and <code class="k">setImmediate</code>. And it's why <code class="k">setTimeout</code> is not in the ECMAScript specification at all.</p>
 
       <div class="filelabel">The canonical warm-up</div>
       <pre>console.log('1');
@@ -379,7 +390,7 @@ setTimeout(() =&gt; console.log('2'), 0);
 Promise.resolve().then(() =&gt; console.log('3'));
 console.log('4');
 <span class="out">// 1  4  3  2   — identical in every browser and in Node</span></pre>
-      <p><code class="k">1</code> and <code class="k">4</code> are synchronous. When the stack empties, the loop drains microtasks — so <code class="k">3</code> (the promise) beats <code class="k">2</code> (the timer), even though the timer was scheduled first and set to <code class="k">0</code>ms. Watch it happen in the simulator below.</p>
+      <p><strong>Example.</strong> <code class="k">1</code> and <code class="k">4</code> are synchronous. When the stack empties, the loop drains microtasks. So <code class="k">3</code> (the promise) beats <code class="k">2</code> (the timer), even though the timer was scheduled first and set to <code class="k">0</code>ms. Watch it happen in the simulator below.</p>
     </section>
 
     <!-- 04 -->
@@ -421,7 +432,7 @@ console.log('4');
     <section id="async">
       <div class="kicker">05 — The part people fake</div>
       <h2>async / await is just promises + microtasks</h2>
-      <p>Nothing new happens with <code class="k">async/await</code> — it's syntax over promises. The trick is knowing exactly where it <em>yields</em>. The rule:</p>
+      <p><strong><code class="k">async/await</code> adds nothing new. It is syntax over promises, and the trick is knowing exactly where it <em>yields</em>.</strong> The rule:</p>
       <div class="note">
         <span class="lbl">The await rule</span>
         Code runs synchronously up to the first <code class="k">await</code>. At <code class="k">await</code>, the function <strong>pauses and returns control to its caller</strong>. Everything <em>after</em> the <code class="k">await</code> is scheduled as a <span class="t-micro">microtask</span> that runs once the awaited value settles.
@@ -439,13 +450,17 @@ console.log('4');
     console.log('b');
   });
 }</pre>
-      <p>That's why in the <strong>async / await</strong> simulator example, <code class="k">console.log('C')</code> (after the await) doesn't run inline — it waits in the microtask queue while the rest of the synchronous script finishes. A senior interviewer will often push here: "So how many microtask ticks does one <code class="k">await</code> cost?" Modern engines: <strong>one tick per <code class="k">await</code></strong> on a native resolved promise (an older spec made it three; that was optimised away).</p>
+      <p><strong>Example.</strong> That's why in the <strong>async / await</strong> simulator example, <code class="k">console.log('C')</code> (after the await) doesn't run inline. It waits in the microtask queue while the rest of the synchronous script finishes.</p>
+      <p><strong>The follow-up.</strong> A senior interviewer will often push here: &ldquo;So how many microtask ticks does one <code class="k">await</code> cost?&rdquo; Modern engines: <strong>one tick per <code class="k">await</code></strong> on a native resolved promise. An older spec made it three; that was optimised away.</p>
       <div class="note warn">
         <span class="lbl">Common trap</span>
         <code class="k">await</code> on a non-promise value (e.g. <code class="k">await 5</code>) still yields to the microtask queue. <code class="k">await</code> is <em>never</em> a no-op, even when the value is already available.
       </div>
       <h3>The one-tick rule, and the exception that breaks it</h3>
-      <p>&ldquo;One microtask tick per <code class="k">await</code>&rdquo; holds for a <em>native</em> promise. The exception is worth carrying because it's both a real performance footgun and a favourite follow-up: <strong>awaiting a thenable — anything with a <code class="k">.then</code> method that isn't a native promise — costs extra ticks</strong>, because the spec has to wrap it and call its <code class="k">then</code> asynchronously. Subclasses of <code class="k">Promise</code> take a slower path still, because <code class="k">await</code> only skips the wrapping when the value's constructor is exactly <code class="k">Promise</code>. The numbers, measured on Node 22 (V8) and worth saying out loud: <strong>a plain value or a native promise costs 1 tick, a thenable 2, a <code class="k">Promise</code> subclass 3.</strong> The 3-to-1 change for native promises landed in V8 v7.2 — Chrome 72, Node 12 — when the spec was fixed to stop allocating two throwaway promises per <code class="k">await</code>. In ordinary application code you'll never notice; in a hot loop, or in code whose whole purpose is demonstrating ordering, it silently changes the answer.</p>
+      <p><strong>&ldquo;One microtask tick per <code class="k">await</code>&rdquo; holds for a <em>native</em> promise. A thenable costs more.</strong></p>
+      <p><strong>How it works.</strong> The exception is worth carrying because it's both a real performance footgun and a favourite follow-up. <strong>Awaiting a thenable costs extra ticks.</strong> A thenable is anything with a <code class="k">.then</code> method that isn't a native promise. The spec has to wrap it and call its <code class="k">then</code> asynchronously. Subclasses of <code class="k">Promise</code> take a slower path still, because <code class="k">await</code> only skips the wrapping when the value's constructor is exactly <code class="k">Promise</code>.</p>
+      <p><strong>Numbers.</strong> Measured on Node 22 (V8), and worth saying out loud: <strong>a plain value or a native promise costs 1 tick, a thenable 2, a <code class="k">Promise</code> subclass 3.</strong> The 3-to-1 change for native promises landed in V8 v7.2 (Chrome 72, Node 12). That is when the spec was fixed to stop allocating two throwaway promises per <code class="k">await</code>.</p>
+      <p><strong>Where it bites.</strong> In ordinary application code you'll never notice. In a hot loop, or in code whose whole purpose is demonstrating ordering, it silently changes the answer.</p>
       <pre><span class="cmt">// sequential — each await waits for the previous. 3 seconds.</span>
 const a = await fetchA();   <span class="err">// 1s</span>
 const b = await fetchB();   <span class="err">// 1s — didn't need a</span>
@@ -453,45 +468,52 @@ const c = await fetchC();   <span class="err">// 1s — didn't need b</span>
 
 <span class="cmt">// concurrent — start all three, then wait. 1 second.</span>
 const [a, b, c] = await Promise.all([fetchA(), fetchB(), fetchC()]);   <span class="out">// 1s</span></pre>
-      <p>This is the most valuable practical consequence of the await rule, and it's the version of the question that shows up as a real bug rather than a puzzle. <code class="k">await</code> in a loop has the same shape: <code class="k">for (const id of ids) await load(id)</code> is N sequential round trips, where <code class="k">Promise.all(ids.map(load))</code> is one. The counter-case matters too — sequential is <em>correct</em> when each call genuinely needs the previous result, when you must not hammer a rate-limited API, or when you need to stop at the first failure rather than firing everything.</p>
-      <div class="note warn"><span class="lbl">The async-function detail people miss</span>An <code class="k">async</code> function <strong>always returns a promise</strong>, and it always starts running synchronously — the body executes up to the first <code class="k">await</code> before control returns to the caller. So an async function with no await runs entirely synchronously and merely wraps its result. Two consequences: a throw before the first <code class="k">await</code> still becomes a rejection rather than a synchronous throw, and calling an async function without awaiting it starts the work immediately — which is how you deliberately kick off concurrent requests before awaiting them.</div>
+      <p><strong>Where it bites.</strong> This is the most valuable practical consequence of the await rule. It's the version of the question that shows up as a real bug rather than a puzzle. <code class="k">await</code> in a loop has the same shape: <code class="k">for (const id of ids) await load(id)</code> is N sequential round trips, where <code class="k">Promise.all(ids.map(load))</code> is one.</p>
+      <p><strong>The counter-case.</strong> Sequential is <em>correct</em> when each call genuinely needs the previous result. It is also right when you must not hammer a rate-limited API, or when you need to stop at the first failure rather than firing everything.</p>
+      <div class="note warn"><span class="lbl">The async-function detail people miss</span>An <code class="k">async</code> function <strong>always returns a promise</strong>, and it always starts running synchronously. The body executes up to the first <code class="k">await</code> before control returns to the caller. So an async function with no await runs entirely synchronously and merely wraps its result. Two consequences. A throw before the first <code class="k">await</code> still becomes a rejection rather than a synchronous throw. And calling an async function without awaiting it starts the work immediately, which is how you deliberately kick off concurrent requests before awaiting them.</div>
     </section>
 
     <!-- 06 -->
     <section id="render">
       <div class="kicker">06 — Where the pixels happen</div>
       <h2>Rendering & requestAnimationFrame</h2>
-      <p>The browser wants to paint at the display's refresh rate (usually ~60fps → every ~16.7ms). But it can only render <strong>between macrotasks, after microtasks are drained</strong>. So the real cycle is closer to:</p>
+      <p><strong>The browser can only paint between macrotasks, after microtasks are drained.</strong></p>
+      <p><strong>How it works.</strong> The browser wants to paint at the display's refresh rate (usually ~60fps → every ~16.7ms). But it can only render <strong>between macrotasks, after microtasks are drained</strong>. So the real cycle is closer to:</p>
       <pre>one macrotask
   → drain all microtasks
   → <span class="kw">requestAnimationFrame</span> callbacks   <span class="cmt">// run just before paint</span>
   → style → layout → paint
 → back to the next macrotask</pre>
-      <p>Practical implications you can name:</p>
+      <p><strong>Where it bites.</strong> Practical implications you can name:</p>
       <ul class="body">
-        <li><code class="k">requestAnimationFrame</code> callbacks fire <strong>right before the browser paints</strong>, which is why it's the correct place for visual/animation updates — not <code class="k">setTimeout</code>.</li>
-        <li>The spec's order inside &ldquo;update the rendering&rdquo; is worth knowing exactly, because it decides what you can read where: resize and scroll events → media-query changes → animation events → <strong>rAF callbacks</strong> → <strong>style and layout</strong> → <code class="k">ResizeObserver</code> callbacks (looping if they change layout) → <code class="k">IntersectionObserver</code> → paint. So a rAF callback runs <em>before</em> style and layout, and reading <code class="k">offsetHeight</code> there forces a synchronous layout; a <code class="k">ResizeObserver</code> callback runs <em>after</em> layout and gets the fresh numbers for free.</li>
-        <li>A flood of <strong>microtasks can starve rendering</strong>. If a promise chain keeps queuing more microtasks, the loop never reaches the render step, and the UI locks up even though you "used promises."</li>
-        <li>A long <strong>macrotask</strong> (heavy synchronous work in one handler) blocks the very next paint — this is what "jank" usually is. Break work into chunks across tasks, or move it to a Web Worker.</li>
+        <li><code class="k">requestAnimationFrame</code> callbacks fire <strong>right before the browser paints</strong>. That is why it's the correct place for visual/animation updates, not <code class="k">setTimeout</code>.</li>
+        <li>The spec's order inside &ldquo;update the rendering&rdquo; is worth knowing exactly, because it decides what you can read where: resize and scroll events → media-query changes → animation events → <strong>rAF callbacks</strong> → <strong>style and layout</strong> → <code class="k">ResizeObserver</code> callbacks (looping if they change layout) → <code class="k">IntersectionObserver</code> → paint. So a rAF callback runs <em>before</em> style and layout, and reading <code class="k">offsetHeight</code> there forces a synchronous layout. A <code class="k">ResizeObserver</code> callback runs <em>after</em> layout and gets the fresh numbers for free.</li>
+        <li>A flood of <strong>microtasks can starve rendering</strong>. If a promise chain keeps queuing more microtasks, the loop never reaches the render step. The UI locks up even though you &ldquo;used promises.&rdquo;</li>
+        <li>A long <strong>macrotask</strong> (heavy synchronous work in one handler) blocks the very next paint. This is what &ldquo;jank&rdquo; usually is. Break work into chunks across tasks, or move it to a Web Worker.</li>
       </ul>
       <h3>The numbers that make this concrete</h3>
-      <p>At 60Hz you have <strong>16.7ms</strong> per frame — and after the browser's own style, layout, paint and compositing work, realistically about <strong>10ms</strong> of main-thread budget. On a 120Hz phone it halves to 8.3ms. Miss the deadline and the frame is <em>dropped</em>, not delayed: the user sees a stutter. That's the whole reason a &ldquo;long task&rdquo; is defined as <strong>&gt;50ms</strong> — by then you've missed roughly three frames and the page feels stuck. The precise definition, from the Long Tasks spec, is a task <em>plus the microtask checkpoint that follows it</em>, or a rendering update, exceeding 50ms; the number comes from RAIL's 100ms response budget — 50ms to finish whatever is running when the input arrives, 50ms to handle the input.</p>
-      <p>So the rendering step is not a suggestion the loop can defer politely; it's a slot that either happens or is missed. Anything that keeps the loop busy — a long task, or an unbounded microtask queue — removes that slot entirely.</p>
+      <p><strong>You get 16.7ms per frame at 60Hz, and a missed frame is dropped, not delayed.</strong></p>
+      <p><strong>Numbers.</strong> At 60Hz you have <strong>16.7ms</strong> per frame. After the browser's own style, layout, paint and compositing work, realistically about <strong>10ms</strong> of main-thread budget is left. On a 120Hz phone it halves to 8.3ms. Miss the deadline and the frame is <em>dropped</em>, not delayed: the user sees a stutter.</p>
+      <p><strong>Why 50ms.</strong> That's the whole reason a &ldquo;long task&rdquo; is defined as <strong>&gt;50ms</strong>. By then you've missed roughly three frames and the page feels stuck. The precise definition, from the Long Tasks spec, is a task <em>plus the microtask checkpoint that follows it</em>, or a rendering update, exceeding 50ms. The number comes from RAIL's 100ms response budget: 50ms to finish whatever is running when the input arrives, 50ms to handle the input.</p>
+      <p><strong>Where it bites.</strong> The rendering step is not a suggestion the loop can defer politely. It's a slot that either happens or is missed. Anything that keeps the loop busy removes that slot entirely: a long task, or an unbounded microtask queue.</p>
       <h3>rAF versus setTimeout, and why it isn't a style preference</h3>
+      <p><strong>rAF is synchronised to the paint and a timer is not. The difference is visible on screen, not a matter of style.</strong></p>
       <ul class="body">
-        <li><strong><code class="k">requestAnimationFrame</code> is synchronised to the paint</strong>: the callback runs immediately before style and layout, so a mutation made there is rendered in <em>this</em> frame with no intermediate state. A <code class="k">setTimeout(fn, 16)</code> drifts against the refresh clock, so some frames get two updates and some get none — visible as uneven motion even at the same average rate.</li>
-        <li><strong>rAF pauses in a background tab</strong>, where timers merely throttle. That's the right behaviour for animation (nothing is visible) and the wrong behaviour for a data buffer you flush per frame — a backgrounded tab will queue forever unless you cap it or flush on <code class="k">visibilitychange</code>.</li>
-        <li><strong>rAF runs once per frame regardless of how often you schedule it</strong>, which is what makes &ldquo;buffer events, flush in rAF&rdquo; the standard fix for a handler firing hundreds of times a second.</li>
+        <li><strong><code class="k">requestAnimationFrame</code> is synchronised to the paint</strong>: the callback runs immediately before style and layout, so a mutation made there is rendered in <em>this</em> frame with no intermediate state. A <code class="k">setTimeout(fn, 16)</code> drifts against the refresh clock, so some frames get two updates and some get none. That shows as uneven motion even at the same average rate.</li>
+        <li><strong>rAF pauses in a background tab</strong>, where timers merely throttle. That's the right behaviour for animation (nothing is visible) and the wrong behaviour for a data buffer you flush per frame. A backgrounded tab will queue forever unless you cap it or flush on <code class="k">visibilitychange</code>.</li>
+        <li><strong>rAF runs once per frame regardless of how often you schedule it</strong>. That is what makes &ldquo;buffer events, flush in rAF&rdquo; the standard fix for a handler firing hundreds of times a second.</li>
       </ul>
-      <p>Two related APIs worth naming: <code class="k">requestIdleCallback</code> runs when the browser has spare time in a frame — good for logging, prefetching, analytics, never for anything the user is waiting on — and <code class="k">scheduler.yield()</code> lets you break a long task into pieces while keeping your place in the queue, with a <code class="k">setTimeout(…, 0)</code> fallback where it isn't available.</p>
-      <p>Know the difference and the shipping status, because &ldquo;just use <code class="k">setTimeout(0)</code>&rdquo; is the answer that gets the follow-up. A <code class="k">setTimeout(0)</code> continuation goes to the <em>back</em> of the task queue, behind every click and fetch callback that arrived meanwhile; <code class="k">await scheduler.yield()</code> puts the continuation at the <em>front</em> of its priority level, so the browser can paint and handle input but your work resumes before other same-priority tasks start. <code class="k">scheduler.postTask(fn, {priority})</code> is the general form — <code class="k">user-blocking</code>, <code class="k">user-visible</code> (default) and <code class="k">background</code>. As of September 2026: <code class="k">postTask</code> is in Chrome/Edge 94+ and Firefox 142+ (August 2025); <code class="k">yield()</code> in Chrome/Edge 129+ (September 2024) and Firefox 142+; <strong>Safari has neither</strong> through 27.x, so neither is Baseline and the fallback is still required.</p>
+      <p><strong>Two related APIs.</strong> <code class="k">requestIdleCallback</code> runs when the browser has spare time in a frame. It is good for logging, prefetching and analytics, never for anything the user is waiting on. <code class="k">scheduler.yield()</code> lets you break a long task into pieces while keeping your place in the queue, with a <code class="k">setTimeout(…, 0)</code> fallback where it isn't available.</p>
+      <p><strong>How it works.</strong> Know the difference and the shipping status, because &ldquo;just use <code class="k">setTimeout(0)</code>&rdquo; is the answer that gets the follow-up. A <code class="k">setTimeout(0)</code> continuation goes to the <em>back</em> of the task queue, behind every click and fetch callback that arrived meanwhile. <code class="k">await scheduler.yield()</code> puts the continuation at the <em>front</em> of its priority level. So the browser can paint and handle input, but your work resumes before other same-priority tasks start. <code class="k">scheduler.postTask(fn, {priority})</code> is the general form, with <code class="k">user-blocking</code>, <code class="k">user-visible</code> (default) and <code class="k">background</code>.</p>
+      <p><strong>Shipping status.</strong> As of September 2026: <code class="k">postTask</code> is in Chrome/Edge 94+ and Firefox 142+ (August 2025). <code class="k">yield()</code> is in Chrome/Edge 129+ (September 2024) and Firefox 142+. <strong>Safari has neither</strong> through 27.x, so neither is Baseline and the fallback is still required.</p>
     </section>
 
     <!-- 07 -->
     <section id="node">
       <div class="kicker">07 — Same idea, different host</div>
       <h2>Node.js: phases, nextTick, setImmediate</h2>
-      <p>Node uses libuv and runs the loop in <strong>phases</strong>, each with its own macrotask queue. Simplified order per iteration:</p>
+      <p><strong>Node runs the loop in phases, and adds a <code class="k">process.nextTick</code> queue that drains before even promises.</strong></p>
+      <p><strong>How it works.</strong> Node uses libuv and runs the loop in <strong>phases</strong>, each with its own macrotask queue. Simplified order per iteration:</p>
       <ol class="body">
         <li><strong>timers</strong> — <code class="k">setTimeout</code> / <code class="k">setInterval</code> callbacks whose time is due.</li>
         <li><strong>pending callbacks</strong> — certain deferred system callbacks.</li>
@@ -499,27 +521,31 @@ const [a, b, c] = await Promise.all([fetchA(), fetchB(), fetchC()]);   <span cla
         <li><strong>check</strong> — <code class="k">setImmediate</code> callbacks.</li>
         <li><strong>close callbacks</strong> — e.g. <code class="k">socket.on('close')</code>.</li>
       </ol>
-      <p>The part that trips people up: <strong>microtasks run <em>between</em> phases and between each callback</strong> (since Node 11 — before that, Node drained the whole timers list and only then ran microtasks, so promise ordering inside timer callbacks actually changed in 2018), and Node has an extra, even-higher-priority queue:</p>
+      <p><strong>The part that trips people up.</strong> <strong>Microtasks run <em>between</em> phases and between each callback.</strong> That has been true since Node 11; before that, Node drained the whole timers list and only then ran microtasks. So in 2018 promise ordering inside timer callbacks actually changed. And Node has an extra, even-higher-priority queue:</p>
       <table class="tbl">
         <tr><th>Queue</th><th>Priority</th><th>Drained when</th></tr>
         <tr><td><code class="k">process.nextTick</code></td><td>Highest</td><td>After the current operation, before the promise microtask queue</td></tr>
         <tr><td>Promise microtasks</td><td>High</td><td>After nextTick drains, before moving to the next phase</td></tr>
         <tr><td>Phase macrotasks</td><td>Normal</td><td>In their phase</td></tr>
       </table>
-      <p>So in Node the priority is <code class="k">process.nextTick</code> → promises → then the next phase's tasks.</p>
+      <p><strong>Say this.</strong> In Node the priority is <code class="k">process.nextTick</code> → promises → then the next phase's tasks.</p>
       <div class="note warn">
         <span class="lbl">The ESM exception</span>
-        That ordering holds in CommonJS and inside any callback. At the <strong>top level of an ES module</strong> it flips: module evaluation itself runs as part of the microtask queue, so a <code class="k">Promise.resolve().then</code> or <code class="k">queueMicrotask</code> registered there fires <em>before</em> a <code class="k">process.nextTick</code> registered next to it. Node's docs call this out, and it reproduces on Node 22: the same three lines print <code class="k">nextTick · promise</code> in a <code class="k">.cjs</code> file and <code class="k">promise · nextTick</code> in a <code class="k">.mjs</code> file. Node's own advice is to prefer <code class="k">queueMicrotask</code> in userland for exactly this portability reason.
+        That ordering holds in CommonJS and inside any callback. At the <strong>top level of an ES module</strong> it flips. Module evaluation itself runs as part of the microtask queue, so a <code class="k">Promise.resolve().then</code> or <code class="k">queueMicrotask</code> registered there fires <em>before</em> a <code class="k">process.nextTick</code> registered next to it. Node's docs call this out, and it reproduces on Node 22: the same three lines print <code class="k">nextTick · promise</code> in a <code class="k">.cjs</code> file and <code class="k">promise · nextTick</code> in a <code class="k">.mjs</code> file. Node's own advice is to prefer <code class="k">queueMicrotask</code> in userland for exactly this portability reason.
       </div>
       <div class="note warn">
         <span class="lbl">Classic Node question</span>
-        <code class="k">setTimeout(fn, 0)</code> vs <code class="k">setImmediate(fn)</code> at the top level is <em>non-deterministic</em> in order (depends on how fast the loop reaches the timers phase). The mechanism: Node floors every <code class="k">setTimeout</code> delay below 1 to <strong>1ms</strong>, so the order depends on whether process start-up has already burned that millisecond when the timers phase is first checked. On a warm machine <code class="k">setImmediate</code> usually wins — 39 of 40 runs on Node 22 here — but &ldquo;usually&rdquo; is the answer, not &ldquo;always&rdquo;. But <strong>inside an I/O callback</strong>, <code class="k">setImmediate</code> always fires first — because after the poll phase, the <em>check</em> phase (setImmediate) comes before the loop wraps back to timers.
+        <code class="k">setTimeout(fn, 0)</code> vs <code class="k">setImmediate(fn)</code> at the top level is <em>non-deterministic</em> in order. It depends on how fast the loop reaches the timers phase. The mechanism: Node floors every <code class="k">setTimeout</code> delay below 1 to <strong>1ms</strong>, so the order depends on whether process start-up has already burned that millisecond when the timers phase is first checked. On a warm machine <code class="k">setImmediate</code> usually wins (39 of 40 runs on Node 22 here). But &ldquo;usually&rdquo; is the answer, not &ldquo;always&rdquo;. <strong>Inside an I/O callback</strong>, though, <code class="k">setImmediate</code> always fires first. After the poll phase, the <em>check</em> phase (setImmediate) comes before the loop wraps back to timers.
       </div>
       <div class="note">
         <span class="lbl">Say this</span>
         "Recursive <code class="k">process.nextTick</code> can starve the event loop entirely — it keeps draining before Node ever advances to I/O. It's why <code class="k">setImmediate</code> is usually the safer 'run this soon' choice in Node."
       </div>
-      <p>Two more Node-versus-browser differences an interviewer may test: Node has <strong>no nesting clamp</strong> on timers — a recursive <code class="k">setTimeout(fn, 0)</code> chain keeps ticking at the 1ms floor (about 1.2ms per hop measured on Node 22), where a browser slows it to 4ms — and Node has no render step at all, so &ldquo;microtasks block painting&rdquo; is meaningless there; the equivalent harm is starving I/O.</p>
+      <p><strong>Two more Node-versus-browser differences</strong> an interviewer may test:</p>
+      <ul class="body">
+        <li>Node has <strong>no nesting clamp</strong> on timers. A recursive <code class="k">setTimeout(fn, 0)</code> chain keeps ticking at the 1ms floor (about 1.2ms per hop measured on Node 22), where a browser slows it to 4ms.</li>
+        <li>Node has no render step at all, so &ldquo;microtasks block painting&rdquo; is meaningless there. The equivalent harm is starving I/O.</li>
+      </ul>
     </section>
 
     <!-- 08 -->
@@ -528,13 +554,15 @@ const [a, b, c] = await Promise.all([fetchA(), fetchB(), fetchC()]);   <span cla
       <h2>Gotchas that separate levels</h2>
 
       <h3>1. setTimeout(fn, 0) is not 0ms</h3>
-      <p>The delay is a <em>minimum</em>, not a guarantee — the callback only runs after the stack is empty and all microtasks are drained. Browsers also clamp nested timers to a minimum — <strong>4ms once the nesting level exceeds 5</strong>, i.e. from the sixth timer in a <code class="k">setTimeout</code>-inside-<code class="k">setTimeout</code> chain — and background tabs throttle timers hard. Node has no nesting clamp but floors every delay at 1ms.</p>
+      <p><strong>The delay is a <em>minimum</em>, not a guarantee.</strong></p>
+      <p><strong>How it works.</strong> The callback only runs after the stack is empty and all microtasks are drained. Browsers also clamp nested timers to a minimum: <strong>4ms once the nesting level exceeds 5</strong>, i.e. from the sixth timer in a <code class="k">setTimeout</code>-inside-<code class="k">setTimeout</code> chain. Background tabs throttle timers hard. Node has no nesting clamp but floors every delay at 1ms.</p>
 
       <h3>2. Microtask starvation</h3>
       <pre><span class="cmt">// this freezes the page — the microtask queue never empties</span>
 function loop(){ Promise.resolve().then(loop); }
 loop();</pre>
-      <p>Because the loop always fully drains microtasks before rendering or running a macrotask, an ever-growing microtask queue means the browser <em>never</em> paints. Contrast with <code class="k">setTimeout(loop, 0)</code>, which yields between turns and keeps the page alive (if choppy).</p>
+      <p><strong>An ever-growing microtask queue means the browser <em>never</em> paints.</strong></p>
+      <p><strong>How it works.</strong> The loop always fully drains microtasks before rendering or running a macrotask. A microtask that queues another microtask never lets the queue empty. Contrast with <code class="k">setTimeout(loop, 0)</code>, which yields between turns and keeps the page alive (if choppy).</p>
 
       <h3>3. Order within a promise chain</h3>
       <pre>Promise.resolve()
@@ -544,34 +572,41 @@ Promise.resolve()
   .then(() =&gt; console.log('c'))
   .then(() =&gt; console.log('d'));
 <span class="out">// a  c  b  d</span></pre>
-      <p>Each <code class="k">.then</code> only schedules the <em>next</em> link once the current one runs. So the two chains interleave — the first <code class="k">.then</code> of each runs (a, c), then the second of each (b, d). This "one tick per link" behaviour is a favourite.</p>
+      <p><strong>Two promise chains interleave, one link at a time.</strong></p>
+      <p><strong>How it works.</strong> Each <code class="k">.then</code> only schedules the <em>next</em> link once the current one runs. So the two chains interleave. The first <code class="k">.then</code> of each runs (a, c), then the second of each (b, d). This &ldquo;one tick per link&rdquo; behaviour is a favourite.</p>
 
       <h3>4. The loop can't interrupt a task</h3>
-      <p>A click that arrives mid-task doesn't preempt anything. Its handler is queued as a macrotask and waits its turn. There's no interruption — only interleaving between tasks.</p>
+      <p><strong>A click that arrives mid-task doesn't preempt anything.</strong> Its handler is queued as a macrotask and waits its turn. There's no interruption, only interleaving between tasks.</p>
       <h3>5. Why the timer clamps exist</h3>
-      <p>The 4ms floor past five levels of nesting isn't arbitrary — it's a defence against a page burning a core with a <code class="k">setTimeout(fn, 0)</code> recursion, standardised because every browser had shipped some version of it. The exact rule in the HTML spec: if the nesting level is greater than 5 and the timeout is under 4ms, set it to 4ms. Chromium implements that literally (its constant is 6 because it counts from 1); WebKit is more generous and only clamps one-shot timers from nesting level 10, repeating ones from 5. Chrome experimented in 2022 with raising the threshold to 15 and even 100, but current Chromium source is back at the spec value.</p>
-      <p>The <em>first-level</em> clamp is the part that went stale. Chrome and Safari historically rounded <code class="k">setTimeout(fn, 0)</code> up to 1ms; Chrome removed that for <code class="k">setTimeout</code> in 2022 and for <code class="k">setInterval</code> in Chrome 135 (2025), Firefox never had it, and WebKit still keeps a 1ms floor for repeating timers only. So &ldquo;a zero timer is really 1ms&rdquo; is now wrong in the browser — and still true in Node, whose docs floor any delay below 1 to 1.</p>
-      <p>Background tabs go much further, and the numbers are specific. Chrome throttles a hidden page's timers to <strong>once per second</strong>; since Chrome 88 (2021) it applies <em>intensive</em> throttling — <strong>once per minute</strong> — when the page has been hidden for more than 5 minutes, the timer chain is at nesting 5 or deeper, the page has been silent for 30 seconds and no WebRTC connection is open. Since Chrome 133 (2025) hidden, silent, CPU-heavy tabs can be <em>frozen</em> outright for 5 minutes at a time under Energy Saver. Firefox desktop clamps hidden tabs to 1 second and Firefox for Android to 15 minutes; WebKit aligns hidden-page timers to 1 second. This is why a timer-driven clock or poller is wrong when the tab is hidden and why long-running work should be checked against <code class="k">document.visibilityState</code> rather than assumed to have kept ticking.</p>
-      <p>The related thing to know about <code class="k">postMessage</code> / <code class="k">MessageChannel</code>: a posted message is queued as a task with no timer at all, so none of these clamps apply. That is why it was the classic &ldquo;<code class="k">setImmediate</code> for browsers&rdquo; polyfill, and it's still what React's scheduler package uses in browsers to yield between units of work without paying a timer delay (it prefers <code class="k">setImmediate</code> where that exists, i.e. Node, and falls back to <code class="k">setTimeout</code> last).</p>
+      <p><strong>The clamps are a defence against a page burning a core, and the exact numbers differ by browser, nesting level and tab visibility.</strong></p>
+      <p><strong>The nesting clamp.</strong> The 4ms floor past five levels of nesting isn't arbitrary. It's a defence against a page burning a core with a <code class="k">setTimeout(fn, 0)</code> recursion, standardised because every browser had shipped some version of it. The exact rule in the HTML spec: if the nesting level is greater than 5 and the timeout is under 4ms, set it to 4ms. Chromium implements that literally (its constant is 6 because it counts from 1). WebKit is more generous and only clamps one-shot timers from nesting level 10, repeating ones from 5. Chrome experimented in 2022 with raising the threshold to 15 and even 100, but current Chromium source is back at the spec value.</p>
+      <p><strong>The first-level clamp.</strong> This is the part that went stale. Chrome and Safari historically rounded <code class="k">setTimeout(fn, 0)</code> up to 1ms. Chrome removed that for <code class="k">setTimeout</code> in 2022 and for <code class="k">setInterval</code> in Chrome 135 (2025). Firefox never had it, and WebKit still keeps a 1ms floor for repeating timers only. So &ldquo;a zero timer is really 1ms&rdquo; is now wrong in the browser, and still true in Node, whose docs floor any delay below 1 to 1.</p>
+      <p><strong>Background tabs.</strong> These go much further, and the numbers are specific. Chrome throttles a hidden page's timers to <strong>once per second</strong>. Since Chrome 88 (2021) it applies <em>intensive</em> throttling, <strong>once per minute</strong>, when all of these hold: the page has been hidden for more than 5 minutes, the timer chain is at nesting 5 or deeper, the page has been silent for 30 seconds and no WebRTC connection is open. Since Chrome 133 (2025), under Energy Saver, a tab that has been hidden and silent for over 5 minutes and is still burning CPU can be <em>frozen</em> outright: no timers at all until it is foregrounded. Firefox desktop clamps hidden tabs to 1 second and Firefox for Android to 15 minutes. WebKit aligns hidden-page timers to 1 second.</p>
+      <p><strong>Where it bites.</strong> A timer-driven clock or poller is wrong when the tab is hidden. Long-running work should be checked against <code class="k">document.visibilityState</code> rather than assumed to have kept ticking.</p>
+      <p><strong>The escape hatch.</strong> A <code class="k">postMessage</code> / <code class="k">MessageChannel</code> message is queued as a task with no timer at all, so none of these clamps apply. That is why it was the classic &ldquo;<code class="k">setImmediate</code> for browsers&rdquo; polyfill. It's still what React's scheduler package uses in browsers to yield between units of work without paying a timer delay. It prefers <code class="k">setImmediate</code> where that exists, i.e. Node, and falls back to <code class="k">setTimeout</code> last.</p>
       <h3>6. The loop is not concurrency, and where the real threads are</h3>
-      <p>The framing that earns the level: <strong>the event loop gives you interleaving, not parallelism.</strong> One task runs to completion on one thread. Nothing you can write in JavaScript on the main thread runs at the same time as anything else, which is precisely why there are no data races and no locks — and equally why a 200ms computation makes the whole UI unresponsive no matter how many promises wrap it.</p>
-      <p>The corollary people get wrong: <strong><code class="k">async</code> does not mean &ldquo;in the background&rdquo;.</strong> Wrapping a heavy synchronous loop in an <code class="k">async</code> function changes nothing — the body still runs to completion on the main thread. What <em>is</em> genuinely parallel lives outside JavaScript: the network stack, timers, disk I/O and the compositor are host-provided and run elsewhere; they merely deliver their results back as tasks. If you need real parallelism for JS, that's a <strong>Web Worker</strong>, and the reason it needs <code class="k">postMessage</code> rather than shared variables is that a second thread would otherwise reintroduce every race the single-threaded model eliminated.</p>
+      <p><strong>The event loop gives you interleaving, not parallelism.</strong></p>
+      <p><strong>How it works.</strong> This is the framing that earns the level. One task runs to completion on one thread. Nothing you can write in JavaScript on the main thread runs at the same time as anything else. That is precisely why there are no data races and no locks. It is equally why a 200ms computation makes the whole UI unresponsive, no matter how many promises wrap it.</p>
+      <p><strong>The trap.</strong> The corollary people get wrong: <strong><code class="k">async</code> does not mean &ldquo;in the background&rdquo;.</strong> Wrapping a heavy synchronous loop in an <code class="k">async</code> function changes nothing. The body still runs to completion on the main thread.</p>
+      <p><strong>Where the real threads are.</strong> What <em>is</em> genuinely parallel lives outside JavaScript. The network stack, timers, disk I/O and the compositor are host-provided and run elsewhere. They merely deliver their results back as tasks. If you need real parallelism for JS, that's a <strong>Web Worker</strong>. It needs <code class="k">postMessage</code> rather than shared variables because a second thread would otherwise reintroduce every race the single-threaded model eliminated.</p>
       <h3>7. Microtasks run between listeners — unless you dispatched the event yourself</h3>
       <pre>btn.addEventListener('click', () =&gt; { console.log('L1'); Promise.resolve().then(() =&gt; console.log('M1')); });
 btn.addEventListener('click', () =&gt; { console.log('L2'); Promise.resolve().then(() =&gt; console.log('M2')); });
 <span class="cmt">// real user click:   L1  M1  L2  M2</span>
 <span class="cmt">// btn.click():       L1  L2  M1  M2</span></pre>
-      <p>The rule is not &ldquo;microtasks run after the task&rdquo; — it's &ldquo;microtasks run whenever the JavaScript stack empties&rdquo;. A user click is dispatched by the browser, so the stack is empty after each listener returns and a microtask checkpoint runs between them. <code class="k">btn.click()</code> dispatches synchronously from your script, which is still on the stack between listeners, so the checkpoint waits until the whole dispatch returns. Same code, different order, and the difference is the caller. Any test that drives the UI with <code class="k">.click()</code> or <code class="k">dispatchEvent</code> sees the second ordering.</p>
+      <p><strong>Microtasks run whenever the JavaScript stack empties, and a synthetic click keeps the stack busy between listeners.</strong></p>
+      <p><strong>How it works.</strong> The rule is not &ldquo;microtasks run after the task&rdquo;. It's &ldquo;microtasks run whenever the JavaScript stack empties&rdquo;. A user click is dispatched by the browser, so the stack is empty after each listener returns and a microtask checkpoint runs between them. <code class="k">btn.click()</code> dispatches synchronously from your script. Your script is still on the stack between listeners, so the checkpoint waits until the whole dispatch returns.</p>
+      <p><strong>Where it bites.</strong> Same code, different order, and the difference is the caller. Any test that drives the UI with <code class="k">.click()</code> or <code class="k">dispatchEvent</code> sees the second ordering.</p>
     </section>
 
     <!-- 09 -->
     <section id="interview">
       <div class="kicker">09 — Drill until reflex</div>
       <h2>Interview drills</h2>
-      <p>Predict the output <em>before</em> revealing. Say your reasoning out loud — that's what the interviewer scores, not just the answer. To watch any of these run one step at a time, open <code class="k">event-loop-playground.html</code> and paste it in.</p>
+      <p><strong>Predict the output <em>before</em> revealing, and say your reasoning out loud.</strong> That's what the interviewer scores, not just the answer. To watch any of these run one step at a time, open <code class="k">event-loop-playground.html</code> and paste it in.</p>
       <div class="note">
         <span class="lbl">Which environment</span>
-        Every ordering below was executed on Node 22 and is the same in Chrome, Firefox and Safari, because each one only pits timers against microtasks — a rule the HTML spec and Node share. Where Node diverges (<code class="k">setImmediate</code>, <code class="k">process.nextTick</code>, the ESM top level, the 1ms timer floor) is in §07; nothing here depends on it.
+        Every ordering below was executed on Node 22 and is the same in Chrome, Firefox and Safari, because each one only pits timers against microtasks, a rule the HTML spec and Node share. Where Node diverges (<code class="k">setImmediate</code>, <code class="k">process.nextTick</code>, the ESM top level, the 1ms timer floor) is in §07; nothing here depends on it.
       </div>
 
       <div class="quizcard" data-quiz>

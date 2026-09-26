@@ -9,7 +9,7 @@
  *   Google Fonts     -> cache-first; opaque cross-origin responses are fine here
  *                       because we only ever replay them, never read their bytes
  */
-const CACHE = 'fe-prep-v3';
+const CACHE = 'fe-prep-v4';
 
 /* Every distinct Google Fonts stylesheet used anywhere in the deck. There are
    two, and missing the second one is what forced a manual "open each guide
